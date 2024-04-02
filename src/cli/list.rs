@@ -1,7 +1,9 @@
+use crate::utils::constants::DATA_FEEDS;
+
 pub fn list() {
-    match get_apps_list() {
-        Ok(apps) => {
-            log::info!("App Chain: {:?}", apps);
+    match get_data_feed_list() {
+        Ok(feeds) => {
+            log::info!("Data Feeds available: {:?}", feeds);
         }
         Err(err) => {
             panic!("Failed to list: {}", err);
@@ -9,7 +11,7 @@ pub fn list() {
     }
 }
 
-fn get_apps_list() -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let apps = vec!["app1".to_string(), "app2".to_string()];
-    Ok(apps)
+fn get_data_feed_list() -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let data_feeds = DATA_FEEDS.iter().map(|x| x.to_string()).collect();
+    Ok(data_feeds)
 }

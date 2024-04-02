@@ -8,3 +8,8 @@ target/
 
 # IntelliJ IDEA
 .idea
+
+/.vscode
+Cargo.lock
+.env
+.private.seed

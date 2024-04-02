@@ -2388,6 +2388,7 @@ version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ea1015b5a70616b688dc230cfe50c8af89d972cb132d5a622814d29773b10b9"
 dependencies = [
+ "rand 0.8.5",
  "rand_core 0.6.4",
 ]
 
@@ -3672,6 +3673,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "password-hash"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "346f04948ba92c43e8469c1ee6736c7563d71012b17d40745260fe106aac2166"
+dependencies = [
+ "base64ct",
+ "rand_core 0.6.4",
+ "subtle",
+]
+
+[[package]]
 name = "paste"
 version = "1.0.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3700,7 +3712,7 @@ checksum = "83a0692ec44e4cf1ef28ca317f14f8f07da2d95ec3fa01f86e4467b725e60917"
 dependencies = [
  "digest 0.10.7",
  "hmac 0.12.1",
- "password-hash",
+ "password-hash 0.4.2",
  "sha2 0.10.8",
 ]
 
@@ -3712,6 +3724,7 @@ checksum = "f8ed6a7761f76e3b9f92dfb0a60a6a6477c61024b775147ff0973a02653abaf2"
 dependencies = [
  "digest 0.10.7",
  "hmac 0.12.1",
+ "password-hash 0.5.0",
 ]
 
 [[package]]
@@ -3907,6 +3920,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 name = "pragma-cli"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "async-trait",
  "bollard",
  "clap",
@@ -3919,17 +3933,21 @@ dependencies = [
  "hex",
  "inquire",
  "log",
+ "parity-scale-codec",
  "rand 0.8.5",
  "reqwest",
+ "scale-info",
  "serde",
  "serde_json",
  "sp-core",
  "strum",
  "strum_macros",
  "subxt",
+ "subxt-signer",
  "thiserror",
  "tokio",
  "toml",
+ "url",
 ]
 
 [[package]]
@@ -5650,6 +5668,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "subxt-signer"
+version = "0.35.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b22a77c98c2670b3bd717b63440e4175af2eb2078a51e2e48daff3ced23147ea"
+dependencies = [
+ "bip39",
+ "cfg-if",
+ "derive_more",
+ "hex",
+ "hmac 0.12.1",
+ "parity-scale-codec",
+ "pbkdf2 0.12.2",
+ "regex",
+ "schnorrkel 0.11.4",
+ "secp256k1",
+ "secrecy",
+ "sha2 0.10.8",
+ "sp-crypto-hashing",
+ "subxt",
+ "zeroize",
+]
+
+[[package]]
 name = "svm-rs"
 version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6259,6 +6300,7 @@ dependencies = [
  "form_urlencoded",
  "idna",
  "percent-encoding",
+ "serde",
 ]
 
 [[package]]

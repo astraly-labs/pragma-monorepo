@@ -10,6 +10,7 @@ path = "src/main.rs"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0.81"
 async-trait = "0.1.77"
 bollard = "0.15.0"
 clap = { version = "4.4.11", features = ["derive"] }
@@ -33,3 +34,9 @@ thiserror = "1.0.52"
 tokio = { version = "1.35.1", features = ["rt", "rt-multi-thread", "macros"] }
 toml = "0.8.8"
 subxt = "0.35.0"
+subxt-signer = "0.35.0"
+scale-info = "2.11.1"
+scale = { package = "parity-scale-codec", version = "3.0.0", features = [
+    "derive",
+] }
+url = { version = "2.5.0", features = ["serde"] }

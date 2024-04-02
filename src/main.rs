@@ -1,6 +1,7 @@
 use clap::{Parser, Subcommand};
 use log::LevelFilter;
 use pragma_cli::cli;
+use subxt::{OnlineClient, SubstrateConfig};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
