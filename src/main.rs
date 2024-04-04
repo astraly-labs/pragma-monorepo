@@ -1,6 +1,12 @@
 use clap::{Parser, Subcommand};
 use log::LevelFilter;
-use pragma_cli::cli;
+use pragma_cli::{
+    cli::{
+        self,
+        types::{DataFeed, HasSelector, StateUpdate},
+    },
+    utils::constants::ORACLE_ADDRESS,
+};
 use subxt::{OnlineClient, SubstrateConfig};
 
 #[derive(Parser)]
@@ -24,8 +30,8 @@ enum Commands {
         /// Assets to be included in the data feed
         assets: Vec<String>,
         /// Data feed name
-        #[clap(short, long = "data-feed")]
-        data_feed: String,
+        #[clap(short, long = "data-feed-name")]
+        data_feed_name: String,
     },
 }
 
@@ -42,8 +48,10 @@ async fn main() {
 
     match &cli.command {
         Some(Commands::List) => cli::list::list(),
-        Some(Commands::Schedule { rpc_url, frequency, assets, data_feed }) => {
-            cli::schedule::schedule(rpc_url, frequency, assets, data_feed).await
+        Some(Commands::Schedule { rpc_url, frequency, assets, data_feed_name }) => {
+            let data_feed =
+                DataFeed::new(assets.to_vec(), ORACLE_ADDRESS.to_string(), StateUpdate::Checkpoint.to_selector());
+            cli::schedule::schedule(rpc_url, frequency, &data_feed).await
         }
         None => log::info!("Use --help to see the complete list of available commands"),
     }
