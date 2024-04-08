@@ -4,7 +4,10 @@ use subxt_signer::sr25519::dev::{self};
 use crate::{
     runtimes::support::madara::{
         self,
-        runtime_types::pallet_autonomous::types::{UserJob, UserPolicy},
+        runtime_types::{
+            mp_felt::Felt252Wrapper,
+            pallet_autonomous::types::{UserJob, UserPolicy},
+        },
     },
     utils::conversion::{string_to_felt_252_wrapper, u128_to_felt_252_wrapper},
 };
@@ -39,7 +42,7 @@ async fn schedule_data_feed(
         string_to_felt_252_wrapper(&data_feed.selector),         /* selector for the `with_arg` external */
         u128_to_felt_252_wrapper(data_feed.calldata.len() as u128), /* calldata_len */
     ];
-    call.extend(data_feed.calldata.iter().map(|s| string_to_felt_252_wrapper(s)));
+    call.extend(data_feed.calldata.iter().map(|f| Felt252Wrapper(f.to_bytes_be())));
 
     let user_job = UserJob { calls: vec![call], policy: UserPolicy { frequency: 10 } };
 

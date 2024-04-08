@@ -40,3 +40,9 @@ scale = { package = "parity-scale-codec", version = "3.0.0", features = [
     "derive",
 ] }
 url = { version = "2.5.0", features = ["serde"] }
+starknet-ff = { git = "https://github.com/xJonathanLEI/starknet-rs.git", rev = "64ebc36", default-features = false, features = [
+    "std",
+] }
+starknet-core = { git = "https://github.com/xJonathanLEI/starknet-rs.git", rev = "64ebc36", default-features = false, features = [
+    "std",
+] }

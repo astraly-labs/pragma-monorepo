@@ -1,16 +1,18 @@
 use serde::{Deserialize, Serialize};
+use starknet_core::utils::cairo_short_string_to_felt;
+use starknet_ff::FieldElement;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DataFeed {
     pub assets: Vec<String>,
     pub contract_address: String,
     pub selector: String,
-    pub calldata: Vec<String>,
+    pub calldata: Vec<FieldElement>,
 }
 
 impl DataFeed {
     pub fn new(assets: Vec<String>, contract_address: String, selector: String) -> Self {
-        let calldata = assets.clone();
+        let calldata = assets.iter().map(|a| cairo_short_string_to_felt(a).unwrap()).collect();
         Self { assets, contract_address, selector, calldata }
     }
 }

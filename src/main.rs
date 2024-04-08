@@ -26,8 +26,10 @@ enum Commands {
         #[clap(short, long = "rpc-url")]
         rpc_url: Option<String>,
         /// Frequency of updates in blocks
+        #[clap(short)]
         frequency: Option<u128>,
         /// Assets to be included in the data feed
+        #[clap(short)]
         assets: Vec<String>,
         /// Data feed name
         #[clap(short, long = "data-feed-name")]
