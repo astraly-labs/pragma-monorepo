@@ -6,17 +6,19 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IMessageRecipient} from "@hyperlane-xyz/core/interfaces/IMessageRecipient.sol";
 import {IInterchainSecurityModule, ISpecifiesInterchainSecurityModule} from "@hyperlane-xyz/core/interfaces/IInterchainSecurityModule.sol";
 
-contract TestRecipient is
+contract HyperlaneRecipient is
     Ownable,
     IMessageRecipient,
     ISpecifiesInterchainSecurityModule
 {
+    // @notice merkle verification module
     IInterchainSecurityModule public interchainSecurityModule;
-    bytes32 public lastSender;
+    // @notice pragma_core contract address
+    IPragma public pragma_core;
+    // @notice mapping from data id to sender
+    mapping(bytes => bytes32) public dataIdToSender;
+    // @notice last data received
     bytes public lastData;
-
-    address public lastCaller;
-    string public lastCallMessage;
 
     event ReceivedMessage(
         uint32 indexed origin,
@@ -24,8 +26,6 @@ contract TestRecipient is
         uint256 indexed value,
         string message
     );
-
-    event ReceivedCall(address indexed caller, uint256 amount, string message);
 
     constructor(address initialOwner) Ownable(initialOwner) {}
 
@@ -35,14 +35,14 @@ contract TestRecipient is
         bytes calldata _data
     ) external payable virtual override {
         emit ReceivedMessage(_origin, _sender, msg.value, string(_data));
-        lastSender = _sender;
-        lastData = _data;
-    }
 
-    function fooBar(uint256 amount, string calldata message) external {
-        emit ReceivedCall(msg.sender, amount, message);
-        lastCaller = msg.sender;
-        lastCallMessage = message;
+        dataId = keccak256(abi.encodePacked(_origin, _sender, _data));
+
+        dataIdToSender[dataId] = _sender;
+        lastData = _data;
+
+        // Updates data in Pragma core contract
+        pragma_core.updateData(dataId, _data);
     }
 
     function setInterchainSecurityModule(address _ism) external onlyOwner {
