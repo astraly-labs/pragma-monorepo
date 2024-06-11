@@ -3,8 +3,8 @@ pragma solidity >=0.8.0;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
-import {IMessageRecipient} from "../interfaces/IMessageRecipient.sol";
-import {IInterchainSecurityModule, ISpecifiesInterchainSecurityModule} from "../interfaces/IInterchainSecurityModule.sol";
+import {IMessageRecipient} from "@hyperlane-xyz/core/interfaces/IMessageRecipient.sol";
+import {IInterchainSecurityModule, ISpecifiesInterchainSecurityModule} from "@hyperlane-xyz/core/interfaces/IInterchainSecurityModule.sol";
 
 contract TestRecipient is
     Ownable,
@@ -26,6 +26,8 @@ contract TestRecipient is
     );
 
     event ReceivedCall(address indexed caller, uint256 amount, string message);
+
+    constructor(address initialOwner) Ownable(initialOwner) {}
 
     function handle(
         uint32 _origin,

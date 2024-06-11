@@ -10,3 +10,4 @@
 [submodule "solidity/lib/hyperlane-monorepo"]
 	path = solidity/lib/hyperlane-monorepo
 	url = https://github.com/hyperlane-xyz/hyperlane-monorepo
+	tag = v3-solidity
