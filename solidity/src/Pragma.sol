@@ -1,4 +1,9 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.13;
+// SPDX-License-Identifier: Apache 2
 
-contract Pragma {}
+pragma solidity ^0.8.0;
+
+/// @title Pragma
+/// @author Pragma Labs
+/// @custom:contact security@pragma.build
+/// @notice The Pragma contract.
+contract Pragma is IPragma {}
