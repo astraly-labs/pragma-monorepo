@@ -7,7 +7,6 @@ use pragma_cli::{
     },
     utils::constants::ORACLE_ADDRESS,
 };
-use subxt::{OnlineClient, SubstrateConfig};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -50,7 +49,7 @@ async fn main() {
 
     match &cli.command {
         Some(Commands::List) => cli::list::list(),
-        Some(Commands::Schedule { rpc_url, frequency, assets, data_feed_name }) => {
+        Some(Commands::Schedule { rpc_url, frequency, assets, data_feed_name: _ }) => {
             let data_feed =
                 DataFeed::new(assets.to_vec(), ORACLE_ADDRESS.to_string(), StateUpdate::Checkpoint.to_selector());
             cli::schedule::schedule(rpc_url, frequency, &data_feed).await

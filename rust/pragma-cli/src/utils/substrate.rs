@@ -19,6 +19,7 @@ use subxt::{
 ///
 /// Currently this will report success once the transaction is included in a block. In the
 /// future there could be a flag to wait for finality before reporting success.
+#[allow(unused)]
 async fn submit_extrinsic<C, Call, Signer>(
     client: &OnlineClient<C>,
     rpc: &LegacyRpcMethods<C>,
@@ -27,7 +28,7 @@ async fn submit_extrinsic<C, Call, Signer>(
 ) -> core::result::Result<blocks::ExtrinsicEvents<C>, subxt::Error>
 where
     C: Config,
-    Call: tx::TxPayload,
+    Call: tx::Payload,
     Signer: tx::Signer<C>,
     <C::ExtrinsicParams as ExtrinsicParams<C>>::Params: From<<DefaultExtrinsicParams<C> as ExtrinsicParams<C>>::Params>,
 {
@@ -75,6 +76,7 @@ where
     Ok(account_nonce)
 }
 
+#[allow(unused)]
 async fn state_call<C, A: Encode, R: Decode>(rpc: &LegacyRpcMethods<C>, func: &str, args: A) -> Result<R>
 where
     C: Config,
@@ -85,6 +87,7 @@ where
 }
 
 /// Fetch the hash of the *best* block (included but not guaranteed to be finalized).
+#[allow(unused)]
 async fn get_best_block<C>(rpc: &LegacyRpcMethods<C>) -> core::result::Result<C::Hash, subxt::Error>
 where
     C: Config,
