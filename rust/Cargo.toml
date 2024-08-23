@@ -40,14 +40,14 @@ subxt = "0.37.0"
 subxt-signer = "0.37.0"
 scale-info = "2.11.3"
 scale = { package = "parity-scale-codec", version = "3.0.0", features = [
-    "derive",
+  "derive",
 ] }
 url = { version = "2.5.2", features = ["serde"] }
 starknet-ff = { git = "https://github.com/xJonathanLEI/starknet-rs.git", rev = "64ebc36", default-features = false, features = [
-    "std",
+  "std",
 ] }
 starknet-core = { git = "https://github.com/xJonathanLEI/starknet-rs.git", rev = "64ebc36", default-features = false, features = [
-    "std",
+  "std",
 ] }
 
 [profile.release]
