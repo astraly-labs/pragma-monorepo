@@ -1,4 +1,5 @@
 pub mod config;
+pub mod handlers;
 pub mod servers;
 pub mod services;
 
