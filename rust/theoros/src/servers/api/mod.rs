@@ -37,7 +37,7 @@ impl ApiDoc {
 }
 
 #[tracing::instrument(skip(state))]
-pub async fn run_api_server(config: &Config, state: AppState) {
+pub async fn run_api_server(config: &Config, state: &AppState) {
     let host = config.server_host();
     let port = config.server_port();
     let address = format!("{}:{}", host, port);
@@ -45,7 +45,7 @@ pub async fn run_api_server(config: &Config, state: AppState) {
 
     let listener = tokio::net::TcpListener::bind(socket_addr).await.unwrap();
     let router = api_router::<ApiDoc>(state.clone())
-        .with_state(state)
+        .with_state(state.clone())
         // Logging so we can see whats going on
         .layer(
             TraceLayer::new_for_http()

@@ -31,5 +31,6 @@ tracing-subscriber = { workspace = true }
 utoipa = { workspace = true, features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipauto = { workspace = true }
+url = { workspace = true }
 
 utils = { path = "../utils" }

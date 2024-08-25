@@ -5197,6 +5197,7 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+ "url",
  "utils",
  "utoipa",
  "utoipa-swagger-ui",

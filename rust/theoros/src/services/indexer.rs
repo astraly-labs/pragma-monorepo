@@ -9,10 +9,27 @@ use apibara_sdk::{configuration, ClientBuilder, Configuration, Uri};
 use futures_util::TryStreamExt;
 use starknet::core::types::Felt;
 use starknet::providers::{jsonrpc::HttpTransport, JsonRpcClient};
+use url::Url;
+
 use utils::conversions::felt_as_apibara_field;
+
+use crate::{config::Config, AppState};
 
 // TODO: depends on the host machine - should be configurable
 const INDEXING_STREAM_CHUNK_SIZE: usize = 1024;
+
+/// Creates & run the indexer service.
+pub async fn run_indexer_service(_config: &Config, _state: &AppState) {
+    // TODO: retrieve all these parameters from the config
+    let rpc_url: Url = "".parse().unwrap();
+    let rpc_client = Arc::new(JsonRpcClient::new(HttpTransport::new(rpc_url)));
+    let apibara_api_key = String::new();
+    let from_block = 0;
+
+    let indexer_service = IndexerService::new(rpc_client, apibara_api_key, from_block);
+    tracing::info!("🚀 Indexer service started");
+    tokio::spawn(async move { indexer_service.start().await.unwrap() });
+}
 
 pub struct IndexerService {
     uri: Uri,
