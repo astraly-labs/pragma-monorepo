@@ -4,8 +4,8 @@ use tokio::sync::OnceCell;
 #[derive(Default, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Mode {
-    Dev,
     #[default]
+    Dev,
     Production,
 }
 

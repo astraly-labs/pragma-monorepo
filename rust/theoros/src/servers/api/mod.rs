@@ -15,11 +15,11 @@ use utoipauto::utoipauto;
 use crate::{config::Config, AppState};
 
 #[tracing::instrument(skip(config, state))]
-pub fn run_api_server(config: &Config, state: AppState) -> JoinHandle<Result<()>> {
+pub fn run_api_server(config: &Config, state: AppState) -> Result<JoinHandle<Result<()>>> {
     let host = config.server_host().to_owned();
     let port = config.server_port();
 
-    tokio::spawn(async move {
+    let handle = tokio::spawn(async move {
         let address = format!("{}:{}", host, port);
         let socket_addr: SocketAddr = address.parse().context("Failed to parse socket address")?;
 
@@ -31,7 +31,9 @@ pub fn run_api_server(config: &Config, state: AppState) -> JoinHandle<Result<()>
 
         tracing::info!("🧩 API server started at http://{}", socket_addr);
         axum::serve(listener, router).await.context("😱 API server stopped!")
-    })
+    });
+
+    Ok(handle)
 }
 
 const OPENAPI_FILENAME: &str = "openapi.json";
