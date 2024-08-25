@@ -20,6 +20,7 @@ clap = { version = "4.5.16", features = ["derive"] }
 dirs = "5.0.1"
 dotenvy = "0.15.7"
 envy = "0.4.2"
+bigdecimal = "0.4.5"
 deadpool-diesel = { version = "0.6.1", features = ["postgres"] }
 diesel_migrations = "2.2.0"
 diesel = { version = "2.2.3", features = [
@@ -42,25 +43,17 @@ rand = "0.8.5"
 reqwest = { version = "0.12.7", features = ["json", "blocking"] }
 serde = { version = "1.0.208", features = ["derive"] }
 serde_json = "1.0.125"
-sp-core = "34.0.0"
 strum = { version = "0.26.3", features = ["derive"] }
 strum_macros = { version = "0.26.4", features = [] }
 thiserror = "1.0.63"
 tokio = { version = "1.39.3", features = ["rt", "rt-multi-thread", "macros"] }
 toml = "0.8.19"
-subxt = "0.37.0"
-subxt-signer = "0.37.0"
 scale-info = "2.11.3"
 scale = { package = "parity-scale-codec", version = "3.0.0", features = [
   "derive",
 ] }
 url = { version = "2.5.2", features = ["serde"] }
-starknet-ff = { git = "https://github.com/xJonathanLEI/starknet-rs.git", rev = "64ebc36", default-features = false, features = [
-  "std",
-] }
-starknet-core = { git = "https://github.com/xJonathanLEI/starknet-rs.git", rev = "64ebc36", default-features = false, features = [
-  "std",
-] }
+starknet = "0.11.0"
 opentelemetry = { version = "0.24" }
 utoipa = { version = "4.2.3", features = ["axum_extras", "chrono", "uuid"] }
 utoipauto = "0.1.14"
@@ -68,6 +61,10 @@ utoipa-swagger-ui = { version = "7.1", features = ["axum"] }
 tower-http = { version = "0.5.2", features = ["fs", "trace", "cors"] }
 axum = { version = "0.7.5", features = ["macros", "ws", "tokio"] }
 axum-macros = { version = "0.4.1" }
+
+# Apibara DNA (indexing)
+apibara-core = { git = "https://github.com/apibara/dna", rev = "9caa385" }
+apibara-sdk = { git = "https://github.com/apibara/dna", rev = "9caa385" }
 
 # Tests dependencies
 tracing-test = "0.2.5"

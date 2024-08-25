@@ -5,6 +5,10 @@
       "name": ".",
     },
     {
+      "path": "rust",
+      "name": "===== RUST ====="
+    },
+    {
       "path": "rust/theoros",
       "name": "theoros",
     },
@@ -15,6 +19,10 @@
     {
       "path": "rust/utils",
       "name": "utils",
+    },
+    {
+      "path": "solidity",
+      "name": "===== SOLIDITY ====="
     },
   ],
   "settings": {},

@@ -24,6 +24,7 @@ async fn main() -> Result<()> {
     init_tracing("theoros")?;
     let config = config().await;
 
+    // TODO: indexer_db_url should be handled in config()
     let indexer_db_url = std::env::var(ENV_DATABASE_URL)?;
     let indexer_pool = init_db_pool("theoros", &indexer_db_url)?;
 

@@ -31,6 +31,3 @@ impl std::fmt::Display for SupportedRuntime {
         }
     }
 }
-
-#[subxt::subxt(runtime_metadata_path = "src/runtimes/artifacts/madara_metadata.scale")]
-pub mod madara {}
