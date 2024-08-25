@@ -41,7 +41,6 @@ async fn main() -> Result<()> {
 
     // Handle results
     indexer_result.context("Indexer service panicked")?.context("Indexer service failed")?;
-
     api_result.context("API server panicked")?.context("API server failed")?;
 
     // Ensure that the tracing provider is shutdown correctly
