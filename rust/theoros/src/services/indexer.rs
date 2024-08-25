@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use apibara_core::{
     node::v1alpha2::DataFinality,
     starknet::v1alpha2::{Block, Filter, HeaderFilter},
@@ -9,6 +9,7 @@ use apibara_sdk::{configuration, ClientBuilder, Configuration, Uri};
 use futures_util::TryStreamExt;
 use starknet::core::types::Felt;
 use starknet::providers::{jsonrpc::HttpTransport, JsonRpcClient};
+use tokio::task::JoinHandle;
 use url::Url;
 
 use utils::conversions::felt_as_apibara_field;
@@ -19,16 +20,19 @@ use crate::{config::Config, AppState};
 const INDEXING_STREAM_CHUNK_SIZE: usize = 1024;
 
 /// Creates & run the indexer service.
-pub async fn run_indexer_service(_config: &Config, _state: &AppState) {
+#[tracing::instrument(skip(_config, _state))]
+pub fn run_indexer_service(_config: &Config, _state: AppState) -> JoinHandle<Result<()>> {
     // TODO: retrieve all these parameters from the config
-    let rpc_url: Url = "".parse().unwrap();
+    let rpc_url: Url = "https://free-rpc.nethermind.io/mainnet-juno".parse().unwrap();
     let rpc_client = Arc::new(JsonRpcClient::new(HttpTransport::new(rpc_url)));
-    let apibara_api_key = String::new();
-    let from_block = 0;
+    let apibara_api_key = String::from("dna_splNZm07gPik81gauR6m");
+    let from_block = 10;
 
-    let indexer_service = IndexerService::new(rpc_client, apibara_api_key, from_block);
-    tracing::info!("🚀 Indexer service started");
-    tokio::spawn(async move { indexer_service.start().await.unwrap() });
+    tokio::spawn(async move {
+        let indexer_service = IndexerService::new(rpc_client, apibara_api_key, from_block);
+        tracing::info!("🧩 Indexer service running!");
+        indexer_service.start().await.context("😱 Indexer service failed!")
+    })
 }
 
 pub struct IndexerService {

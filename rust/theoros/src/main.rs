@@ -2,10 +2,11 @@ pub mod config;
 pub mod servers;
 pub mod services;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use deadpool_diesel::postgres::Pool;
 use servers::api::run_api_server;
 use services::indexer::run_indexer_service;
+use tracing::Level;
 use utils::{db::init_db_pool, tracing::init_tracing};
 
 use crate::config::config;
@@ -23,7 +24,7 @@ pub struct AppState {
 async fn main() -> Result<()> {
     dotenvy::dotenv()?;
 
-    init_tracing("theoros")?;
+    init_tracing("theoros", Level::INFO)?;
     let config = config().await;
 
     // TODO: indexer_db_url should be handled in config()
@@ -33,7 +34,15 @@ async fn main() -> Result<()> {
     // TODO: metrics
     let state = AppState { indexer_pool };
 
-    tokio::join!(run_indexer_service(config, &state), run_api_server(config, &state));
+    let indexer_service = run_indexer_service(config, state.clone());
+    let api_server = run_api_server(config, state.clone());
+
+    let (indexer_result, api_result) = tokio::join!(indexer_service, api_server);
+
+    // Handle results
+    indexer_result.context("Indexer service panicked")?.context("Indexer service failed")?;
+
+    api_result.context("API server panicked")?.context("API server failed")?;
 
     // Ensure that the tracing provider is shutdown correctly
     opentelemetry::global::shutdown_tracer_provider();

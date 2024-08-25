@@ -2,8 +2,9 @@ pub mod router;
 
 use std::{net::SocketAddr, path::PathBuf};
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use router::api_router;
+use tokio::task::JoinHandle;
 use tower_http::{
     cors::CorsLayer,
     trace::{DefaultMakeSpan, TraceLayer},
@@ -12,6 +13,26 @@ use utoipa::OpenApi;
 use utoipauto::utoipauto;
 
 use crate::{config::Config, AppState};
+
+#[tracing::instrument(skip(config, state))]
+pub fn run_api_server(config: &Config, state: AppState) -> JoinHandle<Result<()>> {
+    let host = config.server_host().to_owned();
+    let port = config.server_port();
+
+    tokio::spawn(async move {
+        let address = format!("{}:{}", host, port);
+        let socket_addr: SocketAddr = address.parse().context("Failed to parse socket address")?;
+
+        let listener = tokio::net::TcpListener::bind(socket_addr).await.context("Failed to bind TcpListener")?;
+        let router = api_router::<ApiDoc>(state.clone())
+            .with_state(state.clone())
+            .layer(TraceLayer::new_for_http().make_span_with(DefaultMakeSpan::default().include_headers(true)))
+            .layer(CorsLayer::permissive());
+
+        tracing::info!("🧩 API server started at http://{}", socket_addr);
+        axum::serve(listener, router).await.context("😱 API server stopped!")
+    })
+}
 
 const OPENAPI_FILENAME: &str = "openapi.json";
 
@@ -34,26 +55,4 @@ impl ApiDoc {
         std::fs::write(file_path, json)?;
         Ok(())
     }
-}
-
-#[tracing::instrument(skip(state))]
-pub async fn run_api_server(config: &Config, state: &AppState) {
-    let host = config.server_host();
-    let port = config.server_port();
-    let address = format!("{}:{}", host, port);
-    let socket_addr: SocketAddr = address.parse().unwrap();
-
-    let listener = tokio::net::TcpListener::bind(socket_addr).await.unwrap();
-    let router = api_router::<ApiDoc>(state.clone())
-        .with_state(state.clone())
-        // Logging so we can see whats going on
-        .layer(
-            TraceLayer::new_for_http()
-                .make_span_with(DefaultMakeSpan::default().include_headers(true)),
-        )
-        // Permissive CORS layer to allow all origins
-        .layer(CorsLayer::permissive());
-
-    tracing::info!("🚀 API started at http://{}", socket_addr);
-    tokio::spawn(async move { axum::serve(listener, router).await.unwrap() });
 }

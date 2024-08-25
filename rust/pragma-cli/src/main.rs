@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use tracing::Level;
 use utils::tracing::init_tracing;
 
 use pragma_cli::{
@@ -40,7 +41,7 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    init_tracing("pragma-cli")?;
+    init_tracing("pragma-cli", Level::INFO)?;
 
     let cli = Cli::parse();
     match &cli.command {

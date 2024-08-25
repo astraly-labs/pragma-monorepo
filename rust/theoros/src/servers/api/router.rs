@@ -11,12 +11,12 @@ pub fn api_router<T: OpenApiT>(_state: AppState) -> Router<AppState> {
     let open_api = T::openapi();
     Router::new()
         .merge(SwaggerUi::new("/node/swagger-ui").url("/node/api-docs/openapi.json", open_api))
-        .route("/v1/healthcheck", get(root))
+        .route("/health", get(health))
         .fallback(handler_404)
 }
 
-async fn root() -> &'static str {
-    "Server is running!"
+async fn health() -> StatusCode {
+    StatusCode::OK
 }
 
 async fn handler_404() -> impl IntoResponse {
