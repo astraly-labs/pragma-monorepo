@@ -61,6 +61,13 @@ starknet-ff = { git = "https://github.com/xJonathanLEI/starknet-rs.git", rev = "
 starknet-core = { git = "https://github.com/xJonathanLEI/starknet-rs.git", rev = "64ebc36", default-features = false, features = [
   "std",
 ] }
+opentelemetry = { version = "0.24" }
+utoipa = { version = "4.2.3", features = ["axum_extras", "chrono", "uuid"] }
+utoipauto = "0.1.14"
+utoipa-swagger-ui = { version = "7.1", features = ["axum"] }
+tower-http = { version = "0.5.2", features = ["fs", "trace", "cors"] }
+axum = { version = "0.7.5", features = ["macros", "ws", "tokio"] }
+axum-macros = { version = "0.4.1" }
 
 # Tests dependencies
 tracing-test = "0.2.5"

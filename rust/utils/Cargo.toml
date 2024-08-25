@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
-tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
 deadpool-diesel = { workspace = true, features = ["postgres"] }
+tracing = { workspace = true }
 tracing-axiom = { workspace = true }
+tracing-subscriber = { workspace = true }

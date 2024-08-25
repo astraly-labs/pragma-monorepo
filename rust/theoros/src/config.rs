@@ -48,7 +48,7 @@ impl Config {
 
 pub static CONFIG: OnceCell<Config> = OnceCell::const_new();
 
-pub async fn init_config() -> Config {
+async fn init_config() -> Config {
     let mode_config = envy::from_env::<ModeConfig>().unwrap_or_default();
     let server_config = envy::from_env::<ServerConfig>().unwrap_or_default();
 
