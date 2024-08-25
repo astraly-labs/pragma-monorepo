@@ -1,5 +1,7 @@
+use anyhow::Result;
 use clap::{Parser, Subcommand};
-use log::LevelFilter;
+use utils::tracing::init_tracing;
+
 use pragma_cli::{
     cli::{
         self,
@@ -37,16 +39,10 @@ enum Commands {
 }
 
 #[tokio::main]
-async fn main() {
-    env_logger::Builder::from_default_env()
-        .filter_level(LevelFilter::Info)
-        .format_timestamp(None)
-        .format_level(false)
-        .format_target(false)
-        .init();
+async fn main() -> Result<()> {
+    init_tracing("pragma-cli")?;
 
     let cli = Cli::parse();
-
     match &cli.command {
         Some(Commands::List) => cli::list::list(),
         Some(Commands::Schedule { rpc_url, frequency, assets, data_feed_name: _ }) => {
@@ -54,6 +50,8 @@ async fn main() {
                 DataFeed::new(assets.to_vec(), ORACLE_ADDRESS.to_string(), StateUpdate::Checkpoint.to_selector());
             cli::schedule::schedule(rpc_url, frequency, &data_feed).await
         }
-        None => log::info!("Use --help to see the complete list of available commands"),
+        None => tracing::info!("Use --help to see the complete list of available commands"),
     }
+
+    Ok(())
 }

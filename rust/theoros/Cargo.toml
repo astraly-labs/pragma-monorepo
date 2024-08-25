@@ -5,3 +5,19 @@ edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
+diesel_migrations = { workspace = true }
+diesel = { workspace = true, features = [
+  "postgres",
+  "extras",
+  "postgres_backend",
+  "serde_json",
+] }
+envy = { workspace = true }
+deadpool-diesel = { workspace = true, features = ["postgres"] }
+tokio = { workspace = true, features = ["sync", "macros", "rt-multi-thread"] }
+dotenvy = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+utils = { path = "../utils" }

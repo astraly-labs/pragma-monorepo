@@ -19,7 +19,7 @@ futures-util = { workspace = true }
 git2 = { workspace = true }
 hex = { workspace = true }
 inquire = { workspace = true }
-log = { workspace = true }
+tracing = { workspace = true }
 rand = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
@@ -37,3 +37,5 @@ scale = { workspace = true }
 url = { workspace = true }
 starknet-ff = { workspace = true }
 starknet-core = { workspace = true }
+
+utils = { path = "../utils" }

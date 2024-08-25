@@ -20,10 +20,10 @@ pub async fn schedule(rpc_url: &Option<String>, frequency: &Option<u128>, data_f
 
     match schedule_data_feed(&rpc_url.to_string(), &frequency, data_feed).await {
         Ok(_) => {
-            log::info!("Data Feed successfully scheduled!");
+            tracing::info!("Data Feed successfully scheduled!");
         }
         Err(err) => {
-            log::error!("Failed to schedule the given data feed: {}", err);
+            tracing::error!("Failed to schedule the given data feed: {}", err);
         }
     }
 }
@@ -52,13 +52,13 @@ async fn schedule_data_feed(
         .sign_and_submit_then_watch_default(&schedule_tx, &alice_pair_signer)
         .await
         .map(|e| {
-            log::info!("Job scheduling submitted, waiting for transaction to be finalized...");
+            tracing::info!("Job scheduling submitted, waiting for transaction to be finalized...");
             e
         })?
         .wait_for_finalized_success()
         .await?;
 
-    log::info!("Scheduling data feed with frequency: {}, data feed: {:?}", frequency, data_feed);
+    tracing::info!("Scheduling data feed with frequency: {}, data feed: {:?}", frequency, data_feed);
 
     Ok(())
 }

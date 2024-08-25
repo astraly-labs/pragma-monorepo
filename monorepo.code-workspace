@@ -1,0 +1,21 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": ".",
+    },
+    {
+      "path": "rust/theoros",
+      "name": "theoros",
+    },
+    {
+      "path": "rust/pragma-cli",
+      "name": "pragma-cli",
+    },
+    {
+      "path": "rust/utils",
+      "name": "utils",
+    },
+  ],
+  "settings": {},
+}

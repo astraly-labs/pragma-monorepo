@@ -3,7 +3,7 @@ use crate::utils::constants::DATA_FEEDS;
 pub fn list() {
     match get_data_feed_list() {
         Ok(feeds) => {
-            log::info!("Data Feeds available: {:?}", feeds);
+            tracing::info!("Data Feeds available: {:?}", feeds);
         }
         Err(err) => {
             panic!("Failed to list: {}", err);
