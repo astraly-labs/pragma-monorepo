@@ -1,6 +1,6 @@
 # Supported Runtimes
 
-* Sharingan
+- Sharingan
 
 TODO: Improve the runtimes implementation without the need of replicating
 the same functions for each runtime. Note that _RuntimeApi_ is runtime
