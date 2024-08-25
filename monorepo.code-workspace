@@ -6,7 +6,7 @@
     },
     {
       "path": "rust",
-      "name": "===== RUST ====="
+      "name": "===== RUST =====",
     },
     {
       "path": "rust/theoros",
@@ -22,7 +22,7 @@
     },
     {
       "path": "solidity",
-      "name": "===== SOLIDITY ====="
+      "name": "===== SOLIDITY =====",
     },
   ],
   "settings": {},
