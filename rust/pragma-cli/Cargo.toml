@@ -14,7 +14,7 @@ clap = { workspace = true }
 dirs = { workspace = true }
 env_logger = { workspace = true }
 # TODO: alloy
-ethers = { workspace = true }
+alloy = { workspace = true }
 eyre = { workspace = true }
 futures-util = { workspace = true }
 git2 = { workspace = true }

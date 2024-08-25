@@ -30,7 +30,7 @@ diesel = { version = "2.2.3", features = [
   "serde_json",
 ] }
 env_logger = "0.11.5"
-ethers = { git = "https://github.com/gakonst/ethers-rs", rev = "f0e5b194f09c533feb10d1a686ddb9e5946ec107" }
+alloy = "0.2.1"
 eyre = "0.6.12"
 futures-util = "0.3.30"
 git2 = "0.19.0"
