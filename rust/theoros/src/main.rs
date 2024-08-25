@@ -2,7 +2,8 @@ pub mod config;
 pub mod servers;
 pub mod services;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
+use config::Config;
 use deadpool_diesel::postgres::Pool;
 use servers::api::run_api_server;
 use services::indexer::run_indexer_service;
@@ -34,17 +35,23 @@ async fn main() -> Result<()> {
     // TODO: metrics
     let state = AppState { indexer_pool };
 
+    start_theorus(config, state).await?;
+
+    // Ensure that the tracing provider is shutdown correctly
+    opentelemetry::global::shutdown_tracer_provider();
+
+    Ok(())
+}
+
+async fn start_theorus(config: &Config, state: AppState) -> Result<()> {
     let indexer_service = run_indexer_service(config, state.clone());
     let api_server = run_api_server(config, state.clone());
 
     let (indexer_result, api_result) = tokio::join!(indexer_service, api_server);
 
     // Handle results
-    indexer_result.context("Indexer service panicked")?.context("Indexer service failed")?;
-    api_result.context("API server panicked")?.context("API server failed")?;
-
-    // Ensure that the tracing provider is shutdown correctly
-    opentelemetry::global::shutdown_tracer_provider();
+    indexer_result??;
+    api_result??;
 
     Ok(())
 }
