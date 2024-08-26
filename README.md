@@ -15,6 +15,7 @@
 <a href="./cli/">Pragma CLI</a>
 
 CLI used to interact with the Pragma protocol.
+
 - Register yourself as a data provider
 - Schedule new data feeds
 - Connect pragma to your protocol
@@ -27,8 +28,6 @@ Solidity contracts & libraries.
 
 - Set of contracts used to store data relayed from Pragma chain using Hyperlane.
 - SDK that can be used by EVM protocols looking to integrate Pragma.
-
-
 
 ## Local Development
 
