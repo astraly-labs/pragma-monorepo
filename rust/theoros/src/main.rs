@@ -21,7 +21,7 @@ use crate::{
 // TODO: Config those
 const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;
-const ENV_DATABASE_URL: &str = "PRAGMA_X_INDEXER_DB_URL";
+const ENV_DATABASE_URL: &str = "INDEXER_DB_URL";
 
 #[derive(Clone)]
 pub struct AppState {
