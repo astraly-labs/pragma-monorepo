@@ -40,7 +40,8 @@ async fn main() -> Result<()> {
     init_tracing(APP_NAME, LOG_LEVEL)?;
 
     // TODO: indexer_db_url should be handled in config()
-    let indexer_pool = init_db_pool(APP_NAME, &std::env::var(ENV_DATABASE_URL)?)?;
+    let database_url = std::env::var(ENV_DATABASE_URL)?;
+    let indexer_pool = init_db_pool(APP_NAME, &database_url)?;
     infra::db::migrations::run_migrations(&indexer_pool).await?;
 
     start_theorus(config, indexer_pool).await?;
@@ -51,18 +52,22 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+/// Starts all the Theoros services, i.e:
+/// - API server
+/// - Indexer service
+/// - Metrics server
 async fn start_theorus(config: &Config, indexer_pool: Pool) -> Result<()> {
     let metrics = MetricsService::new(false, METRICS_PORT)?;
-    let metrics_handle = metrics.start()?;
 
     let state = AppState { indexer_pool, metrics_registry: metrics.registry() };
 
     // TODO: spawn one indexer for mainnet & one for testnet
     let indexer_handle = start_indexer_service(config, state.clone())?;
     let api_handle = start_api_server(config, state.clone())?;
+    let metrics_handle = metrics.start()?;
 
+    // TODO: Better struct that groups handles, bubble errors etc...
     let (indexer_result, api_result, metrics_result) = tokio::join!(indexer_handle, api_handle, metrics_handle);
-
     indexer_result??;
     api_result??;
     metrics_result??;
