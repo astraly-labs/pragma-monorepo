@@ -43,11 +43,7 @@ async fn main() -> Result<()> {
     let indexer_pool = init_db_pool(APP_NAME, &std::env::var(ENV_DATABASE_URL)?)?;
     infra::db::migrations::run_migrations(&indexer_pool).await?;
 
-    let metrics = MetricsService::new(false, METRICS_PORT)?;
-
-    let state = AppState { indexer_pool, metrics_registry: metrics.registry() };
-
-    start_theorus(config, state, metrics).await?;
+    start_theorus(config, indexer_pool).await?;
 
     // Ensure that the tracing provider is shutdown correctly
     opentelemetry::global::shutdown_tracer_provider();
@@ -55,11 +51,14 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn start_theorus(config: &Config, state: AppState, mut metrics_service: MetricsService) -> Result<()> {
+async fn start_theorus(config: &Config, indexer_pool: Pool) -> Result<()> {
     // TODO: spawn one indexer for mainnet & one for testnet
+    let metrics = MetricsService::new(false, METRICS_PORT)?;
+    let metrics_handle = metrics.start()?;
+    let state = AppState { indexer_pool, metrics_registry: metrics.registry() };
+
     let indexer_handle = start_indexer_service(config, state.clone())?;
     let api_handle = start_api_server(config, state.clone())?;
-    let metrics_handle = metrics_service.start()?;
 
     let (indexer_result, api_result, metrics_result) = tokio::join!(indexer_handle, api_handle, metrics_handle);
 

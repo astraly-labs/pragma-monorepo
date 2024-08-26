@@ -45,7 +45,7 @@ impl MetricsService {
         self.registry.clone()
     }
 
-    pub fn start(&mut self) -> Result<JoinHandle<Result<()>>> {
+    pub fn start(&self) -> Result<JoinHandle<Result<()>>> {
         let listen_addr = if self.prometheus_external {
             Ipv4Addr::UNSPECIFIED // listen on 0.0.0.0
         } else {
