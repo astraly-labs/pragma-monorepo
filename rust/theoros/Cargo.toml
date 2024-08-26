@@ -22,20 +22,20 @@ diesel_migrations = { workspace = true }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 futures-util = { workspace = true }
+hyper = { workspace = true, features = ["server"] }
 opentelemetry = { workspace = true }
+prometheus = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 starknet = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync", "macros", "rt-multi-thread"] }
 tower-http = { workspace = true, features = ["fs", "trace", "cors"] }
 tracing = { workspace = true }
-thiserror = { workspace = true }
 tracing-subscriber = { workspace = true }
+url = { workspace = true }
 utoipa = { workspace = true, features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipauto = { workspace = true }
-url = { workspace = true }
-prometheus = { workspace = true }
-hyper = { workspace = true, features = ["server"] }
 
 utils = { path = "../utils" }
