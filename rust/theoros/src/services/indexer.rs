@@ -8,9 +8,9 @@ use futures_util::TryStreamExt;
 use starknet::core::types::Felt;
 use tokio::task::JoinHandle;
 
-use utils::conversions::felt_as_apibara_field;
+use utils::conversions::apibara::felt_as_apibara_field;
 
-use crate::{config::Config, types::dispatch_event::Dispatch, AppState};
+use crate::{config::Config, types::dispatch_event::DispatchEvent, AppState};
 
 // TODO: depends on the host machine - should be configurable
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
@@ -122,11 +122,7 @@ impl IndexerService {
             return Ok(());
         }
 
-        // TODO: create a DispatchEvent struct from the event data
-        // https://github.com/astraly-labs/hyperlane_starknet/blob/ff3d79b7cb7720b999749aa38597f5042b7028ab/contracts/src/contracts/mailbox.cairo#L241
-        let _dispatch_event = Dispatch::from_event_data(event.data);
-
-        // TODO: store in database
+        let _dispatch = DispatchEvent::from_event_data(event.data);
 
         Ok(())
     }
