@@ -8,6 +8,6 @@ contract PragmaT is Test {
     Pragma public pragma_;
 
     function setUp() public {
-        pragma_ = new Pragma();
+        // pragma_ = new Pragma();
     }
 }
