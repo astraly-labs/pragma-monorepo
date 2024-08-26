@@ -10,6 +10,7 @@ apibara-sdk = { workspace = true }
 axum = { workspace = true, features = ["macros", "ws", "tokio"] }
 axum-macros = { workspace = true }
 bigdecimal = { workspace = true }
+chrono = { workspace = true, features = ["serde"] }
 deadpool-diesel = { workspace = true, features = ["postgres"] }
 diesel = { workspace = true, features = [
   "postgres",
@@ -23,10 +24,12 @@ envy = { workspace = true }
 futures-util = { workspace = true }
 opentelemetry = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 starknet = { workspace = true }
 tokio = { workspace = true, features = ["sync", "macros", "rt-multi-thread"] }
 tower-http = { workspace = true, features = ["fs", "trace", "cors"] }
 tracing = { workspace = true }
+thiserror = { workspace = true }
 tracing-subscriber = { workspace = true }
 utoipa = { workspace = true, features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }

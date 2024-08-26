@@ -5,13 +5,15 @@ use axum::Router;
 use utoipa::OpenApi as OpenApiT;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::handlers::get_calldata::get_calldata;
 use crate::AppState;
 
-pub fn api_router<T: OpenApiT>(_state: AppState) -> Router<AppState> {
+pub fn api_router<T: OpenApiT>(state: AppState) -> Router<AppState> {
     let open_api = T::openapi();
     Router::new()
-        .merge(SwaggerUi::new("/node/swagger-ui").url("/node/api-docs/openapi.json", open_api))
         .route("/health", get(health))
+        .merge(SwaggerUi::new("/v1/docs").url("/node/api-docs/openapi.json", open_api))
+        .nest("/v1", calldata_route(state.clone()))
         .fallback(handler_404)
 }
 
@@ -21,4 +23,10 @@ async fn health() -> StatusCode {
 
 async fn handler_404() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, "The requested resource was not found")
+}
+
+// TODO: way better route names
+
+fn calldata_route(state: AppState) -> Router<AppState> {
+    Router::new().route("/calldata", get(get_calldata)).with_state(state)
 }

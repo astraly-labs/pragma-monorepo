@@ -17,6 +17,7 @@ anyhow = "1.0.86"
 async-trait = "0.1.81"
 bollard = "0.17.1"
 clap = { version = "4.5.16", features = ["derive"] }
+chrono = { version = "0.4.38", features = ["serde"] }
 dirs = "5.0.1"
 dotenvy = "0.15.7"
 envy = "0.4.2"

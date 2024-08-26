@@ -1122,8 +1122,10 @@ checksum = "a21f936df1771bf62b77f047b726c4625ff2e8aa607c01ec06e5a05bd8463401"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
+ "js-sys",
  "num-traits",
  "serde",
+ "wasm-bindgen",
  "windows-targets 0.52.6",
 ]
 
@@ -4941,6 +4943,7 @@ dependencies = [
  "axum 0.7.5",
  "axum-macros",
  "bigdecimal 0.4.5",
+ "chrono",
  "deadpool-diesel",
  "diesel",
  "diesel_migrations",
@@ -4949,7 +4952,9 @@ dependencies = [
  "futures-util",
  "opentelemetry 0.24.0",
  "serde",
+ "serde_json",
  "starknet 0.11.0",
+ "thiserror",
  "tokio",
  "tower-http",
  "tracing",

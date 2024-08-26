@@ -24,6 +24,10 @@ pub fn run_api_server(config: &Config, state: AppState) -> Result<JoinHandle<Res
         let socket_addr: SocketAddr = address.parse().context("Failed to parse socket address")?;
 
         let listener = tokio::net::TcpListener::bind(socket_addr).await.context("Failed to bind TcpListener")?;
+
+        // Uncomment this line below in order to generate the OpenAPI specs in the current folder
+        // ApiDoc::generate_openapi_json("./".into())?;
+
         let router = api_router::<ApiDoc>(state.clone())
             .with_state(state.clone())
             .layer(TraceLayer::new_for_http().make_span_with(DefaultMakeSpan::default().include_headers(true)))
@@ -35,8 +39,6 @@ pub fn run_api_server(config: &Config, state: AppState) -> Result<JoinHandle<Res
 
     Ok(handle)
 }
-
-const OPENAPI_FILENAME: &str = "openapi.json";
 
 #[utoipauto(paths = "./theoros/src")]
 #[derive(OpenApi)]
@@ -53,8 +55,10 @@ impl ApiDoc {
         if let Some(parent) = output_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        let file_path = output_path.join(OPENAPI_FILENAME);
+        let file_path = output_path.join("openapi.json");
+        tracing::info!("Saving OpenAPI specs to {} ....", file_path.as_path().display());
         std::fs::write(file_path, json)?;
+        tracing::info!("OpenAPI specs saved!");
         Ok(())
     }
 }
