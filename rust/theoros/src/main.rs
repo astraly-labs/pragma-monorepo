@@ -2,11 +2,13 @@ mod config;
 mod errors;
 mod extractors;
 mod handlers;
+mod infra;
 mod servers;
 mod services;
 
 use anyhow::Result;
 use deadpool_diesel::postgres::Pool;
+use infra::db::migrations::run_migrations;
 use tracing::Level;
 use utils::{db::init_db_pool, tracing::init_tracing};
 
@@ -36,6 +38,7 @@ async fn main() -> Result<()> {
 
     // TODO: indexer_db_url should be handled in config()
     let indexer_pool = init_db_pool(APP_NAME, &std::env::var(ENV_DATABASE_URL)?)?;
+    run_migrations(&indexer_pool).await?;
 
     let state = AppState { indexer_pool };
 

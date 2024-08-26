@@ -5,7 +5,7 @@ use std::net::SocketAddr;
 
 use anyhow::{Context, Result};
 use router::api_router;
-use tokio::task::JoinHandle;
+use tokio::{net::TcpListener, task::JoinHandle};
 use tower_http::{
     cors::CorsLayer,
     trace::{DefaultMakeSpan, TraceLayer},
@@ -18,14 +18,13 @@ pub fn run_api_server(config: &Config, state: AppState) -> Result<JoinHandle<Res
     let host = config.server_host().to_owned();
     let port = config.server_port();
 
+    // Uncomment this line below in order to generate the OpenAPI specs in the theoros folder
+    // ApiDoc::generate_openapi_json("./theoros".into())?;
+
     let handle = tokio::spawn(async move {
         let address = format!("{}:{}", host, port);
-        let socket_addr: SocketAddr = address.parse().context("Failed to parse socket address")?;
-
-        let listener = tokio::net::TcpListener::bind(socket_addr).await.context("Failed to bind TcpListener")?;
-
-        // Uncomment this line below in order to generate the OpenAPI specs in the current folder
-        // ApiDoc::generate_openapi_json("./".into())?;
+        let socket_addr: SocketAddr = address.parse()?;
+        let listener = TcpListener::bind(socket_addr).await?;
 
         let router = api_router::<ApiDoc>(state.clone())
             .with_state(state.clone())
