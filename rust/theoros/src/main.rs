@@ -5,17 +5,17 @@ mod handlers;
 mod infra;
 mod servers;
 mod services;
+mod types;
 
 use anyhow::Result;
 use deadpool_diesel::postgres::Pool;
 use prometheus::Registry;
-use servers::metrics::MetricsService;
 use tracing::Level;
 use utils::{db::init_db_pool, tracing::init_tracing};
 
 use crate::{
     config::{config, Config},
-    servers::api::start_api_server,
+    servers::{api::start_api_server, metrics::MetricsServer},
     services::indexer::start_indexer_service,
 };
 
@@ -57,8 +57,9 @@ async fn main() -> Result<()> {
 /// - Indexer service
 /// - Metrics server
 async fn start_theorus(config: &Config, indexer_pool: Pool) -> Result<()> {
-    let metrics = MetricsService::new(false, METRICS_PORT)?;
+    let metrics = MetricsServer::new(false, METRICS_PORT)?;
 
+    // TODO: state should contains the rpc_client to interact with a Madara node
     let state = AppState { indexer_pool, metrics_registry: metrics.registry() };
 
     // TODO: spawn one indexer for mainnet & one for testnet

@@ -29,13 +29,13 @@ enum MetricsError {
     HyperHttp(#[from] hyper::http::Error),
 }
 
-pub struct MetricsService {
+pub struct MetricsServer {
     prometheus_external: bool,
     prometheus_port: u16,
     registry: Registry,
 }
 
-impl MetricsService {
+impl MetricsServer {
     pub fn new(prometheus_external: bool, prometheus_port: u16) -> Result<Self> {
         let service = Self { prometheus_external, prometheus_port, registry: Default::default() };
         Ok(service)
@@ -101,6 +101,6 @@ async fn endpoint(req: Request<Body>, registry: Registry) -> Result<Response<Bod
         Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .header("Content-Type", "text/html")
-            .body(Body::from("Not found.<br><br><a href=\"/metrics\">See Metrics</a>"))?)
+            .body(Body::from("Not found.<br><br>👉 See <a href=\"/metrics\">Metrics</a>"))?)
     }
 }
