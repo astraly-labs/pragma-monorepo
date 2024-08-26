@@ -12,7 +12,7 @@ pub fn api_router<T: OpenApiT>(state: AppState) -> Router<AppState> {
     let open_api = T::openapi();
     Router::new()
         .route("/health", get(health))
-        .merge(SwaggerUi::new("/v1/docs").url("/node/api-docs/openapi.json", open_api))
+        .merge(SwaggerUi::new("/v1/docs").url("/v1/docs/openapi.json", open_api))
         .nest("/v1", calldata_route(state.clone()))
         .fallback(handler_404)
 }

@@ -8,25 +8,28 @@ mod services;
 
 use anyhow::Result;
 use deadpool_diesel::postgres::Pool;
-use infra::db::migrations::run_migrations;
+use prometheus::Registry;
+use servers::metrics::MetricsService;
 use tracing::Level;
 use utils::{db::init_db_pool, tracing::init_tracing};
 
 use crate::{
     config::{config, Config},
-    servers::api::run_api_server,
-    services::indexer::run_indexer_service,
+    servers::api::start_api_server,
+    services::indexer::start_indexer_service,
 };
 
 // TODO: Config those
 const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;
 const ENV_DATABASE_URL: &str = "INDEXER_DB_URL";
+const METRICS_PORT: u16 = 8080;
 
 #[derive(Clone)]
+#[allow(unused)]
 pub struct AppState {
-    #[allow(unused)]
     indexer_pool: Pool,
+    metrics_registry: Registry,
 }
 
 #[tokio::main]
@@ -38,12 +41,13 @@ async fn main() -> Result<()> {
 
     // TODO: indexer_db_url should be handled in config()
     let indexer_pool = init_db_pool(APP_NAME, &std::env::var(ENV_DATABASE_URL)?)?;
-    run_migrations(&indexer_pool).await?;
+    infra::db::migrations::run_migrations(&indexer_pool).await?;
 
-    let state = AppState { indexer_pool };
+    let metrics = MetricsService::new(false, METRICS_PORT)?;
 
-    // TODO: metrics
-    start_theorus(config, state).await?;
+    let state = AppState { indexer_pool, metrics_registry: metrics.registry() };
+
+    start_theorus(config, state, metrics).await?;
 
     // Ensure that the tracing provider is shutdown correctly
     opentelemetry::global::shutdown_tracer_provider();
@@ -51,16 +55,17 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn start_theorus(config: &Config, state: AppState) -> Result<()> {
+async fn start_theorus(config: &Config, state: AppState, mut metrics_service: MetricsService) -> Result<()> {
     // TODO: spawn one indexer for mainnet & one for testnet
-    let indexer_service = run_indexer_service(config, state.clone())?;
-    let api_server = run_api_server(config, state.clone())?;
+    let indexer_handle = start_indexer_service(config, state.clone())?;
+    let api_handle = start_api_server(config, state.clone())?;
+    let metrics_handle = metrics_service.start()?;
 
-    let (indexer_result, api_result) = tokio::join!(indexer_service, api_server);
+    let (indexer_result, api_result, metrics_result) = tokio::join!(indexer_handle, api_handle, metrics_handle);
 
-    // Handle results
     indexer_result??;
     api_result??;
+    metrics_result??;
 
     Ok(())
 }

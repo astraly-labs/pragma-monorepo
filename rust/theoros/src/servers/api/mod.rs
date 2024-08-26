@@ -14,7 +14,7 @@ use tower_http::{
 use crate::{config::Config, servers::api::docs::ApiDoc, AppState};
 
 #[tracing::instrument(skip(config, state))]
-pub fn run_api_server(config: &Config, state: AppState) -> Result<JoinHandle<Result<()>>> {
+pub fn start_api_server(config: &Config, state: AppState) -> Result<JoinHandle<Result<()>>> {
     let host = config.server_host().to_owned();
     let port = config.server_port();
 

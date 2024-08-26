@@ -13,17 +13,18 @@ use utils::conversions::felt_as_apibara_field;
 use crate::{config::Config, AppState};
 
 // TODO: depends on the host machine - should be configurable
-const INDEXING_STREAM_CHUNK_SIZE: usize = 1024;
+const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
 
 /// Creates & run the indexer service.
 #[tracing::instrument(skip(_config, _state))]
-pub fn run_indexer_service(_config: &Config, _state: AppState) -> Result<JoinHandle<Result<()>>> {
+pub fn start_indexer_service(_config: &Config, _state: AppState) -> Result<JoinHandle<Result<()>>> {
     // TODO: retrieve API key from config
     let apibara_api_key = std::env::var("APIBARA_API_KEY")?;
 
     let handle = tokio::spawn(async move {
         let indexer_service = IndexerService::new(apibara_api_key);
-        tracing::info!("🧩 Indexer service running!");
+        // TODO: network should be in the config
+        tracing::info!("🧩 Indexer service running for mainnet!");
         indexer_service.start().await.context("😱 Indexer service failed!")
     });
     Ok(handle)
@@ -41,7 +42,6 @@ impl IndexerService {
     pub fn new(apibara_api_key: String) -> IndexerService {
         // TODO: Should be Pragma X DNA url - see with Apibara team + should be in config
         let uri = Uri::from_static("https://mainnet.starknet.a5a.ch");
-
         // TODO: this should not be a parameter & retrieve from the latest block indexed from the database
         //       for the selected network
         let from_block = 10;
