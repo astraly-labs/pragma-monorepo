@@ -52,11 +52,12 @@ async fn main() -> Result<()> {
 }
 
 async fn start_theorus(config: &Config, indexer_pool: Pool) -> Result<()> {
-    // TODO: spawn one indexer for mainnet & one for testnet
     let metrics = MetricsService::new(false, METRICS_PORT)?;
     let metrics_handle = metrics.start()?;
+
     let state = AppState { indexer_pool, metrics_registry: metrics.registry() };
 
+    // TODO: spawn one indexer for mainnet & one for testnet
     let indexer_handle = start_indexer_service(config, state.clone())?;
     let api_handle = start_api_server(config, state.clone())?;
 
