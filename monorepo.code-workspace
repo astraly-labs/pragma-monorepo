@@ -1,0 +1,29 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": ".",
+    },
+    {
+      "path": "rust",
+      "name": "===== RUST =====",
+    },
+    {
+      "path": "rust/theoros",
+      "name": "theoros",
+    },
+    {
+      "path": "rust/pragma-cli",
+      "name": "pragma-cli",
+    },
+    {
+      "path": "rust/utils",
+      "name": "utils",
+    },
+    {
+      "path": "solidity",
+      "name": "===== SOLIDITY =====",
+    },
+  ],
+  "settings": {},
+}

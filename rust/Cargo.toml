@@ -1,0 +1,89 @@
+[workspace]
+resolver = "2"
+members = ["pragma-cli", "theoros"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Pragma Labs <support@pragma.build>"]
+repository = "https://github.com/astraly-labs/pragma-monorepo/"
+documentation = "https://docs.pragma.build/"
+homepage = "https://pragma.build/"
+license-file = "../LICENSE.md"
+publish = false
+
+[workspace.dependencies]
+anyhow = "1.0.86"
+async-trait = "0.1.81"
+bollard = "0.17.1"
+clap = { version = "4.5.16", features = ["derive"] }
+chrono = { version = "0.4.38", features = ["serde"] }
+dirs = "5.0.1"
+dotenvy = "0.15.7"
+envy = "0.4.2"
+bigdecimal = "0.4.5"
+deadpool-diesel = { version = "0.6.1", features = ["postgres"] }
+diesel_migrations = "2.2.0"
+diesel = { version = "2.2.3", features = [
+  "postgres",
+  "extras",
+  "postgres_backend",
+  "serde_json",
+] }
+env_logger = "0.11.5"
+alloy = "0.2.1"
+eyre = "0.6.12"
+futures = { version = "0.3.30", features = ["std"] }
+futures-util = "0.3.30"
+git2 = "0.19.0"
+hex = "0.4.3"
+inquire = "0.7.5"
+tracing = "0.1.4"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-axiom = "0.7"
+rand = "0.8.5"
+reqwest = { version = "0.12.7", features = ["json", "blocking"] }
+serde = { version = "1.0.208", features = ["derive"] }
+serde_json = "1.0.125"
+strum = { version = "0.26.3", features = ["derive"] }
+strum_macros = { version = "0.26.4", features = [] }
+thiserror = "1.0.63"
+prometheus = "0.13.4"
+hyper = { version = "0.14", features = ["server"] }
+tokio = { version = "1.39.3", features = [
+  "rt",
+  "rt-multi-thread",
+  "macros",
+  "signal",
+] }
+toml = "0.8.19"
+scale-info = "2.11.3"
+scale = { package = "parity-scale-codec", version = "3.0.0", features = [
+  "derive",
+] }
+url = { version = "2.5.2", features = ["serde"] }
+starknet = "0.11.0"
+opentelemetry = { version = "0.24" }
+utoipa = { version = "4.2.3", features = ["axum_extras", "chrono", "uuid"] }
+utoipauto = "0.1.14"
+utoipa-swagger-ui = { version = "7.1", features = ["axum"] }
+tower-http = { version = "0.5.2", features = ["fs", "trace", "cors"] }
+axum = { version = "0.7.5", features = ["macros", "ws", "tokio"] }
+axum-macros = { version = "0.4.1" }
+
+# Apibara DNA (indexing)
+apibara-core = { git = "https://github.com/apibara/dna", rev = "9caa385" }
+apibara-sdk = { git = "https://github.com/apibara/dna", rev = "9caa385" }
+
+# Tests dependencies
+tracing-test = "0.2.5"
+
+[profile.release]
+overflow-checks = true
+lto = "fat"
+codegen-units = 1
+
+[profile.release.build-override]
+opt-level = 3
+incremental = false
+codegen-units = 1
