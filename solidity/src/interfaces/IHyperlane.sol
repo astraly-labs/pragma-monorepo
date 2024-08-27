@@ -19,3 +19,18 @@ struct HyMsg {
     Signature[] signatures;
     bytes32 hash;
 }
+
+/// @title IHyperlane
+/// @author Pragma Labs
+/// @custom:contact security@pragma.build
+interface IHyperlane {
+    /// @notice Parses and verifies a Hyperlane message.
+    /// @dev message should be encoded following the specs (TODO: add docs)
+    /// @param encodedHyMsg The encoded Hyperlane message.
+    /// @return hyMsg The parsed Hyperlane message.
+    /// @return valid Whether the message is valid.
+    /// @return reason The reason the message is invalid.
+    function parseAndVerifyHyMsg(
+        bytes calldata encodedHyMsg
+    ) external view returns (HyMsg memory hyMsg, bool valid, string memory reason);
+}
