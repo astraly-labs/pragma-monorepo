@@ -45,7 +45,7 @@ impl Service for MetricsService {
     async fn start(&mut self, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
         let service = self.clone();
         join_set.spawn(async move {
-            service.clone().run_forever()?;
+            service.run_forever()?;
             Ok(())
         });
         Ok(())

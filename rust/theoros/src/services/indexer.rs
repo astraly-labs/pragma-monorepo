@@ -29,7 +29,7 @@ impl Service for IndexerService {
         let service = self.clone();
         join_set.spawn(async move {
             tracing::info!("🧩 Indexer service started");
-            service.clone().run_forever().await?;
+            service.run_forever().await?;
             Ok(())
         });
         Ok(())
