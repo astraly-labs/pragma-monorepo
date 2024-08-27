@@ -118,6 +118,6 @@ async fn endpoint(req: Request<Body>, registry: Registry) -> Result<Response<Bod
         Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .header("Content-Type", "text/html")
-            .body(Body::from("Not found.<br><br>👉 See <a href=\"/metrics\">Metrics</a>"))?)
+            .body(Body::from("See <a href=\"/metrics\">Metrics</a>"))?)
     }
 }
