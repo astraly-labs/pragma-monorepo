@@ -4817,7 +4817,6 @@ dependencies = [
  "futures-util",
  "hyper 0.14.30",
  "opentelemetry 0.24.0",
- "parking_lot",
  "pragma-utils",
  "prometheus",
  "serde",

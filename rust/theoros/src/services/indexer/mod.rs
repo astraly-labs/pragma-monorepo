@@ -114,7 +114,7 @@ impl IndexerService {
             return Ok(());
         }
         let dispatch_event = DispatchEvent::from_event_data(event.data)?;
-        self.state.event_storage.add(dispatch_event);
+        self.state.event_storage.add(dispatch_event).await;
         Ok(())
     }
 }
