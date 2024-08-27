@@ -28,6 +28,7 @@ impl Service for IndexerService {
     async fn start(&mut self, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
         let service = self.clone();
         join_set.spawn(async move {
+            tracing::info!("🧩 Indexer service started");
             service.clone().run_forever().await?;
             Ok(())
         });
