@@ -29,12 +29,13 @@ impl ApiService {
 #[async_trait::async_trait]
 impl Service for ApiService {
     async fn start(&mut self, join_set: &mut JoinSet<Result<()>>) -> anyhow::Result<()> {
+        // Uncomment this line below in order to generate the OpenAPI specs in the theoros folder
+        // ApiDoc::generate_openapi_json("./theoros".into())?;
+
         let host = self.host.to_owned();
         let port = self.port;
         let state = self.state.clone();
 
-        // Uncomment this line below in order to generate the OpenAPI specs in the theoros folder
-        ApiDoc::generate_openapi_json("./theoros".into())?;
         join_set.spawn(async move {
             let address = format!("{}:{}", host, port);
             let socket_addr: SocketAddr = address.parse()?;
