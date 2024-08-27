@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use tokio::sync::OnceCell;
 
-#[derive(Default, Debug, Deserialize, PartialEq)]
+#[derive(Default, Debug, Deserialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum Mode {
     #[default]
@@ -9,12 +9,12 @@ pub enum Mode {
     Production,
 }
 
-#[derive(Default, Debug, Deserialize)]
+#[derive(Default, Debug, Deserialize, Clone)]
 pub struct ModeConfig {
     mode: Mode,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct ServerConfig {
     host: String,
     port: u16,
@@ -26,7 +26,7 @@ impl Default for ServerConfig {
     }
 }
 
-#[derive(Default, Debug, Deserialize)]
+#[derive(Default, Debug, Deserialize, Clone)]
 pub struct Config {
     mode: ModeConfig,
     server: ServerConfig,

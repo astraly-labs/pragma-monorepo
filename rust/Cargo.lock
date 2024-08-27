@@ -4791,6 +4791,7 @@ dependencies = [
  "anyhow",
  "apibara-core",
  "apibara-sdk",
+ "async-trait",
  "axum 0.7.5",
  "axum-macros",
  "bigdecimal 0.4.5",

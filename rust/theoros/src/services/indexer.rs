@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Result};
 use apibara_core::{
     node::v1alpha2::DataFinality,
     starknet::v1alpha2::{Block, Event, Filter, HeaderFilter},
@@ -6,45 +6,37 @@ use apibara_core::{
 use apibara_sdk::{configuration, ClientBuilder, Configuration, DataMessage, Uri};
 use futures_util::TryStreamExt;
 use starknet::core::types::Felt;
-use tokio::task::JoinHandle;
+use tokio::task::JoinSet;
 
 use utils::conversions::apibara::felt_as_apibara_field;
 
-use crate::{
-    config::Config,
-    types::{DispatchEvent, Network},
-    AppState,
-};
+use crate::{services::Service, types::DispatchEvent, AppState};
 
 // TODO: depends on the host machine - should be configurable
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
 
-/// Creates & run the indexer service.
-#[tracing::instrument(skip(_config, state))]
-pub fn start_indexer_service(network: Network, _config: &Config, state: AppState) -> Result<JoinHandle<Result<()>>> {
-    // TODO: retrieve API key from config
-    let apibara_api_key = std::env::var("APIBARA_API_KEY")?;
-
-    let handle = tokio::spawn(async move {
-        let indexer_service = IndexerService::new(state, network, apibara_api_key);
-        // TODO: network should be in the config
-        tracing::info!("🧩 Indexer service running for {}!", network);
-        indexer_service.start().await.context("😱 Indexer service failed!")
-    });
-    Ok(handle)
-}
-
-#[allow(unused)]
+#[derive(Clone)]
 pub struct IndexerService {
     state: AppState,
-    network: Network,
     uri: Uri,
     apibara_api_key: String,
     stream_config: Configuration<Filter>,
 }
 
+#[async_trait::async_trait]
+impl Service for IndexerService {
+    async fn start(&mut self, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
+        let service = self.clone();
+        join_set.spawn(async move {
+            service.clone().run_forever().await?;
+            Ok(())
+        });
+        Ok(())
+    }
+}
+
 impl IndexerService {
-    pub fn new(state: AppState, network: Network, apibara_api_key: String) -> IndexerService {
+    pub fn new(state: AppState, apibara_api_key: String) -> Self {
         // TODO: Should be Pragma X DNA url - see with Apibara team + should be in config
         let uri = Uri::from_static("https://mainnet.starknet.a5a.ch");
         // TODO: should be a config
@@ -65,10 +57,10 @@ impl IndexerService {
                     .build()
             });
 
-        IndexerService { state, network, uri, apibara_api_key, stream_config }
+        Self { state, uri, apibara_api_key, stream_config }
     }
 
-    pub async fn start(mut self) -> Result<()> {
+    pub async fn run_forever(mut self) -> Result<()> {
         let (config_client, config_stream) = configuration::channel(INDEXING_STREAM_CHUNK_SIZE);
 
         config_client.send(self.stream_config.clone()).await.unwrap();
@@ -119,7 +111,7 @@ impl IndexerService {
             return Ok(());
         }
         let dispatch_event = DispatchEvent::from_event_data(event.data)?;
-        self.state.event_storage.add(self.network, dispatch_event);
+        self.state.event_storage.add(dispatch_event);
         Ok(())
     }
 }

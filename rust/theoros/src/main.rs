@@ -2,7 +2,6 @@ mod config;
 mod errors;
 mod extractors;
 mod handlers;
-mod servers;
 mod services;
 mod types;
 
@@ -15,16 +14,15 @@ use utils::tracing::init_tracing;
 
 use crate::{
     config::{config, Config},
-    servers::{api::start_api_server, metrics::MetricsServer},
-    services::indexer::start_indexer_service,
-    types::{EventStorage, Network},
+    services::{ApiService, IndexerService, MetricsService, Service, ServiceGroup},
+    types::EventStorage,
 };
 
 // TODO: Config those
 const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;
-const METRICS_PORT: u16 = 8080;
 const EVENTS_MEM_SIZE: usize = 10;
+const METRICS_PORT: u16 = 8080;
 
 #[derive(Clone)]
 #[allow(unused)]
@@ -40,9 +38,7 @@ async fn main() -> Result<()> {
     let config = config().await;
     init_tracing(APP_NAME, LOG_LEVEL)?;
 
-    // Starts all the theoros services
-    start_theorus(config).await?;
-
+    start_theorus_services(config).await?;
     // Ensure that the tracing provider is shutdown correctly
     opentelemetry::global::shutdown_tracer_provider();
 
@@ -53,25 +49,20 @@ async fn main() -> Result<()> {
 /// - API server
 /// - Indexer services, one for mainnet & testnet
 /// - Metrics server
-async fn start_theorus(config: &Config) -> Result<()> {
-    let metrics = MetricsServer::new(false, METRICS_PORT)?;
+async fn start_theorus_services(config: &Config) -> Result<()> {
+    let metrics_service = MetricsService::new(false, METRICS_PORT)?;
 
     let event_storage = EventStorage::new(EVENTS_MEM_SIZE);
     // TODO: state should contains the rpc_client to interact with a Madara node
-    let state = AppState { event_storage: Arc::new(event_storage), metrics_registry: metrics.registry() };
+    let state = AppState { event_storage: Arc::new(event_storage), metrics_registry: metrics_service.registry() };
 
-    let mainnet_indexer_handle = start_indexer_service(Network::Mainnet, config, state.clone())?;
-    let sepolia_indexer_handle = start_indexer_service(Network::Sepolia, config, state.clone())?;
-    let api_handle = start_api_server(config, state.clone())?;
-    let metrics_handle = metrics.start()?;
+    // TODO: key in config
+    let apibara_api_key = std::env::var("APIBARA_API_KEY")?;
+    let indexer_service = IndexerService::new(state.clone(), apibara_api_key);
+    let api_service = ApiService::new(state.clone(), config.server_host(), config.server_port());
 
-    // TODO: Better struct that groups handles, bubble errors etc...
-    let (mainnet_indexer_result, sepolia_indexer_result, api_result, metrics_result) =
-        tokio::join!(mainnet_indexer_handle, sepolia_indexer_handle, api_handle, metrics_handle);
-    mainnet_indexer_result??;
-    sepolia_indexer_result??;
-    api_result??;
-    metrics_result??;
+    let app = ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service);
 
+    app.start_and_drive_to_end().await?;
     Ok(())
 }
