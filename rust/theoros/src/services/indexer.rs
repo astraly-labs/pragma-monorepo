@@ -10,21 +10,25 @@ use tokio::task::JoinHandle;
 
 use utils::conversions::apibara::felt_as_apibara_field;
 
-use crate::{config::Config, types::dispatch_event::DispatchEvent, AppState};
+use crate::{
+    config::Config,
+    types::{DispatchEvent, Network},
+    AppState,
+};
 
 // TODO: depends on the host machine - should be configurable
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
 
 /// Creates & run the indexer service.
-#[tracing::instrument(skip(_config, _state))]
-pub fn start_indexer_service(_config: &Config, _state: AppState) -> Result<JoinHandle<Result<()>>> {
+#[tracing::instrument(skip(_config, state))]
+pub fn start_indexer_service(network: Network, _config: &Config, state: AppState) -> Result<JoinHandle<Result<()>>> {
     // TODO: retrieve API key from config
     let apibara_api_key = std::env::var("APIBARA_API_KEY")?;
 
     let handle = tokio::spawn(async move {
-        let indexer_service = IndexerService::new(apibara_api_key);
+        let indexer_service = IndexerService::new(state, network, apibara_api_key);
         // TODO: network should be in the config
-        tracing::info!("🧩 Indexer service running for mainnet!");
+        tracing::info!("🧩 Indexer service running for {}!", network);
         indexer_service.start().await.context("😱 Indexer service failed!")
     });
     Ok(handle)
@@ -32,26 +36,23 @@ pub fn start_indexer_service(_config: &Config, _state: AppState) -> Result<JoinH
 
 #[allow(unused)]
 pub struct IndexerService {
+    state: AppState,
+    network: Network,
     uri: Uri,
     apibara_api_key: String,
     stream_config: Configuration<Filter>,
-    reached_pending_block: bool,
 }
 
 impl IndexerService {
-    pub fn new(apibara_api_key: String) -> IndexerService {
+    pub fn new(state: AppState, network: Network, apibara_api_key: String) -> IndexerService {
         // TODO: Should be Pragma X DNA url - see with Apibara team + should be in config
         let uri = Uri::from_static("https://mainnet.starknet.a5a.ch");
-        // TODO: this should not be a parameter & retrieve from the latest block indexed from the database
-        //       for the selected network
-        let from_block = 10;
         // TODO: should be a config
         let pragma_oracle_contract = felt_as_apibara_field(&Felt::ZERO);
         // TODO: should be a config
         let dispatch_event_selector = felt_as_apibara_field(&Felt::ZERO);
 
         let stream_config = Configuration::<Filter>::default()
-            .with_starting_block(from_block)
             .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
                 filter
@@ -64,7 +65,7 @@ impl IndexerService {
                     .build()
             });
 
-        IndexerService { uri, apibara_api_key, stream_config, reached_pending_block: false }
+        IndexerService { state, network, uri, apibara_api_key, stream_config }
     }
 
     pub async fn start(mut self) -> Result<()> {
@@ -93,14 +94,10 @@ impl IndexerService {
     /// Process a batch of blocks indexed by Apibara DNA
     async fn process_batch(&mut self, batch: DataMessage<Block>) -> Result<()> {
         match batch {
-            DataMessage::Data { cursor: _, end_cursor: _, finality, batch } => {
-                if finality == DataFinality::DataStatusPending && !self.reached_pending_block {
-                    self.log_pending_block_reached(batch.last());
-                    self.reached_pending_block = true;
-                }
+            DataMessage::Data { cursor: _, end_cursor: _, finality: _, batch } => {
                 for block in batch {
                     for event in block.events.into_iter().filter_map(|e| e.event) {
-                        self.process_dispatch_event(event).await?;
+                        self.decode_and_store_event(event).await?;
                     }
                 }
             }
@@ -117,28 +114,12 @@ impl IndexerService {
         Ok(())
     }
 
-    async fn process_dispatch_event(&self, event: Event) -> Result<()> {
+    async fn decode_and_store_event(&self, event: Event) -> Result<()> {
         if event.from_address.is_none() {
             return Ok(());
         }
-
-        let _dispatch = DispatchEvent::from_event_data(event.data);
-
+        let dispatch_event = DispatchEvent::from_event_data(event.data)?;
+        self.state.event_storage.add(self.network, dispatch_event);
         Ok(())
-    }
-
-    /// Logs that we successfully reached current pending block
-    fn log_pending_block_reached(&self, last_block_in_batch: Option<&Block>) {
-        let maybe_pending_block_number = if let Some(last_block) = last_block_in_batch {
-            last_block.header.as_ref().map(|header| header.block_number)
-        } else {
-            None
-        };
-
-        if let Some(pending_block_number) = maybe_pending_block_number {
-            tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block #{}!", pending_block_number);
-        } else {
-            tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block!");
-        }
     }
 }
