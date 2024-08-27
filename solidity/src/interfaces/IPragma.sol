@@ -10,7 +10,7 @@ struct DataFeed {
 }
 
 enum DataFeedType {
-    SpotMedian,
+    SpotMedian
 }
 
 /// @title IPragma

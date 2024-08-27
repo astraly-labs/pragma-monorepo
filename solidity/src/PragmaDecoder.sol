@@ -6,20 +6,19 @@ import {DataFeed, DataFeedType} from "./interfaces/IPragma.sol";
 import {HyMsg, IHyperlane} from "./interfaces/IHyperlane.sol";
 import "./libraries/ConstantsLib.sol";
 import "./libraries/ErrorsLib.sol";
+import "./libraries/EventsLib.sol";
 import "./libraries/BytesLib.sol";
 import "./libraries/UnsafeCalldataBytesLib.sol";
 
 contract PragmaDecoder {
     using BytesLib for bytes;
 
-    address payable public hyperlane;
+    /* STORAGE */
+    IHyperlane public hyperlane;
+    mapping(bytes32 => DataFeed) public latestPriceInfo;
 
     constructor(address _hyperlane) {
-        hyperlane = payable(_hyperlane);
-    }
-
-    function hyperlane() public view returns (IHyperlane) {
-        return IHyperlane(hyperlane);
+        hyperlane = IHyperlane(payable(_hyperlane));
     }
 
     function parseAndVerifyHyMsg(
@@ -27,7 +26,7 @@ contract PragmaDecoder {
     ) internal view returns (HyMsg memory vm) {
         {
             bool valid;
-            (hyMsg, valid, ) = hyperlane().parseAndVerifyHyMsg(encodedHyMsg);
+            (hyMsg, valid, ) = hyperlane.parseAndVerifyHyMsg(encodedHyMsg);
             if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
         }
 
@@ -39,52 +38,52 @@ contract PragmaDecoder {
         bytes calldata updateData
     ) internal pure returns (uint encodedOffset) {
         unchecked {
-            offset = 0;
+            encodedOffset = 0;
 
             {
                 uint8 majorVersion = UnsafeCalldataBytesLib.toUint8(
-                    accumulatorUpdate,
-                    offset
+                    updateData,
+                    encodedOffset
                 );
 
-                offset += 1;
+                encodedOffset += 1;
 
-                if (majorVersion != MAJOR_VERSION)
+                if (majorVersion != ConstantsLib.MAJOR_VERSION)
                     revert ErrorsLib.InvalidVersion();
 
                 uint8 minorVersion = UnsafeCalldataBytesLib.toUint8(
-                    accumulatorUpdate,
-                    offset
+                    updateData,
+                    encodedOffset
                 );
 
-                offset += 1;
+                encodedOffset += 1;
 
                 // Minor versions are forward compatible, so we only check
                 // that the minor version is not less than the minimum allowed
-                if (minorVersion < MINIMUM_ALLOWED_MINOR_VERSION)
+                if (minorVersion < ConstantsLib.MINIMUM_ALLOWED_MINOR_VERSION)
                     revert ErrorsLib.InvalidVersion();
 
                 // This field ensure that we can add headers in the future
                 // without breaking the contract (future compatibility)
                 uint8 trailingHeaderSize = UnsafeCalldataBytesLib.toUint8(
-                    accumulatorUpdate,
-                    offset
+                    updateData,
+                    encodedOffset
                 );
-                offset += 1;
+                encodedOffset += 1;
 
-                // We use another offset for the trailing header and in the end add the
-                // offset by trailingHeaderSize to skip the future headers.
+                // We use another encodedOffset for the trailing header and in the end add the
+                // encodedOffset by trailingHeaderSize to skip the future headers.
                 //
                 // An example would be like this:
-                // uint trailingHeaderOffset = offset
-                // uint x = UnsafeBytesLib.ToUint8(accumulatorUpdate, trailingHeaderOffset)
+                // uint trailingHeaderOffset = encodedOffset
+                // uint x = UnsafeBytesLib.ToUint8(updateData, trailingHeaderOffset)
                 // trailingHeaderOffset += 1
 
-                offset += trailingHeaderSize;
+                encodedOffset += trailingHeaderSize;
             }
 
-            if (accumulatorUpdate.length < offset)
-                revert PythErrors.InvalidUpdateData();
+            if (updateData.length < encodedOffset)
+                revert ErrorsLib.InvalidUpdateData();
         }
     }
 
@@ -109,20 +108,16 @@ contract PragmaDecoder {
             );
             offset = 0;
 
-            uint16 proofSize = UnsafeCalldataBytesLib.toUint16(encoded, offset);
+            uint16 hyMsgSize = UnsafeCalldataBytesLib.toUint16(encoded, offset);
             offset += 2;
 
             {
                 bytes memory encodedPayload;
                 {
                     HyMsg memory hyMsg = parseAndVerifyHyMsg(
-                        UnsafeCalldataBytesLib.slice(
-                            encoded,
-                            offset,
-                            proofSize
-                        )
+                        UnsafeCalldataBytesLib.slice(encoded, offset, hyMsgSize)
                     );
-                    offset += proofSize;
+                    offset += hyMsgSize;
 
                     encodedPayload = hyMsg.payload;
                 }
@@ -147,6 +142,69 @@ contract PragmaDecoder {
         }
     }
 
+    function extractDataInfoFromUpdate(
+        bytes calldata encoded,
+        uint offset,
+        bytes32 checkpointRoot
+    ) internal pure returns (uint endOffset) {
+        unchecked {
+            bytes calldata encodedUpdate;
+            uint16 updateSize = UnsafeCalldataBytesLib.toUint16(
+                encoded,
+                offset
+            );
+            offset += 2;
+
+            {
+                encodedUpdate = UnsafeCalldataBytesLib.slice(
+                    encoded,
+                    offset,
+                    updateSize
+                );
+                offset += updateSize;
+            }
+
+            bool valid;
+            (valid, endOffset) = MerkleTree.isProofValid(
+                encoded, // data
+                offset, // where to start reading the proof
+                checkpointRoot, // root
+                encodedUpdate // leaf
+            );
+
+            if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
+
+            DataFeedType dataFeedType = DataFeedType(
+                UnsafeCalldataBytesLib.toUint8(encodedUpdate, 0)
+            );
+            if (dataFeedType == DataFeedType.SpotMedian) {
+                (dataFeedInfo, dataId, publishTime) = parseSpotMedianDataFeed(
+                    encodedUpdate,
+                    1
+                );
+            } else {
+                revert ErrorsLib.InvalidDataFeedType();
+            }
+        }
+    }
+
+    function parseSpotMedianDataFeed(
+        bytes calldata encodedDataFeed,
+        uint offset
+    )
+        private
+        pure
+        returns (
+            DataFeed memory dataFeedInfo,
+            bytes32 dataId,
+            uint publishTime
+        )
+    {
+        unchecked {
+            // TODO: parse the spot median data feed
+        }
+    }
+
     function updateDataInfoFromUpdate(
         bytes calldata updateData
     ) internal returns (uint8 numUpdates) {
@@ -164,5 +222,36 @@ contract PragmaDecoder {
             numUpdates,
             encoded
         ) = extractCheckpointRootAndNumUpdates(updateData, encodedOffset);
+
+        unchecked {
+            for (uint i = 0; i < numUpdates; i++) {
+                (offset, dataId, info) = extractDataInfoFromUpdate(
+                    encoded,
+                    offset,
+                    checkpointRoot
+                );
+                updateLatestDataInfoIfNecessary(dataId, info);
+            }
+        }
+
+        // We check that the offset is at the end of the encoded data.
+        // If not it means the data is not encoded correctly.
+        if (offset != encoded.length) revert ErrorsLib.InvalidUpdateData();
+    }
+
+    function updateLatestPriceIfNecessary(
+        bytes32 dataId,
+        DataFeed memory info
+    ) internal {
+        uint64 latestPublishTime = latestPriceInfo[dataId].publishTime;
+        if (info.publishTime > latestPublishTime) {
+            latestPriceInfo[dataId] = info;
+            emit EventsLib.DataFeedUpdate(
+                dataId,
+                info.publishTime,
+                info.numSourcesAggregated,
+                info.value
+            );
+        }
     }
 }

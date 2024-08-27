@@ -33,7 +33,7 @@ contract Hyperlane is IHyperlane {
         }
 
         // We're using a fixed point number transformation with 1 decimal to deal with rounding.
-        
+        // we check that we have will be able to reach a quorum with the current signatures
         if (
             (((validators.length * 10) / 3) * 2) / 10 + 1 >
             hyMsg.signatures.length
@@ -60,6 +60,7 @@ contract Hyperlane is IHyperlane {
         address[] memory validators
     ) public pure returns (bool valid, string memory reason) {
         uint8 lastIndex = 0;
+        // TODO: break on quorum
         for (uint i = 0; i < signatures.length; i++) {
             Signature memory sig = signatures[i];
 
