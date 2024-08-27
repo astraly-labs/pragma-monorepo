@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use apibara_core::{
     node::v1alpha2::DataFinality,
     starknet::v1alpha2::{Block, Event, Filter, HeaderFilter},
@@ -66,16 +66,16 @@ impl IndexerService {
     pub async fn run_forever(mut self) -> Result<()> {
         let (config_client, config_stream) = configuration::channel(INDEXING_STREAM_CHUNK_SIZE);
 
-        config_client.send(self.stream_config.clone()).await.unwrap();
+        config_client.send(self.stream_config.clone()).await.context("Sending indexing stream configuration")?;
 
         let mut stream = ClientBuilder::default()
             .with_bearer_token(Some(self.apibara_api_key.clone()))
             .connect(self.uri.clone())
             .await
-            .unwrap()
+            .map_err(|e| anyhow!("Error while connecting to Apibara DNA: {}", e))?
             .start_stream::<Filter, Block, _>(config_stream)
             .await
-            .unwrap();
+            .map_err(|e| anyhow!("Error while starting indexing stream: {}", e))?;
 
         loop {
             match stream.try_next().await {
