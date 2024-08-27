@@ -2,19 +2,17 @@
 
 pragma solidity ^0.8.0;
 
-import { IPragma, DataFeed } from "./interfaces/IPragma.sol";
+import {IPragma, DataFeed} from "./interfaces/IPragma.sol";
+import "./PragmaDecoder.sol";
+import "./libraries/EventsLib.sol";
+import "./libraries/ErrorsLib.sol";
 
 /// @title Pragma
 /// @author Pragma Labs
 /// @custom:contact security@pragma.build
 /// @notice The Pragma contract.
-contract Pragma is IPragma {
-
+contract Pragma is IPragma, PragmaDecoder {
     /* STORAGE */
-
-    address payable public hyperlane;
-    uint16[] public dataSourceEmitterChainIds;
-    bytes32[] public dataSourceEmitterAddresses;
     uint public validTimePeriodSeconds;
     uint public singleUpdateFeeInWei;
     mapping(bytes32 => uint64) public latestDataInfoPublishTime;
@@ -25,20 +23,32 @@ contract Pragma is IPragma {
         bytes32[] memory _dataSourceEmitterAddresses,
         uint _validTimePeriodSeconds,
         uint _singleUpdateFeeInWei
-    ) {
-        // Initialize the contract.
-        hyperlane = payable(_hyperlane);
-        dataSourceEmitterChainIds = _dataSourceEmitterChainIds;
-        dataSourceEmitterAddresses = _dataSourceEmitterAddresses;
+    )
+        PragmaDecoder(
+            _hyperlane,
+            _dataSourceEmitterChainIds,
+            _dataSourceEmitterAddresses
+        )
+    {
         validTimePeriodSeconds = _validTimePeriodSeconds;
         singleUpdateFeeInWei = _singleUpdateFeeInWei;
     }
 
     /// @inheritdoc IPragma
-    function updateDataFeeds(
-        bytes[] calldata updateData
-    ) external payable {
-        // Update the data feeds.
+    function updateDataFeeds(bytes[] calldata updateData) external payable {
+        uint totalNumUpdates = 0;
+        uint len = updateData.length;
+        for (uint i = 0; i < len; ) {
+            totalNumUpdates += updateDataInfoFromUpdate(updateData[i]);
+
+            unchecked {
+                i++;
+            }
+        }
+        uint requiredFee = getTotalFee(totalNumUpdates);
+        if (msg.value < requiredFee) {
+            revert ErrorsLib.InsufficientFee();
+        }
     }
 
     /// @inheritdoc IPragma

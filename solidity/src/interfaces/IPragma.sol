@@ -9,6 +9,15 @@ struct DataFeed {
     int64 value;
 }
 
+enum DataFeedType {
+    SpotMedian
+}
+
+struct DataSource {
+    uint16 chainId;
+    bytes32 emitterAddress;
+}
+
 /// @title IPragma
 /// @author Pragma Labs
 /// @custom:contact security@pragma.build
