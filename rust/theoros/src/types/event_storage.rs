@@ -3,6 +3,8 @@ use std::collections::VecDeque;
 
 use crate::types::dispatch_event::DispatchEvent;
 
+/// FIFO Buffer of fixed size used to store DispatchEvent from our
+/// oracle contract ; the first element being the latest.
 pub struct EventStorage {
     dispatches: RwLock<VecDeque<DispatchEvent>>,
     max_size: usize,
