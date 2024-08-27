@@ -11,14 +11,6 @@ axum = { workspace = true, features = ["macros", "ws", "tokio"] }
 axum-macros = { workspace = true }
 bigdecimal = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
-deadpool-diesel = { workspace = true, features = ["postgres"] }
-diesel = { workspace = true, features = [
-  "postgres",
-  "extras",
-  "postgres_backend",
-  "serde_json",
-] }
-diesel_migrations = { workspace = true }
 dotenvy = { workspace = true }
 envy = { workspace = true }
 futures-util = { workspace = true }
