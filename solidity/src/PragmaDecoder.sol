@@ -14,16 +14,34 @@ contract PragmaDecoder {
     using BytesLib for bytes;
 
     /* STORAGE */
-    IHyperlane public hyperlane;
-    mapping(bytes32 => DataFeed) public latestPriceInfo;
+    IHyperlane public immutable hyperlane;
+
+    mapping(bytes32 => DataFeed) public _latestPriceInfo;
+    mapping(bytes32 => bool) public _isValidDataSource;
 
     constructor(address _hyperlane) {
         hyperlane = IHyperlane(payable(_hyperlane));
     }
 
+    // TODO: set valid data sources
+    function isValidDataSource(
+        uint16 chainId,
+        bytes32 emitterAddress
+    ) public view returns (bool) {
+        return
+            isValidDataSource[
+                keccak256(
+                    abi.encodePacked(
+                        chainId,
+                        emitterAddress
+                    )
+                )
+            ];
+    }
+
     function parseAndVerifyHyMsg(
         bytes calldata encodedHyMsg
-    ) internal view returns (HyMsg memory vm) {
+    ) internal view returns (HyMsg memory hyMsg) {
         {
             bool valid;
             (hyMsg, valid, ) = hyperlane.parseAndVerifyHyMsg(encodedHyMsg);
@@ -146,7 +164,7 @@ contract PragmaDecoder {
         bytes calldata encoded,
         uint offset,
         bytes32 checkpointRoot
-    ) internal pure returns (uint endOffset) {
+    ) internal pure returns (uint endOffset, DataFeed memory dataFeed, bytes32 dataId, uint64 publishTime) {
         unchecked {
             bytes calldata encodedUpdate;
             uint16 updateSize = UnsafeCalldataBytesLib.toUint16(
@@ -178,7 +196,7 @@ contract PragmaDecoder {
                 UnsafeCalldataBytesLib.toUint8(encodedUpdate, 0)
             );
             if (dataFeedType == DataFeedType.SpotMedian) {
-                (dataFeedInfo, dataId, publishTime) = parseSpotMedianDataFeed(
+                (dataFeed, dataId, publishTime) = parseSpotMedianDataFeed(
                     encodedUpdate,
                     1
                 );
@@ -225,12 +243,14 @@ contract PragmaDecoder {
 
         unchecked {
             for (uint i = 0; i < numUpdates; i++) {
-                (offset, dataId, info) = extractDataInfoFromUpdate(
+                DataFeed memory dataFeed;
+                bytes32 dataId;
+                (offset, dataFeed, dataId) = extractDataInfoFromUpdate(
                     encoded,
                     offset,
                     checkpointRoot
                 );
-                updateLatestDataInfoIfNecessary(dataId, info);
+                updateLatestDataInfoIfNecessary(dataId, dataFeed);
             }
         }
 
@@ -239,13 +259,13 @@ contract PragmaDecoder {
         if (offset != encoded.length) revert ErrorsLib.InvalidUpdateData();
     }
 
-    function updateLatestPriceIfNecessary(
+    function updateLatestDataInfoIfNecessary(
         bytes32 dataId,
         DataFeed memory info
     ) internal {
-        uint64 latestPublishTime = latestPriceInfo[dataId].publishTime;
+        uint64 latestPublishTime = _latestPriceInfo[dataId].publishTime;
         if (info.publishTime > latestPublishTime) {
-            latestPriceInfo[dataId] = info;
+            _latestPriceInfo[dataId] = info;
             emit EventsLib.DataFeedUpdate(
                 dataId,
                 info.publishTime,
