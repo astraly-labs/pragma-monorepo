@@ -10,15 +10,23 @@
 [license]: https://www.apache.org/licenses/LICENSE-2.0
 [license-badge]: https://img.shields.io/badge/License-Apache-blue.svg
 
-## CLI
+## Rust
 
-<a href="./cli/">Pragma CLI</a>
+<a href="./rust/pragma-cli/">Pragma CLI</a>
 
 CLI used to interact with the Pragma protocol.
 
 - Register yourself as a data provider
 - Schedule new data feeds
 - Connect pragma to your protocol
+
+<a href="./rust/theoros/">Theoros</a>
+
+Request the API to construct the calldata necessary for cross-chain updates.
+
+- Listens for live data feeds update
+- Retrieves the signatures of the Hyperlane Validators
+- Constructs the calldata for data feeds requested through HTTP/WebSocket
 
 ## Solidity
 
