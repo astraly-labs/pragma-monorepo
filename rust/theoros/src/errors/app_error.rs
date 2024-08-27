@@ -4,8 +4,8 @@ use axum::Json;
 use serde_json::json;
 
 #[derive(Debug)]
-#[allow(unused)]
 pub enum AppError {
+    #[allow(unused)]
     InternalServerError,
     BodyParsingError(String),
 }

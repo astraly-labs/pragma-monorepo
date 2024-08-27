@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use anyhow::{anyhow, Result};
 use apibara_core::{
     node::v1alpha2::DataFinality,
@@ -8,9 +10,9 @@ use futures_util::TryStreamExt;
 use starknet::core::types::Felt;
 use tokio::task::JoinSet;
 
-use utils::conversions::apibara::felt_as_apibara_field;
+use pragma_utils::{conversions::apibara::felt_as_apibara_field, services::Service};
 
-use crate::{services::Service, types::DispatchEvent, AppState};
+use crate::{types::DispatchEvent, AppState};
 
 // TODO: depends on the host machine - should be configurable
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
@@ -37,9 +39,8 @@ impl Service for IndexerService {
 }
 
 impl IndexerService {
-    pub fn new(state: AppState, apibara_api_key: String) -> Self {
-        // TODO: Should be Pragma X DNA url - see with Apibara team + should be in config
-        let uri = Uri::from_static("https://mainnet.starknet.a5a.ch");
+    pub fn new(state: AppState, apibara_uri: &str, apibara_api_key: String) -> Result<Self> {
+        let uri = Uri::from_str(apibara_uri)?;
         // TODO: should be a config
         let pragma_oracle_contract = felt_as_apibara_field(&Felt::ZERO);
         // TODO: should be a config
@@ -58,7 +59,8 @@ impl IndexerService {
                     .build()
             });
 
-        Self { state, uri, apibara_api_key, stream_config }
+        let indexer_service = Self { state, uri, apibara_api_key, stream_config };
+        Ok(indexer_service)
     }
 
     pub async fn run_forever(mut self) -> Result<()> {

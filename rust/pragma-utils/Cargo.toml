@@ -1,5 +1,5 @@
 [package]
-name = "utils"
+name = "pragma-utils"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = { workspace = true }
 apibara-core = { workspace = true }
 apibara-sdk = { workspace = true }
+async-trait = { workspace = true }
 futures = { workspace = true }
 starknet = { workspace = true }
 tokio = { workspace = true, features = ["signal"] }

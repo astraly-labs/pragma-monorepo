@@ -12,7 +12,9 @@ use tower_http::{
     trace::{DefaultMakeSpan, TraceLayer},
 };
 
-use crate::{services::Service, AppState};
+use pragma_utils::services::Service;
+
+use crate::AppState;
 
 pub struct ApiService {
     state: AppState,

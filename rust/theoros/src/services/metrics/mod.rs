@@ -23,7 +23,7 @@ use tokio::{
     task::{JoinHandle, JoinSet},
 };
 
-use crate::services::Service;
+use pragma_utils::services::Service;
 
 #[derive(thiserror::Error, Debug)]
 #[error("error while handling request in prometheus endpoint: {0}")]

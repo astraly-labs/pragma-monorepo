@@ -3,7 +3,7 @@ use apibara_core::starknet::v1alpha2::FieldElement;
 use bigdecimal::BigDecimal;
 use starknet::core::types::U256;
 
-use utils::conversions::apibara::FromFieldBytes;
+use pragma_utils::conversions::apibara::FromFieldBytes;
 
 #[derive(Debug, Clone)]
 #[allow(unused)]
