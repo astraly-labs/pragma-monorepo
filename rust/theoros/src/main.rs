@@ -13,7 +13,7 @@ use tracing::Level;
 use utils::tracing::init_tracing;
 
 use crate::{
-    config::{config, Config},
+    config::config,
     services::{ApiService, IndexerService, MetricsService, Service, ServiceGroup},
     types::EventStorage,
 };
@@ -36,20 +36,9 @@ pub struct AppState {
 async fn main() -> Result<()> {
     dotenvy::dotenv()?;
     let config = config().await;
+
     init_tracing(APP_NAME, LOG_LEVEL)?;
 
-    start_theorus_services(config).await?;
-    // Ensure that the tracing provider is shutdown correctly
-    opentelemetry::global::shutdown_tracer_provider();
-
-    Ok(())
-}
-
-/// Starts all the Theoros services, i.e:
-/// - API server
-/// - Indexer services, one for mainnet & testnet
-/// - Metrics server
-async fn start_theorus_services(config: &Config) -> Result<()> {
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
 
     let event_storage = EventStorage::new(EVENTS_MEM_SIZE);
@@ -61,8 +50,11 @@ async fn start_theorus_services(config: &Config) -> Result<()> {
     let indexer_service = IndexerService::new(state.clone(), apibara_api_key);
     let api_service = ApiService::new(state.clone(), config.server_host(), config.server_port());
 
-    let app = ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service);
+    let theoros = ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service);
+    theoros.start_and_drive_to_end().await?;
 
-    app.start_and_drive_to_end().await?;
+    // Ensure that the tracing provider is shutdown correctly
+    opentelemetry::global::shutdown_tracer_provider();
+
     Ok(())
 }
