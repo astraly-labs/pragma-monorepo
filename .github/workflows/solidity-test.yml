@@ -9,6 +9,8 @@ env:
 
 jobs:
   check:
+    env:
+      working-directory: ./solidity
     strategy:
       fail-fast: true
 
@@ -25,12 +27,14 @@ jobs:
           version: nightly
 
       - name: Run Forge build
+        working-directory: ${{ env.working-directory }}
         run: |
           forge --version
           forge build --sizes
         id: build
 
       - name: Run Forge tests
+        working-directory: ${{ env.working-directory }}
         run: |
           forge test -vvv
         id: test
