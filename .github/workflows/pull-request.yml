@@ -25,4 +25,3 @@ jobs:
   solidity_test:
     name: Run Solidity tests
     uses: ./.github/workflows/solidity-test.yml
-    needs: rust_build
