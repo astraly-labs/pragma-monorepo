@@ -19,8 +19,23 @@ contract PragmaDecoder {
     mapping(bytes32 => DataFeed) public _latestPriceInfo;
     mapping(bytes32 => bool) public _isValidDataSource;
 
-    constructor(address _hyperlane) {
+    constructor(
+        address _hyperlane,
+        uint16[] memory _dataSourceEmitterChainIds,
+        bytes32[] memory _dataSourceEmitterAddresses
+    ) {
         hyperlane = IHyperlane(payable(_hyperlane));
+
+        for (uint i = 0; i < _dataSourceEmitterChainIds.length; i++) {
+            _isValidDataSource[
+                keccak256(
+                    abi.encodePacked(
+                        _dataSourceEmitterChainIds[i],
+                        _dataSourceEmitterAddresses[i]
+                    )
+                )
+            ] = true;
+        }
     }
 
     // TODO: set valid data sources
@@ -30,12 +45,7 @@ contract PragmaDecoder {
     ) public view returns (bool) {
         return
             isValidDataSource[
-                keccak256(
-                    abi.encodePacked(
-                        chainId,
-                        emitterAddress
-                    )
-                )
+                keccak256(abi.encodePacked(chainId, emitterAddress))
             ];
     }
 
@@ -164,7 +174,16 @@ contract PragmaDecoder {
         bytes calldata encoded,
         uint offset,
         bytes32 checkpointRoot
-    ) internal pure returns (uint endOffset, DataFeed memory dataFeed, bytes32 dataId, uint64 publishTime) {
+    )
+        internal
+        pure
+        returns (
+            uint endOffset,
+            DataFeed memory dataFeed,
+            bytes32 dataId,
+            uint64 publishTime
+        )
+    {
         unchecked {
             bytes calldata encodedUpdate;
             uint16 updateSize = UnsafeCalldataBytesLib.toUint16(
@@ -212,11 +231,7 @@ contract PragmaDecoder {
     )
         private
         pure
-        returns (
-            DataFeed memory dataFeedInfo,
-            bytes32 dataId,
-            uint publishTime
-        )
+        returns (DataFeed memory dataFeedInfo, bytes32 dataId, uint publishTime)
     {
         unchecked {
             // TODO: parse the spot median data feed

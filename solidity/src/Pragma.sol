@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import { IPragma, DataFeed } from "./interfaces/IPragma.sol";
+import {IPragma, DataFeed} from "./interfaces/IPragma.sol";
 import "./PragmaDecoder.sol";
 import "./libraries/EventsLib.sol";
 import "./libraries/ErrorsLib.sol";
@@ -12,10 +12,7 @@ import "./libraries/ErrorsLib.sol";
 /// @custom:contact security@pragma.build
 /// @notice The Pragma contract.
 contract Pragma is IPragma, PragmaDecoder {
-
     /* STORAGE */
-    uint16[] public dataSourceEmitterChainIds;
-    bytes32[] public dataSourceEmitterAddresses;
     uint public validTimePeriodSeconds;
     uint public singleUpdateFeeInWei;
     mapping(bytes32 => uint64) public latestDataInfoPublishTime;
@@ -26,20 +23,22 @@ contract Pragma is IPragma, PragmaDecoder {
         bytes32[] memory _dataSourceEmitterAddresses,
         uint _validTimePeriodSeconds,
         uint _singleUpdateFeeInWei
-    ) PragmaDecoder(_hyperlane) {
-        dataSourceEmitterChainIds = _dataSourceEmitterChainIds;
-        dataSourceEmitterAddresses = _dataSourceEmitterAddresses;
+    )
+        PragmaDecoder(
+            _hyperlane,
+            _dataSourceEmitterChainIds,
+            _dataSourceEmitterAddresses
+        )
+    {
         validTimePeriodSeconds = _validTimePeriodSeconds;
         singleUpdateFeeInWei = _singleUpdateFeeInWei;
     }
 
     /// @inheritdoc IPragma
-    function updateDataFeeds(
-        bytes[] calldata updateData
-    ) external payable {
+    function updateDataFeeds(bytes[] calldata updateData) external payable {
         uint totalNumUpdates = 0;
         uint len = updateData.length;
-        for (uint i = 0; i < len;) {
+        for (uint i = 0; i < len; ) {
             totalNumUpdates += updateDataInfoFromUpdate(updateData[i]);
 
             unchecked {
