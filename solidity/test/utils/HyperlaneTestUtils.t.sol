@@ -24,10 +24,7 @@ abstract contract HyperlaneTestUtils is Test {
         return address(hyperlane_);
     }
 
-    function isNotMatch(
-        bytes memory a,
-        bytes memory b
-    ) public pure returns (bool) {
+    function isNotMatch(bytes memory a, bytes memory b) public pure returns (bool) {
         return keccak256(a) != keccak256(b);
     }
 
@@ -45,17 +42,14 @@ abstract contract HyperlaneTestUtils is Test {
 contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
     uint32 constant TEST_UPDATE_TIMESTAMP = 112;
     uint16 constant TEST_EMITTER_CHAIN_ID = 7;
-    bytes32 constant TEST_EMITTER_ADDR =
-        0x0000000000000000000000000000000000000000000000000000000000000bad;
+    bytes32 constant TEST_EMITTER_ADDR = 0x0000000000000000000000000000000000000000000000000000000000000bad;
     bytes constant TEST_PAYLOAD = hex"deadbeaf";
     uint8 constant TEST_NUM_SIGNERS = 4;
 
-    function assertVmMatchesTestValues(
-        HyMsg memory hyMsg,
-        bool valid,
-        string memory reason,
-        bytes memory updateData
-    ) private view {
+    function assertVmMatchesTestValues(HyMsg memory hyMsg, bool valid, string memory reason, bytes memory updateData)
+        private
+        view
+    {
         assertTrue(valid);
         assertEq(reason, "");
         assertEq(hyMsg.timestamp, TEST_UPDATE_TIMESTAMP);
@@ -72,11 +66,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         IHyperlane hyperlane = IHyperlane(setUpHyperlane(5));
 
         bytes memory updateData = generateUpdateData(
-            TEST_UPDATE_TIMESTAMP,
-            TEST_EMITTER_CHAIN_ID,
-            TEST_EMITTER_ADDR,
-            TEST_PAYLOAD,
-            TEST_NUM_SIGNERS
+            TEST_UPDATE_TIMESTAMP, TEST_EMITTER_CHAIN_ID, TEST_EMITTER_ADDR, TEST_PAYLOAD, TEST_NUM_SIGNERS
         );
 
         (HyMsg memory hyMsg, bool valid, string memory reason) = hyperlane.parseAndVerifyHyMsg(updateData);

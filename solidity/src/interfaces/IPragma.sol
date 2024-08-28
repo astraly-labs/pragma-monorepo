@@ -34,17 +34,12 @@ interface IPragma {
     /// @notice Returns the required fee to update an array of price updates.
     /// @param updateData Array of price update data.
     /// @return feeAmount The required fee in Wei.
-    function getUpdateFee(
-        bytes[] calldata updateData
-    ) external view returns (uint feeAmount);
+    function getUpdateFee(bytes[] calldata updateData) external view returns (uint256 feeAmount);
 
     /// @notice Returns the data that is no older than `age` seconds of the current time.
     /// @dev Reverts if the data wasn't updated sufficiently recently.
     /// @return data - please read the documentation of DataFeed to understand how to use this safely.
-    function getPriceNoOlderThan(
-        bytes32 id,
-        uint age
-    ) external view returns (DataFeed memory data);
+    function getPriceNoOlderThan(bytes32 id, uint256 age) external view returns (DataFeed memory data);
 
     /// @notice Checks if a data feed exists.
     /// @param id The data feed ID.

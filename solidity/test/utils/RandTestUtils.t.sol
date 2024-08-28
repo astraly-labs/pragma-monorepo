@@ -5,9 +5,9 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 
 contract RandTestUtils is Test {
-    uint randSeed;
+    uint256 randSeed;
 
-    function setRandSeed(uint seed) internal {
+    function setRandSeed(uint256 seed) internal {
         randSeed = seed;
     }
 
@@ -18,8 +18,8 @@ contract RandTestUtils is Test {
         return keccak256(abi.encode(randSeed));
     }
 
-    function getRandUint() internal returns (uint) {
-        return uint(getRandBytes32());
+    function getRandUint() internal returns (uint256) {
+        return uint256(getRandBytes32());
     }
 
     function getRandUint64() internal returns (uint64) {

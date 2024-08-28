@@ -13,54 +13,44 @@ import "./libraries/ErrorsLib.sol";
 /// @notice The Pragma contract.
 contract Pragma is IPragma, PragmaDecoder {
     /* STORAGE */
-    uint public validTimePeriodSeconds;
-    uint public singleUpdateFeeInWei;
+    uint256 public validTimePeriodSeconds;
+    uint256 public singleUpdateFeeInWei;
     mapping(bytes32 => uint64) public latestDataInfoPublishTime;
 
     constructor(
         address _hyperlane,
         uint16[] memory _dataSourceEmitterChainIds,
         bytes32[] memory _dataSourceEmitterAddresses,
-        uint _validTimePeriodSeconds,
-        uint _singleUpdateFeeInWei
-    )
-        PragmaDecoder(
-            _hyperlane,
-            _dataSourceEmitterChainIds,
-            _dataSourceEmitterAddresses
-        )
-    {
+        uint256 _validTimePeriodSeconds,
+        uint256 _singleUpdateFeeInWei
+    ) PragmaDecoder(_hyperlane, _dataSourceEmitterChainIds, _dataSourceEmitterAddresses) {
         validTimePeriodSeconds = _validTimePeriodSeconds;
         singleUpdateFeeInWei = _singleUpdateFeeInWei;
     }
 
     /// @inheritdoc IPragma
     function updateDataFeeds(bytes[] calldata updateData) external payable {
-        uint totalNumUpdates = 0;
-        uint len = updateData.length;
-        for (uint i = 0; i < len; ) {
+        uint256 totalNumUpdates = 0;
+        uint256 len = updateData.length;
+        for (uint256 i = 0; i < len;) {
             totalNumUpdates += updateDataInfoFromUpdate(updateData[i]);
 
             unchecked {
                 i++;
             }
         }
-        uint requiredFee = getTotalFee(totalNumUpdates);
+        uint256 requiredFee = getTotalFee(totalNumUpdates);
         if (msg.value < requiredFee) {
             revert ErrorsLib.InsufficientFee();
         }
     }
 
     /// @inheritdoc IPragma
-    function getUpdateFee(
-        bytes[] calldata updateData
-    ) external view returns (uint feeAmount) {
+    function getUpdateFee(bytes[] calldata updateData) external view returns (uint256 feeAmount) {
         // Get the update fee.
     }
 
-    function getTotalFee(
-        uint totalNumUpdates
-    ) private view returns (uint requiredFee) {
+    function getTotalFee(uint256 totalNumUpdates) private view returns (uint256 requiredFee) {
         return totalNumUpdates * singleUpdateFeeInWei;
     }
 
@@ -72,14 +62,12 @@ contract Pragma is IPragma, PragmaDecoder {
         return data;
     }
 
-    function getPriceNoOlderThan(
-        bytes32 id,
-        uint age
-    ) external view returns (DataFeed memory data) {
+    function getPriceNoOlderThan(bytes32 id, uint256 age) external view returns (DataFeed memory data) {
         data = getPriceUnsafe(id);
 
-        if (diff(block.timestamp, data.publishTime) > age)
+        if (diff(block.timestamp, data.publishTime) > age) {
             revert ErrorsLib.DataStale();
+        }
     }
 
     /// @inheritdoc IPragma
@@ -87,7 +75,7 @@ contract Pragma is IPragma, PragmaDecoder {
         return (latestDataInfoPublishTime[id] != 0);
     }
 
-    function getValidTimePeriod() public view returns (uint) {
+    function getValidTimePeriod() public view returns (uint256) {
         return validTimePeriodSeconds;
     }
 
@@ -95,7 +83,7 @@ contract Pragma is IPragma, PragmaDecoder {
         return "1.0.0";
     }
 
-    function diff(uint x, uint y) internal pure returns (uint) {
+    function diff(uint256 x, uint256 y) internal pure returns (uint256) {
         if (x > y) {
             return x - y;
         } else {
