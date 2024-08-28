@@ -10,10 +10,5 @@ library EventsLib {
     /// @param feedId Pragma Feed ID.
     /// @param publishTime Unix timestamp of the update.
     /// @param value New value of the data feed.
-    event DataFeedUpdate(
-        bytes32 indexed feedId,
-        uint64 publishTime,
-        uint32 numSourcesAggregated,
-        int64 value
-    );
+    event DataFeedUpdate(bytes32 indexed feedId, uint64 publishTime, uint32 numSourcesAggregated, int64 value);
 }

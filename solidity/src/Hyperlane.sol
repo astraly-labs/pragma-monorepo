@@ -11,9 +11,11 @@ contract Hyperlane is IHyperlane {
 
     address[] public _validators;
 
-    function parseAndVerifyHyMsg(
-        bytes calldata encodedHyMsg
-    )
+    constructor(address[] memory validators) {
+        _validators = validators;
+    }
+
+    function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         public
         view
         returns (HyMsg memory hyMsg, bool valid, string memory reason)
@@ -22,9 +24,7 @@ contract Hyperlane is IHyperlane {
         (valid, reason) = verifyHyMsg(hyMsg);
     }
 
-    function verifyHyMsg(
-        HyMsg memory hyMsg
-    ) public view returns (bool valid, string memory reason) {
+    function verifyHyMsg(HyMsg memory hyMsg) public view returns (bool valid, string memory reason) {
         // TODO: fetch validators from calldata/storage
         address[] memory validators = _validators;
 
@@ -34,19 +34,12 @@ contract Hyperlane is IHyperlane {
 
         // We're using a fixed point number transformation with 1 decimal to deal with rounding.
         // we check that we have will be able to reach a quorum with the current signatures
-        if (
-            (((validators.length * 10) / 3) * 2) / 10 + 1 >
-            hyMsg.signatures.length
-        ) {
+        if ((((validators.length * 10) / 3) * 2) / 10 + 1 > hyMsg.signatures.length) {
             return (false, "no quorum");
         }
 
         // Verify signatures
-        (bool signaturesValid, string memory invalidReason) = verifySignatures(
-            hyMsg.hash,
-            hyMsg.signatures,
-            validators
-        );
+        (bool signaturesValid, string memory invalidReason) = verifySignatures(hyMsg.hash, hyMsg.signatures, validators);
         if (!signaturesValid) {
             return (false, invalidReason);
         }
@@ -54,36 +47,28 @@ contract Hyperlane is IHyperlane {
         return (true, "");
     }
 
-    function verifySignatures(
-        bytes32 hash,
-        Signature[] memory signatures,
-        address[] memory validators
-    ) public pure returns (bool valid, string memory reason) {
+    function verifySignatures(bytes32 hash, Signature[] memory signatures, address[] memory validators)
+        public
+        pure
+        returns (bool valid, string memory reason)
+    {
         uint8 lastIndex = 0;
         // TODO: break on quorum
-        for (uint i = 0; i < signatures.length; i++) {
+        for (uint256 i = 0; i < signatures.length; i++) {
             Signature memory sig = signatures[i];
 
-            require(
-                i == 0 || sig.validatorIndex > lastIndex,
-                "signature indices must be ascending"
-            );
+            require(i == 0 || sig.validatorIndex > lastIndex, "signature indices must be ascending");
             lastIndex = sig.validatorIndex;
 
-            if (
-                ecrecover(hash, sig.v, sig.r, sig.s) !=
-                validators[sig.validatorIndex]
-            ) {
+            if (ecrecover(hash, sig.v, sig.r, sig.s) != validators[sig.validatorIndex]) {
                 return (false, "HyMsg signature invalid");
             }
         }
         return (true, "");
     }
 
-    function parseHyMsg(
-        bytes calldata encodedHyMsg
-    ) public pure returns (HyMsg memory hyMsg) {
-        uint index = 0;
+    function parseHyMsg(bytes calldata encodedHyMsg) public pure returns (HyMsg memory hyMsg) {
+        uint256 index = 0;
 
         hyMsg.version = encodedHyMsg.toUint8(index);
         index += 1;
@@ -94,7 +79,7 @@ contract Hyperlane is IHyperlane {
         index += 1;
         hyMsg.signatures = new Signature[](signersLen);
 
-        for (uint i = 0; i < signersLen; i++) {
+        for (uint256 i = 0; i < signersLen; i++) {
             hyMsg.signatures[i].validatorIndex = encodedHyMsg.toUint8(index);
             index += 1;
 
@@ -107,10 +92,7 @@ contract Hyperlane is IHyperlane {
         }
 
         // Hash the body
-        bytes memory body = encodedHyMsg.slice(
-            index,
-            encodedHyMsg.length - index
-        );
+        bytes memory body = encodedHyMsg.slice(index, encodedHyMsg.length - index);
         hyMsg.hash = keccak256(abi.encodePacked(keccak256(body)));
 
         // Parse the rest of the message

@@ -8,7 +8,6 @@ import "./UnsafeCalldataBytesLib.sol";
  * @dev This library provides methods to construct and verify Merkle Tree proofs efficiently.
  *
  */
-
 library MerkleTree {
     uint8 constant MERKLE_LEAF_PREFIX = 0;
     uint8 constant MERKLE_NODE_PREFIX = 1;
@@ -26,10 +25,7 @@ library MerkleTree {
         return hash(abi.encodePacked(MERKLE_LEAF_PREFIX, data));
     }
 
-    function nodeHash(
-        bytes32 childA,
-        bytes32 childB
-    ) internal pure returns (bytes32) {
+    function nodeHash(bytes32 childA, bytes32 childB) internal pure returns (bytes32) {
         if (childA > childB) {
             (childA, childB) = (childB, childA);
         }
@@ -44,31 +40,22 @@ library MerkleTree {
     /// `proofOffset` parameters. It is the caller's responsibility to ensure
     /// that the `encodedProof` is long enough to contain the proof and the
     /// `proofOffset` is not out of bound.
-    function isProofValid(
-        bytes calldata encodedProof,
-        uint proofOffset,
-        bytes32 root,
-        bytes calldata leafData
-    ) internal pure returns (bool valid, uint endOffset) {
+    function isProofValid(bytes calldata encodedProof, uint256 proofOffset, bytes32 root, bytes calldata leafData)
+        internal
+        pure
+        returns (bool valid, uint256 endOffset)
+    {
         unchecked {
             bytes32 currentDigest = MerkleTree.leafHash(leafData);
 
-            uint8 proofSize = UnsafeCalldataBytesLib.toUint8(
-                encodedProof,
-                proofOffset
-            );
+            uint8 proofSize = UnsafeCalldataBytesLib.toUint8(encodedProof, proofOffset);
             proofOffset += 1;
 
-            for (uint i = 0; i < proofSize; i++) {
-                bytes32 siblingDigest = bytes32(
-                    UnsafeCalldataBytesLib.toBytes32(encodedProof, proofOffset)
-                );
+            for (uint256 i = 0; i < proofSize; i++) {
+                bytes32 siblingDigest = bytes32(UnsafeCalldataBytesLib.toBytes32(encodedProof, proofOffset));
                 proofOffset += 20;
 
-                currentDigest = MerkleTree.nodeHash(
-                    currentDigest,
-                    siblingDigest
-                );
+                currentDigest = MerkleTree.nodeHash(currentDigest, siblingDigest);
             }
 
             valid = currentDigest == root;
@@ -84,10 +71,11 @@ library MerkleTree {
     /// messages as leafs (in the same given order) and returns the root digest
     /// and the proofs for each message. If the number of messages is not a power
     /// of 2, the tree is padded with empty messages.
-    function constructProofs(
-        bytes[] memory messages,
-        uint8 depth
-    ) internal pure returns (bytes32 root, bytes[] memory proofs) {
+    function constructProofs(bytes[] memory messages, uint8 depth)
+        internal
+        pure
+        returns (bytes32 root, bytes[] memory proofs)
+    {
         require((1 << depth) >= messages.length, "depth too small");
 
         bytes32[] memory tree = new bytes32[]((1 << (depth + 1)));
@@ -104,7 +92,7 @@ library MerkleTree {
         // Filling the leaf hashes
         bytes32 cachedEmptyLeafHash = emptyLeafHash();
 
-        for (uint i = 0; i < (1 << depth); i++) {
+        for (uint256 i = 0; i < (1 << depth); i++) {
             if (i < messages.length) {
                 tree[(1 << depth) + i] = leafHash(messages[i]);
             } else {
@@ -113,11 +101,11 @@ library MerkleTree {
         }
 
         // Filling the node hashes from bottom to top
-        for (uint k = depth; k > 0; k--) {
-            uint level = k - 1;
-            uint levelNumNodes = (1 << level);
-            for (uint i = 0; i < levelNumNodes; i++) {
-                uint id = (1 << level) + i;
+        for (uint256 k = depth; k > 0; k--) {
+            uint256 level = k - 1;
+            uint256 levelNumNodes = (1 << level);
+            for (uint256 i = 0; i < levelNumNodes; i++) {
+                uint256 id = (1 << level) + i;
                 tree[id] = nodeHash(tree[id * 2], tree[id * 2 + 1]);
             }
         }
@@ -126,11 +114,11 @@ library MerkleTree {
 
         proofs = new bytes[](messages.length);
 
-        for (uint i = 0; i < messages.length; i++) {
+        for (uint256 i = 0; i < messages.length; i++) {
             // depth is the number of sibling nodes in the path from the leaf to the root
             proofs[i] = abi.encodePacked(depth);
 
-            uint idx = (1 << depth) + i;
+            uint256 idx = (1 << depth) + i;
 
             // This loop iterates through the leaf and its parents
             // and keeps adding the sibling of the current node to the proof.

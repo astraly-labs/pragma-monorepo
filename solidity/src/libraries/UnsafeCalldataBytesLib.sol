@@ -12,25 +12,15 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 library UnsafeCalldataBytesLib {
-    function slice(
-        bytes calldata _bytes,
-        uint256 _start,
-        uint256 _length
-    ) internal pure returns (bytes calldata) {
+    function slice(bytes calldata _bytes, uint256 _start, uint256 _length) internal pure returns (bytes calldata) {
         return _bytes[_start:_start + _length];
     }
 
-    function sliceFrom(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (bytes calldata) {
+    function sliceFrom(bytes calldata _bytes, uint256 _start) internal pure returns (bytes calldata) {
         return _bytes[_start:_bytes.length];
     }
 
-    function toAddress(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (address) {
+    function toAddress(bytes calldata _bytes, uint256 _start) internal pure returns (address) {
         address tempAddress;
 
         assembly {
@@ -40,10 +30,7 @@ library UnsafeCalldataBytesLib {
         return tempAddress;
     }
 
-    function toUint8(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (uint8) {
+    function toUint8(bytes calldata _bytes, uint256 _start) internal pure returns (uint8) {
         uint8 tempUint;
 
         assembly {
@@ -53,10 +40,7 @@ library UnsafeCalldataBytesLib {
         return tempUint;
     }
 
-    function toUint16(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (uint16) {
+    function toUint16(bytes calldata _bytes, uint256 _start) internal pure returns (uint16) {
         uint16 tempUint;
 
         assembly {
@@ -66,10 +50,7 @@ library UnsafeCalldataBytesLib {
         return tempUint;
     }
 
-    function toUint32(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (uint32) {
+    function toUint32(bytes calldata _bytes, uint256 _start) internal pure returns (uint32) {
         uint32 tempUint;
 
         assembly {
@@ -79,10 +60,7 @@ library UnsafeCalldataBytesLib {
         return tempUint;
     }
 
-    function toUint64(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (uint64) {
+    function toUint64(bytes calldata _bytes, uint256 _start) internal pure returns (uint64) {
         uint64 tempUint;
 
         assembly {
@@ -92,10 +70,7 @@ library UnsafeCalldataBytesLib {
         return tempUint;
     }
 
-    function toUint96(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (uint96) {
+    function toUint96(bytes calldata _bytes, uint256 _start) internal pure returns (uint96) {
         uint96 tempUint;
 
         assembly {
@@ -105,10 +80,7 @@ library UnsafeCalldataBytesLib {
         return tempUint;
     }
 
-    function toUint128(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (uint128) {
+    function toUint128(bytes calldata _bytes, uint256 _start) internal pure returns (uint128) {
         uint128 tempUint;
 
         assembly {
@@ -118,10 +90,7 @@ library UnsafeCalldataBytesLib {
         return tempUint;
     }
 
-    function toUint256(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (uint256) {
+    function toUint256(bytes calldata _bytes, uint256 _start) internal pure returns (uint256) {
         uint256 tempUint;
 
         assembly {
@@ -131,10 +100,7 @@ library UnsafeCalldataBytesLib {
         return tempUint;
     }
 
-    function toBytes32(
-        bytes calldata _bytes,
-        uint256 _start
-    ) internal pure returns (bytes32) {
+    function toBytes32(bytes calldata _bytes, uint256 _start) internal pure returns (bytes32) {
         bytes32 tempBytes32;
 
         assembly {
