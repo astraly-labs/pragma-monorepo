@@ -46,7 +46,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
     bytes constant TEST_PAYLOAD = hex"deadbeaf";
     uint8 constant TEST_NUM_SIGNERS = 4;
 
-    function assertVmMatchesTestValues(HyMsg memory hyMsg, bool valid, string memory reason, bytes memory updateData)
+    function assertHyMsgMatchesTestValues(HyMsg memory hyMsg, bool valid, string memory reason, bytes memory updateData)
         private
         view
     {
@@ -56,13 +56,13 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         assertEq(hyMsg.emitterChainId, TEST_EMITTER_CHAIN_ID);
         assertEq(hyMsg.emitterAddress, TEST_EMITTER_ADDR);
         assertEq(hyMsg.payload, TEST_PAYLOAD);
-        // parseAndVerifyVM() returns an empty signatures array for gas savings since it's not used
-        // after its been verified. parseVM() returns the full signatures array.
+        // parseAndVerifyHyMsg() returns an empty signatures array for gas savings since it's not used
+        // after its been verified. parseHyMsg() returns the full signatures array.
         hyMsg = IHyperlane(hyperlaneAddr).parseHyMsg(updateData);
         assertEq(hyMsg.signatures.length, TEST_NUM_SIGNERS);
     }
 
-    function testGenerateVaaWorks() public {
+    function testGenerateUpdateDataWorks() public {
         IHyperlane hyperlane = IHyperlane(setUpHyperlane(5));
 
         bytes memory updateData = generateUpdateData(
@@ -70,6 +70,6 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         );
 
         (HyMsg memory hyMsg, bool valid, string memory reason) = hyperlane.parseAndVerifyHyMsg(updateData);
-        assertVmMatchesTestValues(hyMsg, valid, reason, updateData);
+        assertHyMsgMatchesTestValues(hyMsg, valid, reason, updateData);
     }
 }

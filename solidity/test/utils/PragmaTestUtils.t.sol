@@ -6,9 +6,10 @@ import "forge-std/Test.sol";
 import "../../src/Pragma.sol";
 import "../../src/libraries/MerkleTree.sol";
 import "./RandTestUtils.t.sol";
+import "./HyperlaneTestUtils.t.sol";
 import {DataFeedType} from "../../src/interfaces/IPragma.sol";
 
-abstract contract PragmaTestUtils is Test, RandTestUtils {
+abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
     uint16 constant SOURCE_EMITTER_CHAIN_ID = 0x1;
     bytes32 constant SOURCE_EMITTER_ADDRESS = 0x03dA250675D8c2BB7cef7E1b7FDFe17aA4D5752Ed82A9333e4F9a12b22E521aa;
 
@@ -76,27 +77,27 @@ abstract contract PragmaTestUtils is Test, RandTestUtils {
     ) internal returns (bytes memory hyMerkleUpdateData) {
         bytes[] memory encodedDataFeedMessages = encodeDataFeedMessages(dataFeedMessages);
 
-        (bytes20 rootDigest, bytes[] memory proofs) = MerkleTree.constructProofs(encodedDataFeedMessages, config.depth);
+        (bytes32 rootDigest, bytes[] memory proofs) = MerkleTree.constructProofs(encodedDataFeedMessages, config.depth);
 
         bytes memory hyperlanePayload = abi.encodePacked(rootDigest);
 
-        bytes memory hyperlaneValidatorSignature = generateValidatorSignature(
-            0, config.source_chain_id, config.source_emitter_address, 0, hyperlanePayload, config.numSigners
+        bytes memory updateData = generateUpdateData(
+            0, config.source_chain_id, config.source_emitter_address, hyperlanePayload, config.numSigners
         );
 
-        if (config.brokenVaa) {
-            uint256 mutPos = getRandUint() % hyperlaneValidatorSignature.length;
+        if (config.brokenSignature) {
+            uint256 mutPos = getRandUint() % updateData.length;
 
             // mutate the random position by 1 bit
-            hyperlaneValidatorSignature[mutPos] = bytes1(uint8(hyperlaneValidatorSignature[mutPos]) ^ 1);
+            updateData[mutPos] = bytes1(uint8(updateData[mutPos]) ^ 1);
         }
 
         hyMerkleUpdateData = abi.encodePacked(
             uint8(1), // major version
             uint8(0), // minor version
             uint8(0), // trailing header size
-            uint16(hyperlaneValidatorSignature.length),
-            hyperlaneValidatorSignature,
+            uint16(updateData.length),
+            updateData,
             uint8(dataFeedMessages.length)
         );
 
