@@ -8,7 +8,9 @@ import "./libraries/ConstantsLib.sol";
 import "./libraries/ErrorsLib.sol";
 import "./libraries/EventsLib.sol";
 import "./libraries/BytesLib.sol";
+import "./libraries/MerkleTree.sol";
 import "./libraries/UnsafeCalldataBytesLib.sol";
+import "./libraries/UnsafeBytesLib.sol";
 
 contract PragmaDecoder {
     using BytesLib for bytes;
@@ -44,7 +46,7 @@ contract PragmaDecoder {
         bytes32 emitterAddress
     ) public view returns (bool) {
         return
-            isValidDataSource[
+            _isValidDataSource[
                 keccak256(abi.encodePacked(chainId, emitterAddress))
             ];
     }
@@ -153,7 +155,7 @@ contract PragmaDecoder {
                 uint payloadOffset = 0;
 
                 {
-                    checkpointRoot = UnsafeCalldataBytesLib.toBytes32(
+                    checkpointRoot = UnsafeBytesLib.toBytes32(
                         encodedPayload,
                         payloadOffset
                     );
@@ -231,7 +233,7 @@ contract PragmaDecoder {
     )
         private
         pure
-        returns (DataFeed memory dataFeedInfo, bytes32 dataId, uint publishTime)
+        returns (DataFeed memory dataFeedInfo, bytes32 dataId, uint64 publishTime)
     {
         unchecked {
             // TODO: parse the spot median data feed
@@ -260,7 +262,7 @@ contract PragmaDecoder {
             for (uint i = 0; i < numUpdates; i++) {
                 DataFeed memory dataFeed;
                 bytes32 dataId;
-                (offset, dataFeed, dataId) = extractDataInfoFromUpdate(
+                (offset, dataFeed, dataId,) = extractDataInfoFromUpdate(
                     encoded,
                     offset,
                     checkpointRoot

@@ -18,4 +18,10 @@ library ErrorsLib {
     // Given message is not a valid Hyperlane Checkpoint Root.
     // TODO: add signature
     error InvalidHyperlaneCheckpointRoot();
+    // Update data is invalid (e.g., deserialization error)
+    // Signature: 0xe69ffece
+    error InvalidUpdateData();
+    // Data feed type is not supported.
+    // TODO: add signature
+    error InvalidDataFeedType();
 }
