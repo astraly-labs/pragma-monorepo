@@ -1376,46 +1376,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e8566979429cf69b49a5c740c60791108e86440e8be149bbea4fe54d2c32d6e2"
 
 [[package]]
-name = "deadpool"
-version = "0.12.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6541a3916932fe57768d4be0b1ffb5ec7cbf74ca8c903fdfd5c0fe8aa958f0ed"
-dependencies = [
- "deadpool-runtime",
- "num_cpus",
- "tokio",
-]
-
-[[package]]
-name = "deadpool-diesel"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "590573e9e29c5190a5ff782136f871e6e652e35d598a349888e028693601adf1"
-dependencies = [
- "deadpool",
- "deadpool-sync",
- "diesel",
-]
-
-[[package]]
-name = "deadpool-runtime"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "092966b41edc516079bdf31ec78a2e0588d1d0c08f78b91d8307215928642b2b"
-dependencies = [
- "tokio",
-]
-
-[[package]]
-name = "deadpool-sync"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "524bc3df0d57e98ecd022e21ba31166c2625e7d3e5bcc4510efaeeab4abcab04"
-dependencies = [
- "deadpool-runtime",
-]
-
-[[package]]
 name = "der"
 version = "0.7.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1467,63 +1427,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "rustc_version 0.4.0",
- "syn 2.0.75",
-]
-
-[[package]]
-name = "diesel"
-version = "2.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65e13bab2796f412722112327f3e575601a3e9cdcbe426f0d30dbf43f3f5dc71"
-dependencies = [
- "bigdecimal 0.4.5",
- "bitflags 2.6.0",
- "byteorder",
- "chrono",
- "diesel_derives",
- "ipnetwork",
- "itoa",
- "libc",
- "num-bigint",
- "num-integer",
- "num-traits",
- "pq-sys",
- "r2d2",
- "serde_json",
- "time",
- "uuid 1.10.0",
-]
-
-[[package]]
-name = "diesel_derives"
-version = "2.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7f2c3de51e2ba6bf2a648285696137aaf0f5f487bcbea93972fe8a364e131a4"
-dependencies = [
- "diesel_table_macro_syntax",
- "dsl_auto_type",
- "proc-macro2",
- "quote",
- "syn 2.0.75",
-]
-
-[[package]]
-name = "diesel_migrations"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a73ce704bad4231f001bff3314d91dce4aba0770cee8b233991859abc15c1f6"
-dependencies = [
- "diesel",
- "migrations_internals",
- "migrations_macros",
-]
-
-[[package]]
-name = "diesel_table_macro_syntax"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "209c735641a413bc68c4923a9d6ad4bcb3ca306b794edaa7eb0b3228a99ffb25"
-dependencies = [
  "syn 2.0.75",
 ]
 
@@ -1585,20 +1488,6 @@ name = "dotenvy"
 version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
-
-[[package]]
-name = "dsl_auto_type"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5d9abe6314103864cc2d8901b7ae224e0ab1a103a0a416661b4097b0779b607"
-dependencies = [
- "darling",
- "either",
- "heck 0.5.0",
- "proc-macro2",
- "quote",
- "syn 2.0.75",
-]
 
 [[package]]
 name = "dunce"
@@ -2521,15 +2410,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f518f335dce6725a761382244631d86cf0ccb2863413590b31338feb467f9c3"
 
 [[package]]
-name = "ipnetwork"
-version = "0.20.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bf466541e9d546596ee94f9f69590f89473455f88372423e0008fc1a7daf100e"
-dependencies = [
- "serde",
-]
-
-[[package]]
 name = "is_terminal_polyfill"
 version = "1.70.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2759,27 +2639,6 @@ name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
-
-[[package]]
-name = "migrations_internals"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd01039851e82f8799046eabbb354056283fb265c8ec0996af940f4e85a380ff"
-dependencies = [
- "serde",
- "toml",
-]
-
-[[package]]
-name = "migrations_macros"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffb161cc72176cb37aa47f1fc520d3ef02263d67d661f44f05d05a079e1237fd"
-dependencies = [
- "migrations_internals",
- "proc-macro2",
- "quote",
-]
 
 [[package]]
 name = "mime"
@@ -3328,15 +3187,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pq-sys"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a24ff9e4cf6945c988f0db7005d87747bf72864965c3529d259ad155ac41d584"
-dependencies = [
- "vcpkg",
-]
-
-[[package]]
 name = "pragma-cli"
 version = "0.1.0"
 dependencies = [
@@ -3352,6 +3202,7 @@ dependencies = [
  "hex",
  "inquire",
  "parity-scale-codec",
+ "pragma-utils",
  "rand",
  "reqwest 0.12.7",
  "scale-info",
@@ -3365,7 +3216,22 @@ dependencies = [
  "toml",
  "tracing",
  "url",
- "utils",
+]
+
+[[package]]
+name = "pragma-utils"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "apibara-core",
+ "apibara-sdk",
+ "async-trait",
+ "futures",
+ "starknet 0.11.0",
+ "tokio",
+ "tracing",
+ "tracing-axiom",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -3612,17 +3478,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b5b9d34b8991d19d98081b46eacdd8eb58c6f2b201139f7c5f643cc155a633af"
 dependencies = [
  "proc-macro2",
-]
-
-[[package]]
-name = "r2d2"
-version = "0.8.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51de85fb3fb6524929c8a2eb85e6b6d363de4e8c48f9e2c2eac4944abc181c93"
-dependencies = [
- "log",
- "parking_lot",
- "scheduled-thread-pool",
 ]
 
 [[package]]
@@ -4117,15 +3972,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fbc91545643bcf3a0bbb6569265615222618bdf33ce4ffbbd13c4bbd4c093534"
 dependencies = [
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "scheduled-thread-pool"
-version = "0.2.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3cbc66816425a074528352f5789333ecff06ca41b36b0b0efdfbb29edc391a19"
-dependencies = [
- "parking_lot",
 ]
 
 [[package]]
@@ -4961,29 +4807,28 @@ dependencies = [
  "anyhow",
  "apibara-core",
  "apibara-sdk",
+ "async-trait",
  "axum 0.7.5",
  "axum-macros",
  "bigdecimal 0.4.5",
  "chrono",
- "deadpool-diesel",
- "diesel",
- "diesel_migrations",
  "dotenvy",
  "envy",
  "futures-util",
  "hyper 0.14.30",
  "opentelemetry 0.24.0",
+ "pragma-utils",
  "prometheus",
  "serde",
  "serde_json",
  "starknet 0.11.0",
+ "strum",
  "thiserror",
  "tokio",
  "tower-http",
  "tracing",
  "tracing-subscriber",
  "url",
- "utils",
  "utoipa",
  "utoipa-swagger-ui",
  "utoipauto",
@@ -5605,22 +5450,6 @@ name = "utf8parse"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
-
-[[package]]
-name = "utils"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "apibara-core",
- "apibara-sdk",
- "deadpool-diesel",
- "futures",
- "starknet 0.11.0",
- "tokio",
- "tracing",
- "tracing-axiom",
- "tracing-subscriber",
-]
 
 [[package]]
 name = "utoipa"

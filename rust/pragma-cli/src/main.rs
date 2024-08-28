@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use pragma_utils::tracing::init_tracing;
 use tracing::Level;
-use utils::tracing::init_tracing;
 
 use pragma_cli::{
     cli::{

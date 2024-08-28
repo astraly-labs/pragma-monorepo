@@ -17,8 +17,8 @@
       "name": "pragma-cli",
     },
     {
-      "path": "rust/utils",
-      "name": "utils",
+      "path": "rust/pragma-utils",
+      "name": "pragma-utils",
     },
     {
       "path": "solidity",

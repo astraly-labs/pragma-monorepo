@@ -8,9 +8,6 @@ use hyper::{
     service::{make_service_fn, service_fn},
     Body, Request, Response, Server, StatusCode,
 };
-use prometheus::{Encoder, TextEncoder};
-use tokio::{net::TcpListener, task::JoinHandle};
-
 #[allow(unused)]
 pub use prometheus::{
     self,
@@ -18,8 +15,15 @@ pub use prometheus::{
         AtomicF64 as F64, AtomicI64 as I64, AtomicU64 as U64, GenericCounter as Counter,
         GenericCounterVec as CounterVec, GenericGauge as Gauge, GenericGaugeVec as GaugeVec,
     },
-    exponential_buckets, Error as PrometheusError, Histogram, HistogramOpts, HistogramVec, IntGaugeVec, Opts, Registry,
+    exponential_buckets, Encoder, Error as PrometheusError, Histogram, HistogramOpts, HistogramVec, IntGaugeVec, Opts,
+    Registry, TextEncoder,
 };
+use tokio::{
+    net::TcpListener,
+    task::{JoinHandle, JoinSet},
+};
+
+use pragma_utils::services::Service;
 
 #[derive(thiserror::Error, Debug)]
 #[error("error while handling request in prometheus endpoint: {0}")]
@@ -29,13 +33,26 @@ enum MetricsError {
     HyperHttp(#[from] hyper::http::Error),
 }
 
-pub struct MetricsServer {
+#[derive(Clone)]
+pub struct MetricsService {
     prometheus_external: bool,
     prometheus_port: u16,
     registry: Registry,
 }
 
-impl MetricsServer {
+#[async_trait::async_trait]
+impl Service for MetricsService {
+    async fn start(&mut self, join_set: &mut JoinSet<anyhow::Result<()>>) -> anyhow::Result<()> {
+        let service = self.clone();
+        join_set.spawn(async move {
+            service.run_forever()?;
+            Ok(())
+        });
+        Ok(())
+    }
+}
+
+impl MetricsService {
     pub fn new(prometheus_external: bool, prometheus_port: u16) -> Result<Self> {
         let service = Self { prometheus_external, prometheus_port, registry: Default::default() };
         Ok(service)
@@ -45,7 +62,7 @@ impl MetricsServer {
         self.registry.clone()
     }
 
-    pub fn start(&self) -> Result<JoinHandle<Result<()>>> {
+    pub fn run_forever(&self) -> Result<JoinHandle<Result<()>>> {
         let listen_addr = if self.prometheus_external {
             Ipv4Addr::UNSPECIFIED // listen on 0.0.0.0
         } else {
@@ -101,6 +118,6 @@ async fn endpoint(req: Request<Body>, registry: Registry) -> Result<Response<Bod
         Ok(Response::builder()
             .status(StatusCode::NOT_FOUND)
             .header("Content-Type", "text/html")
-            .body(Body::from("Not found.<br><br>👉 See <a href=\"/metrics\">Metrics</a>"))?)
+            .body(Body::from("See <a href=\"/metrics\">Metrics</a>"))?)
     }
 }

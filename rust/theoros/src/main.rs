@@ -2,34 +2,36 @@ mod config;
 mod errors;
 mod extractors;
 mod handlers;
-mod infra;
-mod servers;
 mod services;
 mod types;
 
+use std::sync::Arc;
+
 use anyhow::Result;
-use deadpool_diesel::postgres::Pool;
 use prometheus::Registry;
 use tracing::Level;
-use utils::{db::init_db_pool, tracing::init_tracing};
+
+use pragma_utils::{
+    services::{Service, ServiceGroup},
+    tracing::init_tracing,
+};
 
 use crate::{
-    config::{config, Config},
-    servers::{api::start_api_server, metrics::MetricsServer},
-    services::indexer::start_indexer_service,
+    config::config,
+    services::{ApiService, IndexerService, MetricsService},
+    types::EventStorage,
 };
 
 // TODO: Config those
 const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;
-const ENV_DATABASE_URL: &str = "INDEXER_DB_URL";
+const EVENTS_MEM_SIZE: usize = 10;
 const METRICS_PORT: u16 = 8080;
 
 #[derive(Clone)]
-#[allow(unused)]
 pub struct AppState {
-    indexer_pool: Pool,
-    metrics_registry: Registry,
+    pub event_storage: Arc<EventStorage>,
+    pub metrics_registry: Registry,
 }
 
 #[tokio::main]
@@ -37,41 +39,30 @@ pub struct AppState {
 async fn main() -> Result<()> {
     dotenvy::dotenv()?;
     let config = config().await;
+
     init_tracing(APP_NAME, LOG_LEVEL)?;
 
-    // TODO: indexer_db_url should be handled in config()
-    let database_url = std::env::var(ENV_DATABASE_URL)?;
-    let indexer_pool = init_db_pool(APP_NAME, &database_url)?;
-    infra::db::migrations::run_migrations(&indexer_pool).await?;
+    let metrics_service = MetricsService::new(false, METRICS_PORT)?;
 
-    start_theorus(config, indexer_pool).await?;
+    // TODO: state should contains the rpc_client to interact with a Madara node
+    let state = AppState {
+        event_storage: Arc::new(EventStorage::new(EVENTS_MEM_SIZE)),
+        metrics_registry: metrics_service.registry(),
+    };
+
+    // TODO: Should be Pragma X DNA url - see with Apibara team + should be in config
+    let apibara_uri = "https://mainnet.starknet.a5a.ch";
+    // TODO: key in config / .env (...)
+    let apibara_api_key = std::env::var("APIBARA_API_KEY")?;
+    let indexer_service = IndexerService::new(state.clone(), apibara_uri, apibara_api_key)?;
+
+    let api_service = ApiService::new(state.clone(), config.server_host(), config.server_port());
+
+    let theoros = ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service);
+    theoros.start_and_drive_to_end().await?;
 
     // Ensure that the tracing provider is shutdown correctly
     opentelemetry::global::shutdown_tracer_provider();
-
-    Ok(())
-}
-
-/// Starts all the Theoros services, i.e:
-/// - API server
-/// - Indexer service
-/// - Metrics server
-async fn start_theorus(config: &Config, indexer_pool: Pool) -> Result<()> {
-    let metrics = MetricsServer::new(false, METRICS_PORT)?;
-
-    // TODO: state should contains the rpc_client to interact with a Madara node
-    let state = AppState { indexer_pool, metrics_registry: metrics.registry() };
-
-    // TODO: spawn one indexer for mainnet & one for testnet
-    let indexer_handle = start_indexer_service(config, state.clone())?;
-    let api_handle = start_api_server(config, state.clone())?;
-    let metrics_handle = metrics.start()?;
-
-    // TODO: Better struct that groups handles, bubble errors etc...
-    let (indexer_result, api_result, metrics_result) = tokio::join!(indexer_handle, api_handle, metrics_handle);
-    indexer_result??;
-    api_result??;
-    metrics_result??;
 
     Ok(())
 }
