@@ -64,11 +64,22 @@ contract Pragma is IPragma, PragmaDecoder {
         return totalNumUpdates * singleUpdateFeeInWei;
     }
 
+    function getPriceUnsafe(bytes32 id) private view returns (DataFeed memory) {
+        DataFeed memory data = _latestPriceInfo[id];
+        if (data.publishTime == 0) {
+            revert ErrorsLib.DataNotFound();
+        }
+        return data;
+    }
+
     function getPriceNoOlderThan(
         bytes32 id,
         uint age
     ) external view returns (DataFeed memory data) {
-        // Get the price no older than.
+        data = getPriceUnsafe(id);
+
+        if (diff(block.timestamp, data.publishTime) > age)
+            revert ErrorsLib.DataStale();
     }
 
     /// @inheritdoc IPragma
@@ -82,5 +93,13 @@ contract Pragma is IPragma, PragmaDecoder {
 
     function version() public pure returns (string memory) {
         return "1.0.0";
+    }
+
+    function diff(uint x, uint y) internal pure returns (uint) {
+        if (x > y) {
+            return x - y;
+        } else {
+            return y - x;
+        }
     }
 }

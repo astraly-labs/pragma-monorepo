@@ -24,4 +24,10 @@ library ErrorsLib {
     // Data feed type is not supported.
     // TODO: add signature
     error InvalidDataFeedType();
+    // Data feed is not found.
+    // TODO: add signature
+    error DataNotFound();
+    // Data feed is stale. (e.g., not updated for a long time)
+    // TODO: add signature
+    error DataStale();
 }
