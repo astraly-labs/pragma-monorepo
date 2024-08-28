@@ -11,6 +11,10 @@ contract Hyperlane is IHyperlane {
 
     address[] public _validators;
 
+    constructor(address[] memory validators) {
+        _validators = validators;
+    }
+
     function parseAndVerifyHyMsg(
         bytes calldata encodedHyMsg
     )
