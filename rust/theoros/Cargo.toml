@@ -31,5 +31,12 @@ url = { workspace = true }
 utoipa = { workspace = true, features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipauto = { workspace = true }
+ya-gcp = { workspace = true }
+derive-new = { workspace = true }
+rusoto_s3 = { workspace = true }
+rusoto_core = { workspace = true }
+rusoto_sts = { workspace = true }
+hashes = { workspace = true }
+alloy = { workspace = true }
 
 pragma-utils = { path = "../pragma-utils" }
