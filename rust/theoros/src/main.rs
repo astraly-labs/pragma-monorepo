@@ -9,13 +9,13 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use prometheus::Registry;
-use starknet::providers::{jsonrpc::HttpTransport, JsonRpcClient};
 use tracing::Level;
 
 use pragma_utils::{
     services::{Service, ServiceGroup},
     tracing::init_tracing,
 };
+use types::StarknetRpc;
 use url::Url;
 
 use crate::{
@@ -36,7 +36,7 @@ const APIBARA_DNA_URL: &str = "https://mainnet.starknet.a5a.ch"; // TODO: Should
 
 #[derive(Clone)]
 pub struct AppState {
-    pub rpc_client: Arc<JsonRpcClient<HttpTransport>>,
+    pub rpc_client: Arc<StarknetRpc>,
     pub event_storage: Arc<EventStorage>,
     pub metrics_registry: Registry, // already wrapped into an Arc
 }
@@ -51,7 +51,7 @@ async fn main() -> Result<()> {
 
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
     let rpc_url: Url = MADARA_RPC_URL.parse()?;
-    let rpc_client = JsonRpcClient::new(HttpTransport::new(rpc_url));
+    let rpc_client = StarknetRpc::new(rpc_url);
 
     // TODO: state should contains the rpc_client to interact with a Madara node
     let state = AppState {
@@ -60,7 +60,7 @@ async fn main() -> Result<()> {
         metrics_registry: metrics_service.registry(),
     };
 
-    let apibara_api_key = std::env::var("APIBARA_API_KEY")?;
+    let apibara_api_key = std::env::var("APIBARA_API_KEY")?; // TODO: Should be in CLI
     let indexer_service = IndexerService::new(state.clone(), APIBARA_DNA_URL, apibara_api_key)?;
 
     let api_service = ApiService::new(state.clone(), config.server_host(), config.server_port());

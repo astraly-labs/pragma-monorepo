@@ -12,7 +12,7 @@ use tokio::task::JoinSet;
 
 use pragma_utils::{conversions::apibara::felt_as_apibara_field, services::Service};
 
-use crate::{types::DispatchEvent, AppState};
+use crate::{types::hyperlane::DispatchEvent, AppState};
 
 // TODO: depends on the host machine - should be configurable
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
