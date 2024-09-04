@@ -16,6 +16,9 @@ use crate::{types::DispatchEvent, AppState};
 
 // TODO: depends on the host machine - should be configurable
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
+// TODO: Config those
+const PRAGMA_ORACLE_CONTRACT_ADDRESS: Felt = Felt::ZERO;
+const DISPATCH_EVENT_SELECTOR: Felt = Felt::ZERO;
 
 #[derive(Clone)]
 pub struct IndexerService {
@@ -42,9 +45,9 @@ impl IndexerService {
     pub fn new(state: AppState, apibara_uri: &str, apibara_api_key: String) -> Result<Self> {
         let uri = Uri::from_str(apibara_uri)?;
         // TODO: should be a config
-        let pragma_oracle_contract = felt_as_apibara_field(&Felt::ZERO);
+        let pragma_oracle_contract = felt_as_apibara_field(&PRAGMA_ORACLE_CONTRACT_ADDRESS);
         // TODO: should be a config
-        let dispatch_event_selector = felt_as_apibara_field(&Felt::ZERO);
+        let dispatch_event_selector = felt_as_apibara_field(&DISPATCH_EVENT_SELECTOR);
 
         let stream_config = Configuration::<Filter>::default()
             .with_finality(DataFinality::DataStatusPending)
@@ -109,6 +112,7 @@ impl IndexerService {
         Ok(())
     }
 
+    /// Converts the [Event] into a [DispatchEvent] and stores it into the event_storage.
     async fn decode_and_store_event(&self, event: Event) -> Result<()> {
         if event.from_address.is_none() {
             return Ok(());
