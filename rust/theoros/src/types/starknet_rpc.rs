@@ -1,4 +1,5 @@
 use anyhow::Result;
+use pragma_utils::conversions::starknet::felt_vec_to_vec_string;
 use starknet::{
     core::types::{BlockId, BlockTag, EthAddress, Felt, FunctionCall},
     macros::selector,
@@ -33,8 +34,8 @@ impl StarknetRpc {
             calldata,
         };
 
-        let _response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
-        // TODO: Decode response into Vec<StorageLocation>
-        Ok(vec![])
+        let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
+        let storage_locations = felt_vec_to_vec_string(&response)?;
+        Ok(storage_locations)
     }
 }
