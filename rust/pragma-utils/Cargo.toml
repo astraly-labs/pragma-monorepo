@@ -6,9 +6,7 @@ edition = "2021"
 [dependencies]
 anyhow = { workspace = true }
 apibara-core = { workspace = true }
-apibara-sdk = { workspace = true }
 async-trait = { workspace = true }
-futures = { workspace = true }
 starknet = { workspace = true }
 tokio = { workspace = true, features = ["signal"] }
 tracing = { workspace = true }

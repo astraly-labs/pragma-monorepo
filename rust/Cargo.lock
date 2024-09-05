@@ -2250,12 +2250,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "hashes"
-version = "0.1.9"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ae25ccbcba51b77f4ffd55cd0221c84e0e2958a13669d97775ccd43ce6f2873"
-
-[[package]]
 name = "heck"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3579,9 +3573,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "apibara-core",
- "apibara-sdk",
  "async-trait",
- "futures",
  "rusoto_core",
  "starknet 0.11.0",
  "tokio",
@@ -4186,21 +4178,6 @@ dependencies = [
  "serde",
  "sha2 0.9.9",
  "tokio",
-]
-
-[[package]]
-name = "rusoto_sts"
-version = "0.48.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1643f49aa67cb7cb895ebac5a2ff3f991c6dbdc58ad98b28158cd5706aecd1d"
-dependencies = [
- "async-trait",
- "bytes",
- "chrono",
- "futures",
- "rusoto_core",
- "serde_urlencoded",
- "xml-rs",
 ]
 
 [[package]]
@@ -5333,23 +5310,19 @@ dependencies = [
  "dotenvy",
  "envy",
  "futures-util",
- "hashes",
  "hyper 0.14.30",
  "opentelemetry 0.24.0",
  "pragma-utils",
  "prometheus",
  "rusoto_core",
  "rusoto_s3",
- "rusoto_sts",
  "serde",
  "serde_json",
  "starknet 0.11.0",
- "strum",
  "thiserror",
  "tokio",
  "tower-http",
  "tracing",
- "tracing-subscriber",
  "url",
  "utoipa",
  "utoipa-swagger-ui",

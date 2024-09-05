@@ -74,8 +74,6 @@ ya-gcp = { version = "0.11.3", features = ["storage"] }
 derive-new = "0.7.0"
 rusoto_s3 = "0.48.0"
 rusoto_core = "0.48.0"
-rusoto_sts = "0.48.0"
-hashes = "0.1.9"
 
 # Apibara DNA (indexing)
 apibara-core = { git = "https://github.com/apibara/dna", rev = "9caa385" }
