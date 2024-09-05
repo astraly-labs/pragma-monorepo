@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use prometheus::IntGauge;
 
-use crate::types::{CheckpointFetcher, CheckpointWithMessageId};
+use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
 
 #[allow(unused)]
 #[derive(Debug, Clone)]
@@ -41,7 +41,7 @@ impl CheckpointFetcher for LocalStorage {
         Ok(Some(checkpoint))
     }
 
-    fn announcement_location(&self) -> String {
+    fn announcement_location(&self) -> StorageLocation {
         format!("file://{}", self.path.to_str().unwrap())
     }
 }

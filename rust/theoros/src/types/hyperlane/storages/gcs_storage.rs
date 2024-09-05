@@ -4,7 +4,7 @@ use derive_new::new;
 use std::fmt;
 use ya_gcp::{storage::StorageClient, AuthFlow, ClientBuilder, ClientBuilderConfig};
 
-use crate::types::{CheckpointFetcher, CheckpointWithMessageId};
+use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
 
 #[allow(unused)]
 const ANNOUNCEMENT_KEY: &str = "gcsAnnouncementKey";
@@ -64,7 +64,7 @@ impl CheckpointFetcher for GcsStorageClient {
         Ok(Some(serde_json::from_slice(res.as_ref())?))
     }
 
-    fn announcement_location(&self) -> String {
+    fn announcement_location(&self) -> StorageLocation {
         format!("gs://{}/{}", &self.bucket, ANNOUNCEMENT_KEY)
     }
 }
