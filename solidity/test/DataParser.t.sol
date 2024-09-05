@@ -9,8 +9,8 @@ contract DataParserTest is Test {
         bytes memory data = abi.encodePacked(
             uint16(21325), // SM
             uint64(1625097600), // timestamp
-            bytes32("SOURCE"),
-            bytes32("PUBLISHER"),
+            uint16(3), 
+            uint8(8),
             bytes32("BTC/USD"),
             uint256(35000 ether), // price
             uint256(100 ether) // volume
@@ -19,9 +19,9 @@ contract DataParserTest is Test {
         ParsedData memory result = DataParser.parse(data);
         
         assertEq(result.dataType, 21325);
-        assertEq(result.spotEntry.base_entry.timestamp, 1625097600);
-        assertEq(result.spotEntry.base_entry.source, bytes32("SOURCE"));
-        assertEq(result.spotEntry.base_entry.publisher, bytes32("PUBLISHER"));
+        assertEq(result.spotEntry.metadata.timestamp, 1625097600);
+        assertEq(result.spotEntry.metadata.number_of_sources, 3);
+        assertEq(result.spotEntry.metadata.decimals, 8);
         assertEq(result.spotEntry.pair_id, bytes32("BTC/USD"));
         assertEq(result.spotEntry.price, 35000 ether);
         assertEq(result.spotEntry.volume, 100 ether);
@@ -31,8 +31,8 @@ contract DataParserTest is Test {
         bytes memory data = abi.encodePacked(
             uint16(21591), // TW
             uint64(1625097600), // timestamp
-            bytes32("SOURCE"),
-            bytes32("PUBLISHER"),
+            uint16(3), 
+            uint8(8),
             bytes32("ETH/USD"),
             uint256(2000 ether), // twap_price
             uint256(3600), // time_period
@@ -45,9 +45,9 @@ contract DataParserTest is Test {
         ParsedData memory result = DataParser.parse(data);
         
         assertEq(result.dataType, 21591);
-        assertEq(result.twapEntry.base_entry.timestamp, 1625097600);
-        assertEq(result.twapEntry.base_entry.source, bytes32("SOURCE"));
-        assertEq(result.twapEntry.base_entry.publisher, bytes32("PUBLISHER"));
+        assertEq(result.twapEntry.metadata.timestamp, 1625097600);
+        assertEq(result.twapEntry.metadata.number_of_sources, 3);
+        assertEq(result.twapEntry.metadata.decimals, 8);
         assertEq(result.twapEntry.pair_id, bytes32("ETH/USD"));
         assertEq(result.twapEntry.twap_price, 2000 ether);
         assertEq(result.twapEntry.time_period, 3600);
@@ -61,8 +61,8 @@ contract DataParserTest is Test {
         bytes memory data = abi.encodePacked(
             uint16(21078), // RV
             uint64(1625097600), // timestamp
-            bytes32("SOURCE"),
-            bytes32("PUBLISHER"),
+            uint16(3), 
+            uint8(8),
             bytes32("BTC/USD"),
             uint256(0.5 ether), // volatility
             uint256(86400), // time_period
@@ -76,9 +76,9 @@ contract DataParserTest is Test {
         ParsedData memory result = DataParser.parse(data);
         
         assertEq(result.dataType, 21078);
-        assertEq(result.rvEntry.base_entry.timestamp, 1625097600);
-        assertEq(result.rvEntry.base_entry.source, bytes32("SOURCE"));
-        assertEq(result.rvEntry.base_entry.publisher, bytes32("PUBLISHER"));
+        assertEq(result.rvEntry.metadata.timestamp, 1625097600);
+        assertEq(result.rvEntry.metadata.number_of_sources, 3);
+        assertEq(result.rvEntry.metadata.decimals, 8);
         assertEq(result.rvEntry.pair_id, bytes32("BTC/USD"));
         assertEq(result.rvEntry.volatility, 0.5 ether);
         assertEq(result.rvEntry.time_period, 86400);
@@ -93,8 +93,8 @@ contract DataParserTest is Test {
         bytes memory data = abi.encodePacked(
             uint16(20304), // OP
             uint64(1625097600), // timestamp
-            bytes32("SOURCE"),
-            bytes32("PUBLISHER"),
+            uint16(3), 
+            uint8(8),
             bytes32("ETH/USD"),
             uint256(2500 ether), // strike_price
             uint256(0.5 ether), // implied_volatility
@@ -112,9 +112,9 @@ contract DataParserTest is Test {
         ParsedData memory result = DataParser.parse(data);
         
         assertEq(result.dataType, 20304);
-        assertEq(result.optionsEntry.base_entry.timestamp, 1625097600);
-        assertEq(result.optionsEntry.base_entry.source, bytes32("SOURCE"));
-        assertEq(result.optionsEntry.base_entry.publisher, bytes32("PUBLISHER"));
+        assertEq(result.optionsEntry.metadata.timestamp, 1625097600);
+        assertEq(result.optionsEntry.metadata.number_of_sources, 3);
+        assertEq(result.optionsEntry.metadata.decimals, 8);
         assertEq(result.optionsEntry.pair_id, bytes32("ETH/USD"));
         assertEq(result.optionsEntry.strike_price, 2500 ether);
         assertEq(result.optionsEntry.implied_volatility, 0.5 ether);
@@ -133,8 +133,8 @@ contract DataParserTest is Test {
         bytes memory data = abi.encodePacked(
             uint16(20560), // PP
             uint64(1625097600), // timestamp
-            bytes32("SOURCE"),
-            bytes32("PUBLISHER"),
+            uint16(3), 
+            uint8(8),
             bytes32("BTC/USD"),
             uint256(35000 ether), // mark_price
             uint256(0.001 ether), // funding_rate
@@ -145,9 +145,9 @@ contract DataParserTest is Test {
         ParsedData memory result = DataParser.parse(data);
         
         assertEq(result.dataType, 20560);
-        assertEq(result.perpEntry.base_entry.timestamp, 1625097600);
-        assertEq(result.perpEntry.base_entry.source, bytes32("SOURCE"));
-        assertEq(result.perpEntry.base_entry.publisher, bytes32("PUBLISHER"));
+        assertEq(result.perpEntry.metadata.timestamp, 1625097600);
+        assertEq(result.perpEntry.metadata.number_of_sources, 3);
+        assertEq(result.perpEntry.metadata.decimals, 8);
         assertEq(result.perpEntry.pair_id, bytes32("BTC/USD"));
         assertEq(result.perpEntry.mark_price, 35000 ether);
         assertEq(result.perpEntry.funding_rate, 0.001 ether);

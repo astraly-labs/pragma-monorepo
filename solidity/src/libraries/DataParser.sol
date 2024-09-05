@@ -2,21 +2,21 @@
 pragma solidity ^0.8.0;
 
 import "./BytesLib.sol";
-    struct BaseEntry {
+    struct Metadata {
         uint64 timestamp; 
-        bytes32 source; 
-        bytes32 publisher;
+        uint16 number_of_sources;
+        uint8 decimals;
     }
 
     struct SpotMedianEntry {
-        BaseEntry base_entry;
+        Metadata metadata;
         bytes32 pair_id;
         uint256 price;
         uint256 volume;
     }
 
 struct TWAPEntry {
-    BaseEntry base_entry;
+    Metadata metadata;
     bytes32 pair_id;
     uint256 twap_price;
     uint256 time_period; 
@@ -27,7 +27,7 @@ struct TWAPEntry {
 }
 
 struct RealizedVolatilityEntry {
-    BaseEntry base_entry;
+    Metadata metadata;
     bytes32 pair_id;
     uint256 volatility; 
     uint256 time_period; 
@@ -39,7 +39,7 @@ struct RealizedVolatilityEntry {
 }
 
 struct OptionsEntry {
-    BaseEntry base_entry;
+    Metadata metadata;
     bytes32 pair_id;
     uint256 strike_price;
     uint256 implied_volatility; 
@@ -55,7 +55,7 @@ struct OptionsEntry {
 }
 
 struct PerpEntry {
-    BaseEntry base_entry;
+    Metadata metadata;
     bytes32 pair_id;
     uint256 mark_price;
     uint256 funding_rate; 
@@ -109,27 +109,27 @@ library DataParser {
         return (pairId, index);
     }
 
-    function parseBaseEntry(bytes memory data, uint256 startIndex) internal pure returns (BaseEntry memory, uint256) {
-        BaseEntry memory baseEntry;
+    function parseMetadata(bytes memory data, uint256 startIndex) internal pure returns (Metadata memory, uint256) {
+        Metadata memory metadata;
         uint256 index = startIndex;
 
-        baseEntry.timestamp = data.toUint64(index);
+        metadata.timestamp = data.toUint64(index);
         index += 8;
 
-        baseEntry.source = bytes32(data.toUint256(index));
-        index += 32;
+        metadata.number_of_sources = uint16(data.toUint16(index));
+        index += 2;
 
-        baseEntry.publisher = bytes32(data.toUint256(index));
-        index += 32;
+        metadata.decimals = uint8(data.toUint8(index));
+        index += 1;
 
-        return (baseEntry, index);
+        return (metadata, index);
     }
 
     function parseSpotData(bytes memory data) internal pure returns (SpotMedianEntry memory) {
         SpotMedianEntry memory entry;
         uint256 index = 2; 
 
-        (entry.base_entry, index) = parseBaseEntry(data, index);
+        (entry.metadata, index) = parseMetadata(data, index);
         (entry.pair_id, index) = parsePairId(data, index);
 
         entry.price = data.toUint256(index);
@@ -144,7 +144,7 @@ library DataParser {
         TWAPEntry memory entry;
         uint256 index = 2;
 
-        (entry.base_entry, index) = parseBaseEntry(data, index);
+        (entry.metadata, index) = parseMetadata(data, index);
         (entry.pair_id, index) = parsePairId(data, index);
 
         entry.twap_price = data.toUint256(index);
@@ -171,7 +171,7 @@ library DataParser {
         RealizedVolatilityEntry memory entry;
         uint256 index = 2;
 
-        (entry.base_entry, index) = parseBaseEntry(data, index);
+        (entry.metadata, index) = parseMetadata(data, index);
         (entry.pair_id, index) = parsePairId(data, index);
 
         entry.volatility = data.toUint256(index);
@@ -201,7 +201,7 @@ library DataParser {
         OptionsEntry memory entry;
         uint256 index = 2; 
 
-        (entry.base_entry, index) = parseBaseEntry(data, index);
+        (entry.metadata, index) = parseMetadata(data, index);
         (entry.pair_id, index) = parsePairId(data, index);
 
         entry.strike_price = data.toUint256(index);
@@ -243,7 +243,7 @@ library DataParser {
         PerpEntry memory entry;
         uint256 index = 2; // Skip data type
 
-        (entry.base_entry, index) = parseBaseEntry(data, index);
+        (entry.metadata, index) = parseMetadata(data, index);
         (entry.pair_id, index) = parsePairId(data, index);
 
         entry.mark_price = data.toUint256(index);
