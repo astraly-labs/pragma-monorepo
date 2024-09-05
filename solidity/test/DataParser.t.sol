@@ -137,15 +137,9 @@ contract DataParserTest is Test {
             bytes32("PUBLISHER"),
             bytes32("BTC/USD"),
             uint256(35000 ether), // mark_price
-            uint256(34900 ether), // index_price
             uint256(0.001 ether), // funding_rate
             uint256(1000 ether), // open_interest
-            uint256(500 ether), // volume
-            uint256(600 ether), // long_open_interest
-            uint256(400 ether), // short_open_interest
-            uint256(1625184000), // next_funding_time
-            uint256(0.0015 ether), // predicted_funding_rate
-            uint256(100) // max_leverage
+            uint256(500 ether) // volume
         );
 
         ParsedData memory result = DataParser.parse(data);
@@ -156,15 +150,9 @@ contract DataParserTest is Test {
         assertEq(result.perpEntry.base_entry.publisher, bytes32("PUBLISHER"));
         assertEq(result.perpEntry.pair_id, bytes32("BTC/USD"));
         assertEq(result.perpEntry.mark_price, 35000 ether);
-        assertEq(result.perpEntry.index_price, 34900 ether);
         assertEq(result.perpEntry.funding_rate, 0.001 ether);
         assertEq(result.perpEntry.open_interest, 1000 ether);
         assertEq(result.perpEntry.volume, 500 ether);
-        assertEq(result.perpEntry.long_open_interest, 600 ether);
-        assertEq(result.perpEntry.short_open_interest, 400 ether);
-        assertEq(result.perpEntry.next_funding_time, 1625184000);
-        assertEq(result.perpEntry.predicted_funding_rate, 0.0015 ether);
-        assertEq(result.perpEntry.max_leverage, 100);
     }
 
     function testParseUnknownDataType() public {

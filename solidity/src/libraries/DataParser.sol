@@ -58,15 +58,9 @@ struct PerpEntry {
     BaseEntry base_entry;
     bytes32 pair_id;
     uint256 mark_price;
-    uint256 index_price;
     uint256 funding_rate; 
     uint256 open_interest;
     uint256 volume;
-    uint256 long_open_interest;
-    uint256 short_open_interest;
-    uint256 next_funding_time;
-    uint256 predicted_funding_rate; 
-    uint256 max_leverage; 
 }
 
     struct ParsedData {
@@ -255,9 +249,6 @@ library DataParser {
         entry.mark_price = data.toUint256(index);
         index += 32;
 
-        entry.index_price = data.toUint256(index);
-        index += 32;
-
         entry.funding_rate = data.toUint256(index);
         index += 32;
 
@@ -265,21 +256,6 @@ library DataParser {
         index += 32;
 
         entry.volume = data.toUint256(index);
-        index += 32;
-
-        entry.long_open_interest = data.toUint256(index);
-        index += 32;
-
-        entry.short_open_interest = data.toUint256(index);
-        index += 32;
-
-        entry.next_funding_time = data.toUint256(index);
-        index += 32;
-
-        entry.predicted_funding_rate = data.toUint256(index);
-        index += 32;
-
-        entry.max_leverage = data.toUint256(index);
 
         return entry;
     }
