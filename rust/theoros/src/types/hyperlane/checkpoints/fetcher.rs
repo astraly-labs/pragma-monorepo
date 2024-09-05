@@ -1,3 +1,6 @@
+// Source:
+// https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/3e90734310fb1ca9a607ce3d334015fa7aaa9208/rust/hyperlane-base/src/settings/checkpoint_syncer.rs#L14
+
 use std::{env, path::PathBuf};
 
 use anyhow::{anyhow, Context, Error, Result};

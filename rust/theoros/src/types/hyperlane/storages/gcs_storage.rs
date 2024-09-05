@@ -1,3 +1,5 @@
+// Source:
+// https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/3e90734310fb1ca9a607ce3d334015fa7aaa9208/rust/hyperlane-base/src/types/gcs_storage.rs#L63
 use anyhow::Result;
 use async_trait::async_trait;
 use derive_new::new;
