@@ -1,6 +1,6 @@
-pub mod syncer;
+pub mod fetcher;
 
-pub use syncer::*;
+pub use fetcher::*;
 
 use serde::{Deserialize, Serialize};
 

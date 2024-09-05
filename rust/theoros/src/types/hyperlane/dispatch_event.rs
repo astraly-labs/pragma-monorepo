@@ -138,13 +138,6 @@ pub enum UpdateType {
     Future = 1,
 }
 
-#[derive(Debug, Clone)]
-#[allow(unused)]
-pub enum DispatchUpdate {
-    Spot(SpotUpdate),
-    Future(FutureUpdate),
-}
-
 impl UpdateType {
     fn from_u8(value: u8) -> Result<Self> {
         match value {
@@ -153,6 +146,13 @@ impl UpdateType {
             _ => Err(anyhow!("Invalid update type: {}", value)),
         }
     }
+}
+
+#[derive(Debug, Clone)]
+#[allow(unused)]
+pub enum DispatchUpdate {
+    Spot(SpotUpdate),
+    Future(FutureUpdate),
 }
 
 impl DispatchUpdate {

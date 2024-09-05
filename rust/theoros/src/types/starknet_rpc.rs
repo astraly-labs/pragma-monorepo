@@ -16,6 +16,7 @@ impl StarknetRpc {
         Self(JsonRpcClient::new(HttpTransport::new(rpc_url)))
     }
 
+    /// Retrieves a [Vec] of [StorageLocation] from the hyperlane core contract.
     pub async fn get_announced_storage_locations(
         &self,
         hyperlane_core_address: &str,
@@ -38,4 +39,6 @@ impl StarknetRpc {
         let storage_locations = felt_vec_to_vec_string(&response)?;
         Ok(storage_locations)
     }
+
+    // TODO: get_announced_validators
 }
