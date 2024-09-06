@@ -21,15 +21,17 @@ prometheus = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 starknet = { workspace = true }
-strum = { workspace = true, features = ["derive"] }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync", "macros", "rt-multi-thread"] }
 tower-http = { workspace = true, features = ["fs", "trace", "cors"] }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true }
 url = { workspace = true }
 utoipa = { workspace = true, features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipauto = { workspace = true }
+ya-gcp = { workspace = true }
+rusoto_s3 = { workspace = true }
+rusoto_core = { workspace = true }
+alloy = { workspace = true }
 
 pragma-utils = { path = "../pragma-utils" }

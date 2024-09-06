@@ -12,10 +12,14 @@ use tokio::task::JoinSet;
 
 use pragma_utils::{conversions::apibara::felt_as_apibara_field, services::Service};
 
-use crate::{types::DispatchEvent, AppState};
+use crate::{types::hyperlane::DispatchEvent, AppState};
 
 // TODO: depends on the host machine - should be configurable
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
+
+// TODO: Config those
+const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt = Felt::ZERO;
+const DISPATCH_EVENT_SELECTOR: Felt = Felt::ZERO;
 
 #[derive(Clone)]
 pub struct IndexerService {
@@ -38,13 +42,20 @@ impl Service for IndexerService {
     }
 }
 
+// TODO: We will probably need to also index the [ValidatorAnnouncement] events
+//       from the Hyperlane core contract.
+//
+// Goal is to track if validators send checkpoints to a new location that isn't tracked
+// yet.
+// For now, we just do the first call to [get_announced_storage_locations].
+
 impl IndexerService {
     pub fn new(state: AppState, apibara_uri: &str, apibara_api_key: String) -> Result<Self> {
         let uri = Uri::from_str(apibara_uri)?;
         // TODO: should be a config
-        let pragma_oracle_contract = felt_as_apibara_field(&Felt::ZERO);
+        let pragma_oracle_contract = felt_as_apibara_field(&HYPERLANE_CORE_CONTRACT_ADDRESS);
         // TODO: should be a config
-        let dispatch_event_selector = felt_as_apibara_field(&Felt::ZERO);
+        let dispatch_event_selector = felt_as_apibara_field(&DISPATCH_EVENT_SELECTOR);
 
         let stream_config = Configuration::<Filter>::default()
             .with_finality(DataFinality::DataStatusPending)
@@ -109,6 +120,7 @@ impl IndexerService {
         Ok(())
     }
 
+    /// Converts the [Event] into a [DispatchEvent] and stores it into the event_storage.
     async fn decode_and_store_event(&self, event: Event) -> Result<()> {
         if event.from_address.is_none() {
             return Ok(());

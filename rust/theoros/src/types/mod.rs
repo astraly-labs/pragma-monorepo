@@ -1,5 +1,7 @@
-pub mod dispatch_event;
 pub mod event_storage;
+pub mod hyperlane;
+pub mod starknet_rpc;
 
-pub use dispatch_event::*;
 pub use event_storage::*;
+pub use hyperlane::*;
+pub use starknet_rpc::*;

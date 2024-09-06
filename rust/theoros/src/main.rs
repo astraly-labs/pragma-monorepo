@@ -15,6 +15,8 @@ use pragma_utils::{
     services::{Service, ServiceGroup},
     tracing::init_tracing,
 };
+use types::StarknetRpc;
+use url::Url;
 
 use crate::{
     config::config,
@@ -25,13 +27,18 @@ use crate::{
 // TODO: Config those
 const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;
-const EVENTS_MEM_SIZE: usize = 10;
 const METRICS_PORT: u16 = 8080;
+
+const EVENTS_MEM_SIZE: usize = 10;
+
+const MADARA_RPC_URL: &str = "https://free-rpc.nethermind.io/sepolia-juno";
+const APIBARA_DNA_URL: &str = "https://mainnet.starknet.a5a.ch"; // TODO: Should be Pragma X DNA url
 
 #[derive(Clone)]
 pub struct AppState {
+    pub rpc_client: Arc<StarknetRpc>,
     pub event_storage: Arc<EventStorage>,
-    pub metrics_registry: Registry,
+    pub metrics_registry: Registry, // already wrapped into an Arc
 }
 
 #[tokio::main]
@@ -43,18 +50,18 @@ async fn main() -> Result<()> {
     init_tracing(APP_NAME, LOG_LEVEL)?;
 
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
+    let rpc_url: Url = MADARA_RPC_URL.parse()?;
+    let rpc_client = StarknetRpc::new(rpc_url);
 
     // TODO: state should contains the rpc_client to interact with a Madara node
     let state = AppState {
+        rpc_client: Arc::new(rpc_client),
         event_storage: Arc::new(EventStorage::new(EVENTS_MEM_SIZE)),
         metrics_registry: metrics_service.registry(),
     };
 
-    // TODO: Should be Pragma X DNA url - see with Apibara team + should be in config
-    let apibara_uri = "https://mainnet.starknet.a5a.ch";
-    // TODO: key in config / .env (...)
-    let apibara_api_key = std::env::var("APIBARA_API_KEY")?;
-    let indexer_service = IndexerService::new(state.clone(), apibara_uri, apibara_api_key)?;
+    let apibara_api_key = std::env::var("APIBARA_API_KEY")?; // TODO: Should be in CLI
+    let indexer_service = IndexerService::new(state.clone(), APIBARA_DNA_URL, apibara_api_key)?;
 
     let api_service = ApiService::new(state.clone(), config.server_host(), config.server_port());
 

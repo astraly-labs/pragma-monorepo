@@ -106,7 +106,7 @@ impl DispatchMessageHeader {
 #[allow(unused)]
 pub struct DispatchMessageBody {
     pub nb_updated: u32,
-    pub updates: Vec<Update>,
+    pub updates: Vec<DispatchUpdate>,
 }
 
 impl DispatchMessageBody {
@@ -116,16 +116,16 @@ impl DispatchMessageBody {
         let mut updates = Vec::with_capacity(nb_updated as usize);
 
         for _ in 0..nb_updated {
-            let update = Update::from_event_data(&mut data).context("Failed to parse update")?;
+            let update = DispatchUpdate::from_event_data(&mut data).context("Failed to parse update")?;
             updates.push(update);
         }
 
         if updates.len() != nb_updated as usize {
-            return Err(anyhow::anyhow!(
+            anyhow::bail!(
                 "Mismatch between declared number of updates ({}) and actual updates parsed ({})",
                 nb_updated,
                 updates.len()
-            ));
+            );
         }
 
         Ok(Self { nb_updated, updates })
@@ -138,13 +138,6 @@ pub enum UpdateType {
     Future = 1,
 }
 
-#[derive(Debug, Clone)]
-#[allow(unused)]
-pub enum Update {
-    Spot(SpotUpdate),
-    Future(FutureUpdate),
-}
-
 impl UpdateType {
     fn from_u8(value: u8) -> Result<Self> {
         match value {
@@ -155,14 +148,21 @@ impl UpdateType {
     }
 }
 
-impl Update {
+#[derive(Debug, Clone)]
+#[allow(unused)]
+pub enum DispatchUpdate {
+    Spot(SpotUpdate),
+    Future(FutureUpdate),
+}
+
+impl DispatchUpdate {
     pub fn from_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         let data_type =
             UpdateType::from_u8(u8::from_field_bytes(data.next().context("Missing data type")?.to_bytes()))?;
 
         match data_type {
-            UpdateType::Spot => Ok(Update::Spot(SpotUpdate::from_event_data(&mut data)?)),
-            UpdateType::Future => Ok(Update::Future(FutureUpdate::from_event_data(&mut data)?)),
+            UpdateType::Spot => Ok(DispatchUpdate::Spot(SpotUpdate::from_event_data(&mut data)?)),
+            UpdateType::Future => Ok(DispatchUpdate::Future(FutureUpdate::from_event_data(&mut data)?)),
         }
     }
 }
@@ -284,14 +284,14 @@ mod tests {
         assert_eq!(body.updates.len(), 1);
 
         match &body.updates[0] {
-            Update::Spot(update) => {
+            DispatchUpdate::Spot(update) => {
                 assert_eq!(update.feed_id, U256::from(9_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
                 assert_eq!(update.decimals, 2);
                 assert_eq!(update.timestamp, 1234567890);
                 assert_eq!(update.num_sources_aggregated, 5);
             }
-            Update::Future(_) => panic!("Expected Spot update"),
+            DispatchUpdate::Future(_) => panic!("Expected Spot update"),
         }
     }
 
@@ -345,18 +345,18 @@ mod tests {
         assert_eq!(body.updates.len(), 2);
 
         match &body.updates[0] {
-            Update::Spot(update) => {
+            DispatchUpdate::Spot(update) => {
                 assert_eq!(update.feed_id, U256::from(1_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
                 assert_eq!(update.decimals, 2);
                 assert_eq!(update.timestamp, 1234567890);
                 assert_eq!(update.num_sources_aggregated, 5);
             }
-            Update::Future(_) => panic!("Expected Spot update"),
+            DispatchUpdate::Future(_) => panic!("Expected Spot update"),
         }
 
         match &body.updates[1] {
-            Update::Future(update) => {
+            DispatchUpdate::Future(update) => {
                 assert_eq!(update.feed_id, U256::from(2_u32));
                 assert_eq!(update.price, BigDecimal::from(2)); // 2000 / 10^3
                 assert_eq!(update.decimals, 3);
@@ -364,7 +364,7 @@ mod tests {
                 assert_eq!(update.num_sources_aggregated, 6);
                 assert_eq!(update.expiration_timestamp, 1234567892);
             }
-            Update::Spot(_) => panic!("Expected Future update"),
+            DispatchUpdate::Spot(_) => panic!("Expected Future update"),
         }
     }
 
@@ -391,22 +391,22 @@ mod tests {
             create_field_element(1234567892), // expiration_timestamp
         ];
 
-        let spot_update = Update::from_event_data(spot_data.into_iter()).unwrap();
-        let future_update = Update::from_event_data(future_data.into_iter()).unwrap();
+        let spot_update = DispatchUpdate::from_event_data(spot_data.into_iter()).unwrap();
+        let future_update = DispatchUpdate::from_event_data(future_data.into_iter()).unwrap();
 
         match spot_update {
-            Update::Spot(update) => {
+            DispatchUpdate::Spot(update) => {
                 assert_eq!(update.feed_id, U256::from(1_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
                 assert_eq!(update.decimals, 2);
                 assert_eq!(update.timestamp, 1234567890);
                 assert_eq!(update.num_sources_aggregated, 5);
             }
-            Update::Future(_) => panic!("Expected Spot update"),
+            DispatchUpdate::Future(_) => panic!("Expected Spot update"),
         }
 
         match future_update {
-            Update::Future(update) => {
+            DispatchUpdate::Future(update) => {
                 assert_eq!(update.feed_id, U256::from(2_u32));
                 assert_eq!(update.price, BigDecimal::from(2)); // 2000 / 10^3
                 assert_eq!(update.decimals, 3);
@@ -414,7 +414,7 @@ mod tests {
                 assert_eq!(update.num_sources_aggregated, 6);
                 assert_eq!(update.expiration_timestamp, 1234567892);
             }
-            Update::Spot(_) => panic!("Expected Future update"),
+            DispatchUpdate::Spot(_) => panic!("Expected Future update"),
         }
     }
 }
