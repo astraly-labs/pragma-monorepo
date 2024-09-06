@@ -1,9 +1,9 @@
 // Source:
 // https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/3e90734310fb1ca9a607ce3d334015fa7aaa9208/rust/hyperlane-base/src/types/gcs_storage.rs#L63
+use std::fmt;
+
 use anyhow::Result;
 use async_trait::async_trait;
-use derive_new::new;
-use std::fmt;
 use ya_gcp::{storage::StorageClient, AuthFlow, ClientBuilder, ClientBuilderConfig};
 
 use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
@@ -16,9 +16,28 @@ pub const GCS_USER_SECRET: &str = "GCS_USER_SECRET";
 /// Path to GCS Service account key
 pub const GCS_SERVICE_ACCOUNT_KEY: &str = "GCS_SERVICE_ACCOUNT_KEY";
 
-#[derive(Debug, new)]
+#[derive(Debug)]
 pub struct GcsStorageClientBuilder {
     auth: AuthFlow,
+}
+
+impl GcsStorageClientBuilder {
+    /// Creates a new [GcsStorageClientBuilder].
+    pub fn new(auth: AuthFlow) -> Self {
+        GcsStorageClientBuilder { auth }
+    }
+
+    /// Builds a [GcsStorageClient].
+    pub async fn build(self, bucket_name: impl Into<String>, folder: Option<String>) -> Result<GcsStorageClient> {
+        let inner = ClientBuilder::new(ClientBuilderConfig::new().auth_flow(self.auth)).await?.build_storage_client();
+        let bucket = if let Some(folder) = folder {
+            format! {"{}/{}", bucket_name.into(), folder}
+        } else {
+            bucket_name.into()
+        };
+
+        Ok(GcsStorageClient { inner, bucket })
+    }
 }
 
 #[allow(unused)]
@@ -33,29 +52,10 @@ pub struct GcsStorageClient {
     bucket: String,
 }
 
-impl GcsStorageClientBuilder {
-    pub async fn build(self, bucket_name: impl Into<String>, folder: Option<String>) -> Result<GcsStorageClient> {
-        let inner = ClientBuilder::new(ClientBuilderConfig::new().auth_flow(self.auth)).await?.build_storage_client();
-        let bucket = if let Some(folder) = folder {
-            format! {"{}/{}", bucket_name.into(), folder}
-        } else {
-            bucket_name.into()
-        };
-
-        Ok(GcsStorageClient { inner, bucket })
-    }
-}
-
 #[allow(unused)]
 impl GcsStorageClient {
     fn get_checkpoint_key(index: u32) -> String {
         format!("checkpoint_{index}_with_id.json")
-    }
-}
-
-impl fmt::Debug for GcsStorageClient {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("S3Storage").field("bucket", &self.bucket).finish()
     }
 }
 
@@ -68,5 +68,11 @@ impl CheckpointFetcher for GcsStorageClient {
 
     fn announcement_location(&self) -> StorageLocation {
         format!("gs://{}/{}", &self.bucket, ANNOUNCEMENT_KEY)
+    }
+}
+
+impl fmt::Debug for GcsStorageClient {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("S3Storage").field("bucket", &self.bucket).finish()
     }
 }

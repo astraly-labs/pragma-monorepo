@@ -4,16 +4,15 @@ use std::{fmt, sync::OnceLock, time::Duration};
 
 use anyhow::{bail, Result};
 use async_trait::async_trait;
-use derive_new::new;
 use futures_util::TryStreamExt;
-use pragma_utils::http::http_client_with_timeout;
-use prometheus::IntGauge;
 use rusoto_core::{
     credential::{Anonymous, AwsCredentials, StaticProvider},
     Region, RusotoError,
 };
 use rusoto_s3::{GetObjectError, GetObjectRequest, S3Client, S3};
 use tokio::time::timeout;
+
+use pragma_utils::http::http_client_with_timeout;
 
 use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
 
@@ -23,7 +22,7 @@ use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
 const S3_REQUEST_TIMEOUT_SECONDS: u64 = 30;
 
 #[allow(unused)]
-#[derive(Clone, new)]
+#[derive(Clone)]
 /// Type for reading/writing to S3
 pub struct S3Storage {
     /// The name of the bucket.
@@ -33,10 +32,7 @@ pub struct S3Storage {
     /// The region of the bucket.
     region: Region,
     /// A client without credentials for anonymous requests.
-    #[new(default)]
     anonymous_client: OnceLock<S3Client>,
-    /// The latest seen signed checkpoint index.
-    latest_index: Option<IntGauge>,
 }
 
 impl fmt::Debug for S3Storage {
@@ -51,6 +47,11 @@ impl fmt::Debug for S3Storage {
 
 #[allow(unused)]
 impl S3Storage {
+    /// Creates a new S3Storage.
+    pub fn new(bucket: String, folder: Option<String>, region: Region) -> Self {
+        S3Storage { bucket, folder, region, anonymous_client: Default::default() }
+    }
+
     /// Uses an anonymous client. This should only be used for publicly accessible buckets.
     async fn anonymously_read_from_bucket(&self, key: String) -> Result<Option<Vec<u8>>> {
         let req =

@@ -4,7 +4,6 @@ use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
-use prometheus::IntGauge;
 
 use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
 
@@ -12,20 +11,18 @@ use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
 #[derive(Debug, Clone)]
 /// Type for reading/write to LocalStorage
 pub struct LocalStorage {
-    /// base path
     path: PathBuf,
-    latest_index: Option<IntGauge>,
 }
 
 #[allow(unused)]
 impl LocalStorage {
-    pub fn new(path: PathBuf, latest_index: Option<IntGauge>) -> Result<Self> {
+    pub fn new(path: PathBuf) -> Result<Self> {
         if !path.exists() {
             std::fs::create_dir_all(&path).with_context(|| {
                 format!("Failed to create local checkpoint fetcher storage directory at {:?}", path)
             })?;
         }
-        Ok(Self { path, latest_index })
+        Ok(Self { path })
     }
 
     fn checkpoint_file_path(&self, index: u32) -> PathBuf {

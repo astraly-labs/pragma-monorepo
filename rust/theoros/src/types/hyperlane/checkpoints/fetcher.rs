@@ -1,17 +1,14 @@
 // Source:
 // https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/3e90734310fb1ca9a607ce3d334015fa7aaa9208/rust/hyperlane-base/src/settings/checkpoint_syncer.rs#L14
 
+use std::fmt::Debug;
 use std::{env, path::PathBuf};
 
-use anyhow::{anyhow, Context, Error, Result};
+use anyhow::{anyhow, bail, Context, Error, Result};
+use async_trait::async_trait;
 use core::str::FromStr;
-use prometheus::IntGauge;
 use rusoto_core::Region;
 use ya_gcp::{AuthFlow, ServiceAccountAuth};
-
-use std::fmt::Debug;
-
-use async_trait::async_trait;
 
 use crate::types::{
     gcs_storage::{GcsStorageClientBuilder, GCS_SERVICE_ACCOUNT_KEY, GCS_USER_SECRET},
@@ -108,20 +105,18 @@ impl FromStr for CheckpointFetcherConf {
                     Ok(Self::Gcs { bucket: suffix.into(), folder: None, service_account_key, user_secrets })
                 }
             }
-            _ => Err(anyhow!("Unknown storage location prefix `{prefix}`")),
+            _ => bail!("Unknown storage location prefix `{prefix}`"),
         }
     }
 }
 
 impl CheckpointFetcherConf {
     /// Turn conf info a Checkpoint Syncer
-    pub async fn build(&self, latest_index_gauge: Option<IntGauge>) -> Result<Box<dyn CheckpointFetcher>> {
+    pub async fn build(&self) -> Result<Box<dyn CheckpointFetcher>> {
         Ok(match self {
-            CheckpointFetcherConf::LocalStorage { path } => {
-                Box::new(LocalStorage::new(path.clone(), latest_index_gauge)?)
-            }
+            CheckpointFetcherConf::LocalStorage { path } => Box::new(LocalStorage::new(path.clone())?),
             CheckpointFetcherConf::S3 { bucket, folder, region } => {
-                Box::new(S3Storage::new(bucket.clone(), folder.clone(), region.clone(), latest_index_gauge))
+                Box::new(S3Storage::new(bucket.clone(), folder.clone(), region.clone()))
             }
             CheckpointFetcherConf::Gcs { bucket, folder, service_account_key, user_secrets } => {
                 let auth = if let Some(path) = service_account_key {
