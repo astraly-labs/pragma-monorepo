@@ -17,9 +17,10 @@ impl ValidatorsStorage {
         Self(RwLock::new(HashMap::default()))
     }
 
+    /// Fills the [HashMap] with the initial state fetched from the RPC.
     pub async fn fill_with_initial_state(&self, validators: Vec<Felt>, locations: Vec<String>) -> anyhow::Result<()> {
         if validators.len() != locations.len() {
-            bail!("Validators and locations vectors must have the same length");
+            bail!("⛔ Validators and locations vectors must have the same length");
         }
 
         let mut all_fetchers = self.0.write().await;

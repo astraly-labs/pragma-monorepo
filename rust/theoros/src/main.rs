@@ -55,12 +55,9 @@ async fn main() -> Result<()> {
     let rpc_client = StarknetRpc::new(rpc_url);
 
     // New storage + initialization
-    let theoros_storage = TheorosStorage::from_current_state(
-        &rpc_client,
-        &PRAGMA_WRAPPER_CONTRACT_ADDRESS,
-        &HYPERLANE_CORE_CONTRACT_ADDRESS,
-    )
-    .await?;
+    let theoros_storage =
+        TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_WRAPPER_CONTRACT_ADDRESS, &HYPERLANE_CORE_CONTRACT_ADDRESS)
+            .await?;
 
     // Theoros metrics
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
