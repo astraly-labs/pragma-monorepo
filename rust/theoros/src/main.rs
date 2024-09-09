@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use anyhow::{Context, Result};
 use prometheus::Registry;
+use storages::TheorosStorage;
 use tracing::Level;
 
 use pragma_utils::{
@@ -18,18 +19,13 @@ use pragma_utils::{
 use types::StarknetRpc;
 use url::Url;
 
-use crate::{
-    services::{ApiService, IndexerService, MetricsService},
-    storages::EventStorage,
-};
+use crate::services::{ApiService, IndexerService, MetricsService};
 
 // TODO: Everything below here should be configurable, either via CLI or config file.
 // See: https://github.com/astraly-labs/pragma-monorepo/issues/17
 const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;
 const METRICS_PORT: u16 = 8080;
-
-const EVENTS_MEM_SIZE: usize = 10;
 
 const MADARA_RPC_URL: &str = "https://free-rpc.nethermind.io/sepolia-juno";
 const APIBARA_DNA_URL: &str = "https://sepolia.starknet.a5a.ch"; // TODO: Should be Pragma X DNA url
@@ -47,7 +43,7 @@ lazy_static::lazy_static! {
 #[derive(Clone)]
 pub struct AppState {
     pub rpc_client: Arc<StarknetRpc>,
-    pub event_storage: Arc<EventStorage>,
+    pub storage: Arc<TheorosStorage>,
     pub metrics_registry: Registry, // already wrapped into an Arc
 }
 
@@ -56,14 +52,13 @@ pub struct AppState {
 async fn main() -> Result<()> {
     init_tracing(APP_NAME, LOG_LEVEL)?;
 
-    let metrics_service = MetricsService::new(false, METRICS_PORT)?;
     let rpc_url: Url = MADARA_RPC_URL.parse()?;
-    let rpc_client = StarknetRpc::new(rpc_url);
+    let metrics_service = MetricsService::new(false, METRICS_PORT)?;
 
     // TODO: state should contains the rpc_client to interact with a Madara node
     let state = AppState {
-        rpc_client: Arc::new(rpc_client),
-        event_storage: Arc::new(EventStorage::new(EVENTS_MEM_SIZE)),
+        rpc_client: Arc::new(StarknetRpc::new(rpc_url)),
+        storage: Arc::new(TheorosStorage::default()),
         metrics_registry: metrics_service.registry(),
     };
 

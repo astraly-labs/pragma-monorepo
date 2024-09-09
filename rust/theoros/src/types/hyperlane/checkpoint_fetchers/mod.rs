@@ -22,8 +22,6 @@ use crate::types::hyperlane::{
 
 use super::CheckpointWithMessageId;
 
-pub type StorageLocation = String;
-
 #[allow(unused)]
 /// A generic trait to read/write Checkpoints offchain
 #[async_trait]
@@ -31,7 +29,7 @@ pub trait CheckpointFetcher: Debug + Send + Sync {
     /// Attempt to fetch the signed (checkpoint, messageId) tuple at this index
     async fn fetch(&self, index: u32) -> Result<Option<CheckpointWithMessageId>>;
     /// Return the announcement storage location for this syncer
-    fn announcement_location(&self) -> StorageLocation;
+    fn announcement_location(&self) -> String;
 }
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]

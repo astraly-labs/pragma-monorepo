@@ -7,8 +7,6 @@ use starknet::{
 };
 use url::Url;
 
-use crate::types::hyperlane::StorageLocation;
-
 pub struct StarknetRpc(JsonRpcClient<HttpTransport>);
 
 impl StarknetRpc {
@@ -16,12 +14,12 @@ impl StarknetRpc {
         Self(JsonRpcClient::new(HttpTransport::new(rpc_url)))
     }
 
-    /// Retrieves a [Vec] of [StorageLocation] from the hyperlane core contract.
+    /// Retrieves a [Vec] of [String] (storage locations) from the hyperlane core contract.
     pub async fn get_announced_storage_locations(
         &self,
         hyperlane_core_address: &str,
         validators: &[EthAddress],
-    ) -> Result<Vec<StorageLocation>> {
+    ) -> Result<Vec<String>> {
         let hyperlane_core_address = Felt::from_hex(hyperlane_core_address)?;
 
         let validators: Vec<Felt> = validators.iter().cloned().map(Felt::from).collect();

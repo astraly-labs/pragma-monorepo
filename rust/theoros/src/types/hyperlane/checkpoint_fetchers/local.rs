@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 
-use crate::types::hyperlane::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
+use crate::types::hyperlane::{CheckpointFetcher, CheckpointWithMessageId};
 
 #[allow(unused)]
 #[derive(Debug, Clone)]
@@ -40,7 +40,7 @@ impl CheckpointFetcher for LocalStorage {
         Ok(Some(checkpoint))
     }
 
-    fn announcement_location(&self) -> StorageLocation {
+    fn announcement_location(&self) -> String {
         format!("file://{}", self.path.to_str().unwrap())
     }
 }

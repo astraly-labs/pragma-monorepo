@@ -4,9 +4,11 @@ pub mod validators_storage;
 pub use event_storage::*;
 pub use validators_storage::*;
 
-#[allow(unused)]
+use crate::types::hyperlane::DispatchEvent;
+
+#[derive(Default)]
 pub struct TheorosStorage {
-    pub events: EventStorage,
+    pub dispatch_events: EventStorage<DispatchEvent>,
     pub validators: ValidatorsStorage,
 }
 
