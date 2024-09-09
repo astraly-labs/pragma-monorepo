@@ -14,6 +14,7 @@ use crate::{
 };
 
 /// Theoros storage that contains:
+///   * a set of all available data feeds,
 ///   * an events storage containing the most recents [DispatchEvent] events indexed,
 ///   * a mapping of all the validators and their fetchers.
 #[derive(Default)]
