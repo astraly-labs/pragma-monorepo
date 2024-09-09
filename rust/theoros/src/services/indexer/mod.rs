@@ -7,21 +7,21 @@ use apibara_core::{
 };
 use apibara_sdk::{configuration, ClientBuilder, Configuration, DataMessage, Uri};
 use futures_util::TryStreamExt;
-use starknet::core::{types::Felt, utils::get_selector_from_name};
+use starknet::core::utils::get_selector_from_name;
 use tokio::task::JoinSet;
 
 use pragma_utils::{conversions::apibara::felt_as_apibara_field, services::Service};
 
 use crate::{
     types::hyperlane::{DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
-    AppState,
+    AppState, HYPERLANE_CORE_CONTRACT_ADDRESS,
 };
 
 // TODO: Everything below here should be configurable, either via CLI or config file.
 // See: https://github.com/astraly-labs/pragma-monorepo/issues/17
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
 lazy_static::lazy_static! {
-    pub static ref HYPERLANE_CORE_CONTRACT_ADDRESS: FieldElement = felt_as_apibara_field(&Felt::ZERO);
+    pub static ref F_HYPERLANE_CORE_CONTRACT_ADDRESS: FieldElement = felt_as_apibara_field(&HYPERLANE_CORE_CONTRACT_ADDRESS);
     pub static ref DISPATCH_EVENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("Dispatch").unwrap());
     pub static ref VALIDATOR_ANNOUNCEMENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("ValidatorAnnouncement").unwrap());
 }
@@ -58,12 +58,12 @@ impl IndexerService {
                     .with_header(HeaderFilter::weak())
                     .add_event(|event| {
                         event
-                            .with_from_address(HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
+                            .with_from_address(F_HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
                             .with_keys(vec![DISPATCH_EVENT_SELECTOR.clone()])
                     })
                     .add_event(|event| {
                         event
-                            .with_from_address(HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
+                            .with_from_address(F_HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
                             .with_keys(vec![VALIDATOR_ANNOUNCEMENT_SELECTOR.clone()])
                     })
                     .build()
