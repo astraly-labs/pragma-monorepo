@@ -9,7 +9,7 @@ use std::collections::HashSet;
 use starknet::core::types::Felt;
 
 use crate::{
-    rpc::{hyperlane::HyperlaneCalls, pragma_wrapper::PragmaWrapperCalls, StarknetRpc},
+    rpc::{HyperlaneCalls, PragmaWrapperCalls, StarknetRpc},
     types::hyperlane::DispatchEvent,
 };
 

@@ -120,7 +120,7 @@ impl IndexerService {
 
     /// Decodes a starknet [Event] into either a:
     ///     * [DispatchEvent] and stores it into the events storage,
-    ///     * [ValidatorAnnouncementEvent] and stores it into validators storage.
+    ///     * [ValidatorAnnouncementEvent] and stores it into the validators storage.
     async fn decode_and_store_event(&self, event: Event) -> Result<()> {
         let event_selector = event.keys.first().context("No event selector")?;
 
