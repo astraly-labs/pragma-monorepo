@@ -7,7 +7,7 @@ use starknet::{
 };
 use url::Url;
 
-use super::StorageLocation;
+use crate::types::hyperlane::StorageLocation;
 
 pub struct StarknetRpc(JsonRpcClient<HttpTransport>);
 

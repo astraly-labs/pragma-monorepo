@@ -33,5 +33,6 @@ ya-gcp = { workspace = true }
 rusoto_s3 = { workspace = true }
 rusoto_core = { workspace = true }
 alloy = { workspace = true }
+lazy_static = { workspace = true }
 
 pragma-utils = { path = "../pragma-utils" }

@@ -5,6 +5,8 @@ use starknet::core::types::U256;
 
 use pragma_utils::conversions::apibara::FromFieldBytes;
 
+use super::FromStarknetEventData;
+
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub struct DispatchEvent {
@@ -14,32 +16,32 @@ pub struct DispatchEvent {
     pub message: DispatchMessage,
 }
 
-impl DispatchEvent {
-    // Creates a Dispatch from a Dispatch Event data, which is:
-    // 0. (felt) sender address
-    // 1. (felt) destination chain id
-    // 2. (felt:low; felt:high) recipient address
-    // 3. message
-    //    a. header =>
-    //        - felt => version,
-    //        - felt => nonce,
-    //        - felt => origin,
-    //        - felt => sender_low,
-    //        - felt => sender_high,
-    //        - felt => destination,
-    //        - felt => recipient_low,
-    //        - felt => recipient_high,
-    //    b. body:
-    //        - felt => nbr data_feeds updated
-    //        - update (per data_feed) =>
-    //            - felt => data_type (given it, we know update_size)
-    //            - felt => ID
-    //            - felt => price
-    //            - felt => decimals
-    //            - felt => timestamp
-    //            - felt => sources_aggregated
-    //            - IF FUTURE: felt => expiration_timestamp
-    pub fn from_event_data(data: Vec<FieldElement>) -> Result<Self> {
+// Creates a Dispatch from a Dispatch starknet event data, which is:
+// 0. (felt) sender address
+// 1. (felt) destination chain id
+// 2. (felt:low; felt:high) recipient address
+// 3. message
+//    a. header =>
+//        - felt => version,
+//        - felt => nonce,
+//        - felt => origin,
+//        - felt => sender_low,
+//        - felt => sender_high,
+//        - felt => destination,
+//        - felt => recipient_low,
+//        - felt => recipient_high,
+//    b. body:
+//        - felt => nbr data_feeds updated
+//        - update (per data_feed) =>
+//            - felt => data_type (given it, we know update_size)
+//            - felt => ID
+//            - felt => price
+//            - felt => decimals
+//            - felt => timestamp
+//            - felt => sources_aggregated
+//            - IF FUTURE: felt => expiration_timestamp
+impl FromStarknetEventData for DispatchEvent {
+    fn from_starknet_event_data(data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         let mut data = data.into_iter();
 
         let sender = U256::from_words(
@@ -54,8 +56,8 @@ impl DispatchEvent {
             u128::from_field_bytes(data.next().context("Missing recipient part 2")?.to_bytes()),
         );
 
-        let header = DispatchMessageHeader::from_event_data(&mut data.by_ref().take(HEADER_SIZE))?;
-        let body = DispatchMessageBody::from_event_data(&mut data)?;
+        let header = DispatchMessageHeader::from_starknet_event_data(&mut data.by_ref().take(HEADER_SIZE))?;
+        let body = DispatchMessageBody::from_starknet_event_data(&mut data)?;
         let message = DispatchMessage { header, body };
 
         let dispatch = Self { sender, destination_domain, recipient_address, message };
@@ -83,8 +85,8 @@ pub struct DispatchMessageHeader {
     pub recipient: U256,
 }
 
-impl DispatchMessageHeader {
-    pub fn from_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
+impl FromStarknetEventData for DispatchMessageHeader {
+    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         Ok(Self {
             version: u8::from_field_bytes(data.next().context("Missing version")?.to_bytes()),
             nonce: u32::from_field_bytes(data.next().context("Missing nonce")?.to_bytes()),
@@ -109,14 +111,14 @@ pub struct DispatchMessageBody {
     pub updates: Vec<DispatchUpdate>,
 }
 
-impl DispatchMessageBody {
-    pub fn from_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
+impl FromStarknetEventData for DispatchMessageBody {
+    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         let nb_updated = u32::from_field_bytes(data.next().context("Missing number of updates")?.to_bytes());
 
         let mut updates = Vec::with_capacity(nb_updated as usize);
 
         for _ in 0..nb_updated {
-            let update = DispatchUpdate::from_event_data(&mut data).context("Failed to parse update")?;
+            let update = DispatchUpdate::from_starknet_event_data(&mut data).context("Failed to parse update")?;
             updates.push(update);
         }
 
@@ -155,14 +157,14 @@ pub enum DispatchUpdate {
     Future(FutureUpdate),
 }
 
-impl DispatchUpdate {
-    pub fn from_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
+impl FromStarknetEventData for DispatchUpdate {
+    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         let data_type =
             UpdateType::from_u8(u8::from_field_bytes(data.next().context("Missing data type")?.to_bytes()))?;
 
         match data_type {
-            UpdateType::Spot => Ok(DispatchUpdate::Spot(SpotUpdate::from_event_data(&mut data)?)),
-            UpdateType::Future => Ok(DispatchUpdate::Future(FutureUpdate::from_event_data(&mut data)?)),
+            UpdateType::Spot => Ok(DispatchUpdate::Spot(SpotUpdate::from_starknet_event_data(&mut data)?)),
+            UpdateType::Future => Ok(DispatchUpdate::Future(FutureUpdate::from_starknet_event_data(&mut data)?)),
         }
     }
 }
@@ -177,8 +179,8 @@ pub struct SpotUpdate {
     pub num_sources_aggregated: u32,
 }
 
-impl SpotUpdate {
-    pub fn from_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
+impl FromStarknetEventData for SpotUpdate {
+    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         let feed_id = U256::from_words(
             u128::from_field_bytes(data.next().context("Missing feed ID part 1")?.to_bytes()),
             u128::from_field_bytes(data.next().context("Missing feed ID part 2")?.to_bytes()),
@@ -208,8 +210,8 @@ pub struct FutureUpdate {
     pub num_sources_aggregated: u32,
 }
 
-impl FutureUpdate {
-    pub fn from_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
+impl FromStarknetEventData for FutureUpdate {
+    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         let feed_id = U256::from_words(
             u128::from_field_bytes(data.next().context("Missing feed ID part 1")?.to_bytes()),
             u128::from_field_bytes(data.next().context("Missing feed ID part 2")?.to_bytes()),
@@ -265,7 +267,7 @@ mod tests {
             create_field_element(5),          // num_sources_aggregated
         ];
 
-        let dispatch_event = DispatchEvent::from_event_data(event_data).unwrap();
+        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data.into_iter()).unwrap();
 
         assert_eq!(dispatch_event.sender, U256::from(1_u32));
         assert_eq!(dispatch_event.destination_domain, 2);
@@ -308,7 +310,7 @@ mod tests {
             create_field_element(0), // recipient part 2
         ];
 
-        let header = DispatchMessageHeader::from_event_data(header_data.into_iter()).unwrap();
+        let header = DispatchMessageHeader::from_starknet_event_data(header_data.into_iter()).unwrap();
 
         assert_eq!(header.version, 1);
         assert_eq!(header.nonce, 2);
@@ -339,7 +341,7 @@ mod tests {
             create_field_element(1234567892), // expiration_timestamp
         ];
 
-        let body = DispatchMessageBody::from_event_data(body_data.into_iter()).unwrap();
+        let body = DispatchMessageBody::from_starknet_event_data(body_data.into_iter()).unwrap();
 
         assert_eq!(body.nb_updated, 2);
         assert_eq!(body.updates.len(), 2);
@@ -391,8 +393,8 @@ mod tests {
             create_field_element(1234567892), // expiration_timestamp
         ];
 
-        let spot_update = DispatchUpdate::from_event_data(spot_data.into_iter()).unwrap();
-        let future_update = DispatchUpdate::from_event_data(future_data.into_iter()).unwrap();
+        let spot_update = DispatchUpdate::from_starknet_event_data(spot_data.into_iter()).unwrap();
+        let future_update = DispatchUpdate::from_starknet_event_data(future_data.into_iter()).unwrap();
 
         match spot_update {
             DispatchUpdate::Spot(update) => {

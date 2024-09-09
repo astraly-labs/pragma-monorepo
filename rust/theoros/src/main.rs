@@ -1,13 +1,13 @@
-mod config;
 mod errors;
 mod extractors;
 mod handlers;
 mod services;
+mod storages;
 mod types;
 
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use prometheus::Registry;
 use tracing::Level;
 
@@ -19,12 +19,12 @@ use types::StarknetRpc;
 use url::Url;
 
 use crate::{
-    config::config,
     services::{ApiService, IndexerService, MetricsService},
-    types::EventStorage,
+    storages::EventStorage,
 };
 
-// TODO: Config those
+// TODO: Everything below here should be configurable, either via CLI or config file.
+// See: https://github.com/astraly-labs/pragma-monorepo/issues/17
 const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;
 const METRICS_PORT: u16 = 8080;
@@ -32,7 +32,17 @@ const METRICS_PORT: u16 = 8080;
 const EVENTS_MEM_SIZE: usize = 10;
 
 const MADARA_RPC_URL: &str = "https://free-rpc.nethermind.io/sepolia-juno";
-const APIBARA_DNA_URL: &str = "https://mainnet.starknet.a5a.ch"; // TODO: Should be Pragma X DNA url
+const APIBARA_DNA_URL: &str = "https://sepolia.starknet.a5a.ch"; // TODO: Should be Pragma X DNA url
+
+const SERVER_HOST: &str = "0.0.0.0";
+const SERVER_PORT: u16 = 3000;
+
+// TODO: Do we want to have data_feeds list? Does it cost more to have all feeds?
+lazy_static::lazy_static! {
+    pub static ref DATA_FEEDS: Vec<u16> = vec![
+        1, 2, 3, 4,
+    ];
+}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -44,9 +54,6 @@ pub struct AppState {
 #[tokio::main]
 #[tracing::instrument]
 async fn main() -> Result<()> {
-    dotenvy::dotenv()?;
-    let config = config().await;
-
     init_tracing(APP_NAME, LOG_LEVEL)?;
 
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
@@ -60,10 +67,10 @@ async fn main() -> Result<()> {
         metrics_registry: metrics_service.registry(),
     };
 
-    let apibara_api_key = std::env::var("APIBARA_API_KEY")?; // TODO: Should be in CLI
+    let apibara_api_key = std::env::var("APIBARA_API_KEY").context("APIBARA_API_KEY not found.")?;
     let indexer_service = IndexerService::new(state.clone(), APIBARA_DNA_URL, apibara_api_key)?;
 
-    let api_service = ApiService::new(state.clone(), config.server_host(), config.server_port());
+    let api_service = ApiService::new(state.clone(), SERVER_HOST, SERVER_PORT);
 
     let theoros = ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service);
     theoros.start_and_drive_to_end().await?;

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 
-use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
+use crate::types::hyperlane::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
 
 #[allow(unused)]
 #[derive(Debug, Clone)]

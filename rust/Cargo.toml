@@ -73,6 +73,7 @@ axum-macros = { version = "0.4.1" }
 ya-gcp = { version = "0.11.3", features = ["storage"] }
 rusoto_s3 = "0.48.0"
 rusoto_core = "0.48.0"
+lazy_static = "1.5.0"
 
 # Apibara DNA (indexing)
 apibara-core = { git = "https://github.com/apibara/dna", rev = "9caa385" }

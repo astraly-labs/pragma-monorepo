@@ -6,7 +6,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use ya_gcp::{storage::StorageClient, AuthFlow, ClientBuilder, ClientBuilderConfig};
 
-use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
+use crate::types::hyperlane::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
 
 #[allow(unused)]
 const ANNOUNCEMENT_KEY: &str = "gcsAnnouncementKey";

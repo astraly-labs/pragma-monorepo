@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
+use serde_json::to_string_pretty;
 use utoipa::OpenApi;
 use utoipauto::utoipauto;
 
@@ -15,7 +16,9 @@ pub struct ApiDoc;
 
 impl ApiDoc {
     pub fn generate_openapi_json(output_path: PathBuf) -> Result<()> {
-        let json = ApiDoc::openapi().to_json()?;
+        let openapi = ApiDoc::openapi();
+        let json = to_string_pretty(&openapi)?;
+
         if let Some(parent) = output_path.parent() {
             std::fs::create_dir_all(parent)?;
         }

@@ -2,10 +2,11 @@ use std::collections::VecDeque;
 
 use tokio::sync::RwLock;
 
-use crate::types::dispatch_event::DispatchEvent;
+use crate::types::hyperlane::DispatchEvent;
 
 /// FIFO Buffer of fixed size used to store DispatchEvent from our
 /// oracle contract ; the first element being the latest.
+#[derive(Debug, Default)]
 pub struct EventStorage {
     dispatches: RwLock<VecDeque<DispatchEvent>>,
     max_size: usize,
