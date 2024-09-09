@@ -6,6 +6,7 @@ import {DataFeed, DataFeedType} from "./interfaces/IPragma.sol";
 import {HyMsg, IHyperlane} from "./interfaces/IHyperlane.sol";
 import "./libraries/ConstantsLib.sol";
 import "./libraries/ErrorsLib.sol";
+import "./libraries/DataParser.sol";
 import "./libraries/EventsLib.sol";
 import "./libraries/BytesLib.sol";
 import "./libraries/MerkleTree.sol";
@@ -20,6 +21,13 @@ contract PragmaDecoder {
 
     mapping(bytes32 => DataFeed) public _latestPriceInfo;
     mapping(bytes32 => bool) public _isValidDataSource;
+    mapping(bytes32 => uint64) public latestPublishTimes;
+
+    mapping(bytes32 => SpotMedian) public spotMedianFeeds;
+    mapping(bytes32 => TWAP) public twapFeeds;
+    mapping(bytes32 => RealizedVolatility) public rvFeeds;
+    mapping(bytes32 => Options) public optionsFeeds;
+    mapping(bytes32 => Perp) public perpFeeds;
 
     constructor(
         address _hyperlane,
@@ -139,7 +147,7 @@ contract PragmaDecoder {
     function extractDataInfoFromUpdate(bytes calldata encoded, uint256 offset, bytes32 checkpointRoot)
         internal
         pure
-        returns (uint256 endOffset, DataFeed memory dataFeed, bytes32 dataId, uint64 publishTime)
+        returns (uint256 endOffset, ParsedData memory parsedData, bytes32 dataId, uint64 publishTime)
     {
         unchecked {
             bytes calldata encodedUpdate;
@@ -152,32 +160,26 @@ contract PragmaDecoder {
             }
 
             bool valid;
-            (valid, endOffset) = MerkleTree.isProofValid(
-                encoded, // data
-                offset, // where to start reading the proof
-                checkpointRoot, // root
-                encodedUpdate // leaf
-            );
+            (valid, endOffset) = MerkleTree.isProofValid(encoded, offset, checkpointRoot, encodedUpdate);
 
             if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
 
-            DataFeedType dataFeedType = DataFeedType(UnsafeCalldataBytesLib.toUint8(encodedUpdate, 0));
-            if (dataFeedType == DataFeedType.SpotMedian) {
-                (dataFeed, dataId, publishTime) = parseSpotMedianDataFeed(encodedUpdate, 1);
-            } else {
-                revert ErrorsLib.InvalidDataFeedType();
-            }
+            (parsedData, dataId, publishTime) = parseDataFeed(encodedUpdate);
         }
     }
 
-    function parseSpotMedianDataFeed(bytes calldata encodedDataFeed, uint256 offset)
+    function parseDataFeed(bytes calldata encodedDataFeed)
         private
         pure
-        returns (DataFeed memory dataFeedInfo, bytes32 dataId, uint64 publishTime)
+        returns (ParsedData memory parsedData, bytes32 dataId, uint64 publishTime)
     {
-        unchecked {
-            // TODO: parse the spot median data feed
-        }
+        parsedData = DataParser.parse(encodedDataFeed);
+
+        // Assuming dataId and publishTime are appended at the end of encodedDataFeed
+        uint256 offset = encodedDataFeed.length - 40; // 32 bytes for dataId, 8 bytes for publishTime
+        dataId = bytes32(UnsafeCalldataBytesLib.toUint256(encodedDataFeed, offset));
+        offset += 32;
+        publishTime = UnsafeCalldataBytesLib.toUint64(encodedDataFeed, offset);
     }
 
     function updateDataInfoFromUpdate(bytes calldata updateData) internal returns (uint8 numUpdates) {
@@ -193,10 +195,11 @@ contract PragmaDecoder {
 
         unchecked {
             for (uint256 i = 0; i < numUpdates; i++) {
-                DataFeed memory dataFeed;
+                ParsedData memory parsedData;
                 bytes32 dataId;
-                (offset, dataFeed, dataId,) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
-                updateLatestDataInfoIfNecessary(dataId, dataFeed);
+                uint64 publishTime;
+                (offset, parsedData, dataId, publishTime) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
+                updateLatestDataInfoIfNecessary(dataId, parsedData, publishTime);
             }
         }
 
@@ -205,11 +208,30 @@ contract PragmaDecoder {
         if (offset != encoded.length) revert ErrorsLib.InvalidUpdateData();
     }
 
-    function updateLatestDataInfoIfNecessary(bytes32 dataId, DataFeed memory info) internal {
-        uint64 latestPublishTime = _latestPriceInfo[dataId].publishTime;
-        if (info.publishTime > latestPublishTime) {
-            _latestPriceInfo[dataId] = info;
-            emit EventsLib.DataFeedUpdate(dataId, info.publishTime, info.numSourcesAggregated, info.value);
+    function updateLatestDataInfoIfNecessary(bytes32 dataId, ParsedData memory parsedData, uint64 publishTime)
+        internal
+    {
+        if (publishTime > latestPublishTimes[dataId]) {
+            latestPublishTimes[dataId] = publishTime;
+
+            if (parsedData.dataType == DataParser.SM) {
+                spotMedianFeeds[dataId] = parsedData.spot;
+                emit EventsLib.SpotMedianUpdate(dataId, publishTime, parsedData.spot);
+            } else if (parsedData.dataType == DataParser.TW) {
+                twapFeeds[dataId] = parsedData.twap;
+                emit EventsLib.TWAPUpdate(dataId, publishTime, parsedData.twap);
+            } else if (parsedData.dataType == DataParser.RV) {
+                rvFeeds[dataId] = parsedData.rv;
+                emit EventsLib.RealizedVolatilityUpdate(dataId, publishTime, parsedData.rv);
+            } else if (parsedData.dataType == DataParser.OP) {
+                optionsFeeds[dataId] = parsedData.options;
+                emit EventsLib.OptionsUpdate(dataId, publishTime, parsedData.options);
+            } else if (parsedData.dataType == DataParser.PP) {
+                perpFeeds[dataId] = parsedData.perp;
+                emit EventsLib.PerpUpdate(dataId, publishTime, parsedData.perp);
+            } else {
+                revert ErrorsLib.InvalidDataFeedType();
+            }
         }
     }
 }

@@ -82,7 +82,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         bytes memory hyperlanePayload = abi.encodePacked(rootDigest);
 
         bytes memory updateData = generateUpdateData(
-            0, config.source_chain_id, config.source_emitter_address, hyperlanePayload, config.numSigners
+            1234, 0, config.source_chain_id, config.source_emitter_address, hyperlanePayload, config.numSigners
         );
 
         if (config.brokenSignature) {

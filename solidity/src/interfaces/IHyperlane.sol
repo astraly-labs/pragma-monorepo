@@ -11,7 +11,7 @@ struct Signature {
 
 struct HyMsg {
     uint8 version;
-    uint32 timestamp;
+    uint64 timestamp;
     uint32 nonce;
     uint16 emitterChainId;
     bytes32 emitterAddress;
