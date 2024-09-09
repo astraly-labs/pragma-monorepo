@@ -1,6 +1,8 @@
 pub mod hyperlane;
+pub mod pragma_wrapper;
 
 pub use hyperlane::*;
+pub use pragma_wrapper::*;
 
 use pragma_utils::conversions::starknet::felt_vec_to_vec_string;
 use starknet::{
@@ -47,5 +49,12 @@ impl HyperlaneCalls for StarknetRpc {
         };
         let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
         Ok(response)
+    }
+}
+
+#[async_trait::async_trait]
+impl PragmaWrapperCalls for StarknetRpc {
+    async fn get_data_feeds(&self, _pragma_wrapper_address: &Felt) -> anyhow::Result<Vec<String>> {
+        Ok(vec![])
     }
 }

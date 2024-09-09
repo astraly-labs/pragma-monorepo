@@ -13,15 +13,15 @@ use prometheus::Registry;
 use starknet::core::types::Felt;
 use storages::TheorosStorage;
 use tracing::Level;
+use url::Url;
 
 use pragma_utils::{
     services::{Service, ServiceGroup},
     tracing::init_tracing,
 };
 
-use rpc::{HyperlaneCalls, StarknetRpc};
+use rpc::StarknetRpc;
 use services::{ApiService, IndexerService, MetricsService};
-use url::Url;
 
 // TODO: Everything below here should be configurable, either via CLI or config file.
 // See: https://github.com/astraly-labs/pragma-monorepo/issues/17
@@ -35,14 +35,8 @@ const APIBARA_DNA_URL: &str = "https://sepolia.starknet.a5a.ch"; // TODO: Should
 const SERVER_HOST: &str = "0.0.0.0";
 const SERVER_PORT: u16 = 3000;
 
+const PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt = Felt::ZERO;
 const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt = Felt::ZERO;
-
-// TODO: Do we want to have data_feeds list? Does it cost more to have all feeds?
-lazy_static::lazy_static! {
-    pub static ref DATA_FEEDS: Vec<u16> = vec![
-        1, 2, 3, 4,
-    ];
-}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -56,18 +50,26 @@ pub struct AppState {
 async fn main() -> Result<()> {
     init_tracing(APP_NAME, LOG_LEVEL)?;
 
+    // New RPC client
     let rpc_url: Url = MADARA_RPC_URL.parse()?;
+    let rpc_client = StarknetRpc::new(rpc_url);
+
+    // New storage + initialization
+    let theoros_storage = TheorosStorage::from_current_state(
+        &rpc_client,
+        &PRAGMA_WRAPPER_CONTRACT_ADDRESS,
+        &HYPERLANE_CORE_CONTRACT_ADDRESS,
+    )
+    .await?;
+
+    // Theoros metrics
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
 
     let state = AppState {
-        rpc_client: Arc::new(StarknetRpc::new(rpc_url)),
-        storage: Arc::new(TheorosStorage::default()),
+        rpc_client: Arc::new(rpc_client),
+        storage: Arc::new(theoros_storage),
         metrics_registry: metrics_service.registry(),
     };
-
-    let initial_validators = state.rpc_client.get_announced_validators(&HYPERLANE_CORE_CONTRACT_ADDRESS).await?;
-    let _validators_locations =
-        state.rpc_client.get_announced_storage_locations(&HYPERLANE_CORE_CONTRACT_ADDRESS, &initial_validators).await?;
 
     let apibara_api_key = std::env::var("APIBARA_API_KEY").context("APIBARA_API_KEY not found.")?;
     let indexer_service = IndexerService::new(state.clone(), APIBARA_DNA_URL, apibara_api_key)?;
