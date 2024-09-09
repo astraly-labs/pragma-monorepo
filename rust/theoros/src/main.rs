@@ -3,7 +3,7 @@ mod extractors;
 mod handlers;
 mod rpc;
 mod services;
-mod storages;
+mod storage;
 mod types;
 
 use std::sync::Arc;
@@ -11,7 +11,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result};
 use prometheus::Registry;
 use starknet::core::types::Felt;
-use storages::TheorosStorage;
+use storage::TheorosStorage;
 use tracing::Level;
 use url::Url;
 
