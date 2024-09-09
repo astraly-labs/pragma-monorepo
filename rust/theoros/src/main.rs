@@ -55,12 +55,13 @@ async fn main() -> Result<()> {
     let rpc_url: Url = MADARA_RPC_URL.parse()?;
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
 
-    // TODO: state should contains the rpc_client to interact with a Madara node
     let state = AppState {
         rpc_client: Arc::new(StarknetRpc::new(rpc_url)),
         storage: Arc::new(TheorosStorage::default()),
         metrics_registry: metrics_service.registry(),
     };
+
+    // TODO: Initial RPC calls to populate the Storage
 
     let apibara_api_key = std::env::var("APIBARA_API_KEY").context("APIBARA_API_KEY not found.")?;
     let indexer_service = IndexerService::new(state.clone(), APIBARA_DNA_URL, apibara_api_key)?;
