@@ -1,3 +1,7 @@
+pub mod gcs;
+pub mod local;
+pub mod s3;
+
 // Source:
 // https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/3e90734310fb1ca9a607ce3d334015fa7aaa9208/rust/hyperlane-base/src/settings/checkpoint_syncer.rs#L14
 
@@ -10,15 +14,13 @@ use core::str::FromStr;
 use rusoto_core::Region;
 use ya_gcp::{AuthFlow, ServiceAccountAuth};
 
-use crate::types::{
-    gcs_storage::{GcsStorageClientBuilder, GCS_SERVICE_ACCOUNT_KEY, GCS_USER_SECRET},
+use crate::types::hyperlane::{
+    gcs::{GcsStorageClientBuilder, GCS_SERVICE_ACCOUNT_KEY, GCS_USER_SECRET},
     local::LocalStorage,
     s3::S3Storage,
 };
 
 use super::CheckpointWithMessageId;
-
-pub type StorageLocation = String;
 
 #[allow(unused)]
 /// A generic trait to read/write Checkpoints offchain
@@ -27,10 +29,10 @@ pub trait CheckpointFetcher: Debug + Send + Sync {
     /// Attempt to fetch the signed (checkpoint, messageId) tuple at this index
     async fn fetch(&self, index: u32) -> Result<Option<CheckpointWithMessageId>>;
     /// Return the announcement storage location for this syncer
-    fn announcement_location(&self) -> StorageLocation;
+    fn announcement_location(&self) -> String;
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub enum CheckpointFetcherConf {
     /// A local checkpoint syncer
     LocalStorage {

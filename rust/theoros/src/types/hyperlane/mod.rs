@@ -1,8 +1,7 @@
-pub mod checkpoints;
-pub mod dispatch_event;
-pub mod storages;
+pub mod checkpoint;
+pub mod checkpoint_fetchers;
+pub mod events;
 
-pub use checkpoints::*;
-pub use dispatch_event::*;
-#[allow(unused)]
-pub use storages::*;
+pub use checkpoint::*;
+pub use checkpoint_fetchers::*;
+pub use events::*;

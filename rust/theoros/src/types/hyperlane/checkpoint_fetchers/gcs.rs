@@ -6,7 +6,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 use ya_gcp::{storage::StorageClient, AuthFlow, ClientBuilder, ClientBuilderConfig};
 
-use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
+use crate::types::hyperlane::{CheckpointFetcher, CheckpointWithMessageId};
 
 #[allow(unused)]
 const ANNOUNCEMENT_KEY: &str = "gcsAnnouncementKey";
@@ -66,7 +66,7 @@ impl CheckpointFetcher for GcsStorageClient {
         Ok(Some(serde_json::from_slice(res.as_ref())?))
     }
 
-    fn announcement_location(&self) -> StorageLocation {
+    fn announcement_location(&self) -> String {
         format!("gs://{}/{}", &self.bucket, ANNOUNCEMENT_KEY)
     }
 }

@@ -14,7 +14,7 @@ use tokio::time::timeout;
 
 use pragma_utils::http::http_client_with_timeout;
 
-use crate::types::{CheckpointFetcher, CheckpointWithMessageId, StorageLocation};
+use crate::types::hyperlane::{CheckpointFetcher, CheckpointWithMessageId};
 
 /// The timeout for S3 requests. Rusoto doesn't offer timeout configuration
 /// out of the box, so S3 requests must be wrapped with a timeout.
@@ -112,7 +112,7 @@ impl CheckpointFetcher for S3Storage {
             .map_err(Into::into)
     }
 
-    fn announcement_location(&self) -> StorageLocation {
+    fn announcement_location(&self) -> String {
         match self.folder.as_deref() {
             None | Some("") => format!("s3://{}/{}", self.bucket, self.region.name()),
             Some(folder_str) => {

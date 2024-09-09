@@ -5299,6 +5299,7 @@ dependencies = [
  "envy",
  "futures-util",
  "hyper 0.14.30",
+ "lazy_static",
  "opentelemetry 0.24.0",
  "pragma-utils",
  "prometheus",
