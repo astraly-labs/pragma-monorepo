@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 use std::str::FromStr;
 
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context};
 use hex;
 use strum_macros::{Display, EnumString};
 
@@ -32,6 +32,7 @@ pub enum FeedType {
 
 impl TryFrom<u16> for FeedType {
     type Error = anyhow::Error;
+
     fn try_from(value: u16) -> anyhow::Result<Self> {
         match value {
             21325 => Ok(FeedType::SpotMedian),
@@ -47,7 +48,7 @@ impl TryFrom<u16> for FeedType {
 impl FromStr for Feed {
     type Err = anyhow::Error;
 
-    fn from_str(feed_id: &str) -> Result<Self, Self::Err> {
+    fn from_str(feed_id: &str) -> anyhow::Result<Self> {
         let feed_id = feed_id.strip_prefix("0x").unwrap_or(feed_id);
         let bytes = hex::decode(feed_id)?;
 
@@ -55,7 +56,7 @@ impl FromStr for Feed {
             // * 2 bytes for type
             // * 11 bytes for metadata
             // * 32 bytes for pair_id
-            return Err(anyhow!("Feed ID is too short"));
+            bail!("Feed ID is too short");
         }
 
         let feed_type = FeedType::try_from(u16::from_be_bytes([bytes[0], bytes[1]]))?;
@@ -69,7 +70,7 @@ impl FromStr for Feed {
             .to_string();
 
         if pair_id.is_empty() {
-            return Err(anyhow!("Empty pair ID"));
+            bail!("Empty pair ID");
         }
 
         Ok(Feed { asset_class: AssetClass::Crypto, feed_type, pair_id })
@@ -86,6 +87,7 @@ mod tests {
             "0x534D000000000000000000000000004254432F55534400000000000000000000000000000000000000000000000000";
         let result: Feed = feed_id.parse().unwrap();
 
+        assert_eq!(result.asset_class, AssetClass::Crypto);
         assert_eq!(result.feed_type, FeedType::SpotMedian);
         assert_eq!(result.pair_id, "BTC/USD");
     }
@@ -117,7 +119,7 @@ mod tests {
     #[test]
     fn test_feed_from_str_invalid_id() {
         let feed_id = "0x1234"; // Too short
-        let result: Result<Feed, _> = feed_id.parse();
+        let result: anyhow::Result<Feed> = feed_id.parse();
         assert!(result.is_err());
     }
 
