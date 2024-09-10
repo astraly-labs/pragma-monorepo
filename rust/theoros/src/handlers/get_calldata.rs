@@ -17,11 +17,11 @@ pub struct GetCalldataResponse {
 
 #[utoipa::path(
     get,
-    path = "/v1/calldata/{data_feed_id}",
+    path = "/v1/calldata/{feed_id}",
     responses(
         (
             status = 200,
-            description = "Constructs the calldata used to update the data feed id specified",
+            description = "Constructs the calldata used to update the feed id specified",
             body = [GetCalldataResponse]
         )
     ),
@@ -31,9 +31,9 @@ pub struct GetCalldataResponse {
 )]
 pub async fn get_calldata(
     State(_state): State<AppState>,
-    PathExtractor(data_feed_id): PathExtractor<String>,
+    PathExtractor(feed_id): PathExtractor<String>,
     Query(_params): Query<GetCalldataQuery>,
 ) -> Result<Json<GetCalldataResponse>, GetCalldataError> {
-    tracing::info!("Received get calldata request for feed: {data_feed_id}");
+    tracing::info!("Received get calldata request for feed: {feed_id}");
     Ok(Json(GetCalldataResponse::default()))
 }

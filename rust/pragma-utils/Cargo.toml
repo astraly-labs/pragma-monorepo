@@ -16,3 +16,4 @@ rusoto_core = { workspace = true }
 hex = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
+serde = { workspace = true, features = ["derive"] }

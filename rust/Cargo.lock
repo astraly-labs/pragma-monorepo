@@ -3565,6 +3565,7 @@ dependencies = [
  "async-trait",
  "hex",
  "rusoto_core",
+ "serde",
  "starknet 0.11.0",
  "strum",
  "strum_macros",

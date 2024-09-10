@@ -25,6 +25,16 @@ pub struct TheorosStorage {
 }
 
 impl TheorosStorage {
+    // TODO: remove this later, only used for now for tests
+    pub fn testing_state() -> Self {
+        let constants_data_feeds: HashSet<String> = HashSet::from([
+            "0x01534d4254432f555344".into(),     // BTC/USD
+            "0x01534d4554482f555344".into(),     // ETH/USD
+            "0x01534d454b55424f2f555344".into(), // EKUBO/USD
+        ]);
+        Self { data_feeds: constants_data_feeds, ..Default::default() }
+    }
+
     pub async fn from_rpc_state(
         rpc_client: &StarknetRpc,
         pragma_wrapper_address: &Felt,

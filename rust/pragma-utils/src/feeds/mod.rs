@@ -39,16 +39,18 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context};
 use hex;
+use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumString};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct Feed {
+    pub feed_id: String,
     pub asset_class: AssetClass,
     pub feed_type: FeedType,
     pub pair_id: String,
 }
 
-#[derive(Debug, PartialEq, Display, EnumString)]
+#[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize)]
 pub enum AssetClass {
     Crypto = 1,
 }
@@ -64,7 +66,7 @@ impl TryFrom<u8> for AssetClass {
     }
 }
 
-#[derive(Debug, PartialEq, Display, EnumString)]
+#[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize)]
 pub enum FeedType {
     #[strum(serialize = "Spot Median")]
     SpotMedian = 21325,
@@ -94,8 +96,8 @@ impl FromStr for Feed {
     type Err = anyhow::Error;
 
     fn from_str(feed_id: &str) -> anyhow::Result<Self> {
-        let feed_id = feed_id.strip_prefix("0x").unwrap_or(feed_id);
-        let mut bytes = hex::decode(feed_id)?;
+        let stripped_id = feed_id.strip_prefix("0x").unwrap_or(feed_id);
+        let mut bytes = hex::decode(stripped_id)?;
 
         if bytes.len() < 3 {
             bail!("Feed ID is too short");
@@ -120,7 +122,7 @@ impl FromStr for Feed {
             bail!("Empty pair ID");
         }
 
-        Ok(Feed { asset_class, feed_type, pair_id })
+        Ok(Feed { feed_id: feed_id.to_owned(), asset_class, feed_type, pair_id })
     }
 }
 
