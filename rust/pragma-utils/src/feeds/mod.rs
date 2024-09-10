@@ -46,8 +46,6 @@ pub struct Feed {
     pub pair_id: String,
 }
 
-/// TODO: At the moment, the asset class isn't present in the feed_id.
-/// We consider everything to be Crypto.
 #[derive(Debug, PartialEq, Display, EnumString)]
 pub enum AssetClass {
     Crypto = 1,
