@@ -7,6 +7,7 @@ edition = "2024_07"
 
 [dependencies]
 starknet.workspace = true
+openzeppelin_upgrades.workspace = true
 
 [tool]
 fmt.workspace = true
@@ -19,8 +20,7 @@ casm-add-pythonic-hints = true
 name = "pragma_dispatcher"
 
 [dev-dependencies]
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.30.0" }
-assert_macros = "2.8.2"
+snforge_std.workspace = true
 
 [scripts]
 test = "snforge test --max-n-steps 4294967295"
