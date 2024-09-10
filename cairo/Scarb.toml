@@ -14,7 +14,18 @@ repository = "https://github.com/astraly-labs/pragma-monorepo"
 
 [workspace.dependencies]
 starknet = "2.8.2"
+openzeppelin_access = "0.16.0"
 openzeppelin_upgrades = "0.16.0"
+openzeppelin_security = "0.16.0"
+openzeppelin_governance = "0.16.0"
+alexandria_data_structures = "0.1.0"
+alexandria_storage = "0.1.0"
+alexandria_bytes = "0.1.0"
+
+# Pragma Dispatcher crates
+pragma_feed_types = { path = "crates/pragma_feed_types" }
+pragma_feed_registry = { path = "crates/pragma_feed_registry" }
+pragma_dispatcher = { path = "crates/pragma_dispatcher" }
 
 # Test dependencies
 snforge_std = "0.30.0"

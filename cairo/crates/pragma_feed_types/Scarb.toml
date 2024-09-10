@@ -1,17 +1,11 @@
 [package]
-name = "pragma_dispatcher"
+name = "pragma_feed_types"
 version = "0.1.0"
 edition = "2024_07"
 
-# See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
-
 [dependencies]
 starknet.workspace = true
-openzeppelin_access.workspace = true
-openzeppelin_upgrades.workspace = true
-openzeppelin_security.workspace = true
-openzeppelin_governance.workspace = true
-alexandria_storage.workspace = true 
+alexandria_bytes.workspace = true
 
 [tool]
 fmt.workspace = true
@@ -21,7 +15,7 @@ casm = true
 casm-add-pythonic-hints = true
 
 [lib]
-name = "pragma_dispatcher"
+name = "pragma_feed_types"
 
 [dev-dependencies]
 snforge_std.workspace = true

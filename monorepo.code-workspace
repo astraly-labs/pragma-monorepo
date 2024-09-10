@@ -29,6 +29,18 @@
       "name": "===== CAIRO =====",
     },
     {
+      "path": "cairo/crates/pragma_dispatcher",
+      "name": "pragma_dispatcher",
+    },
+    {
+      "path": "cairo/crates/pragma_feed_registry",
+      "name": "pragma_feed_registry",
+    },
+    {
+      "path": "cairo/crates/pragma_feed_types",
+      "name": "pragma_feed_types",
+    },
+    {
       "path": "solidity",
       "name": "===== SOLIDITY =====",
     },

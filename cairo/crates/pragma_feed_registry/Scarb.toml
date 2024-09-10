@@ -9,6 +9,8 @@ edition = "2024_07"
 starknet.workspace = true
 openzeppelin_upgrades.workspace = true
 
+pragma_feed_types.workspace = true
+
 [tool]
 fmt.workspace = true
 
