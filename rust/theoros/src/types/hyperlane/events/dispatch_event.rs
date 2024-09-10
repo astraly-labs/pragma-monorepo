@@ -269,25 +269,40 @@ mod tests {
     }
 
     #[test]
-    fn test_dispatch_message_header_from_event_data() {
-        let header_data = vec![
-            create_field_element(1), // version
-            create_field_element(2), // nonce
-            create_field_element(3), // origin
-            create_field_element(4), // sender part 1
+    fn test_dispatch_event_from_event_data_no_updates() {
+        let event_data = vec![
+            create_field_element(1), // sender part 1
             create_field_element(0), // sender part 2
-            create_field_element(5), // destination
-            create_field_element(6), // recipient part 1
+            create_field_element(2), // destination_domain
+            create_field_element(3), // recipient part 1
             create_field_element(0), // recipient part 2
+            create_field_element(1), // version
+            create_field_element(4), // nonce
+            create_field_element(5), // origin
+            create_field_element(6), // sender part 1
+            create_field_element(0), // sender part 2
+            create_field_element(7), // destination
+            create_field_element(8), // recipient part 1
+            create_field_element(0), // recipient part 2
+            create_field_element(0), // nb_updated
         ];
 
-        let header = DispatchMessageHeader::from_starknet_event_data(header_data.into_iter()).unwrap();
+        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data.into_iter()).unwrap();
 
+        assert_eq!(dispatch_event.sender, U256::from(1_u32));
+        assert_eq!(dispatch_event.destination_domain, 2);
+        assert_eq!(dispatch_event.recipient_address, U256::from(3_u32));
+
+        let header = &dispatch_event.message.header;
         assert_eq!(header.version, 1);
-        assert_eq!(header.nonce, 2);
-        assert_eq!(header.origin, 3);
-        assert_eq!(header.sender, U256::from(4_u32));
-        assert_eq!(header.destination, 5);
-        assert_eq!(header.recipient, U256::from(6_u32));
+        assert_eq!(header.nonce, 4);
+        assert_eq!(header.origin, 5);
+        assert_eq!(header.sender, U256::from(6_u32));
+        assert_eq!(header.destination, 7);
+        assert_eq!(header.recipient, U256::from(8_u32));
+
+        let body = &dispatch_event.message.body;
+        assert_eq!(body.nb_updated, 0);
+        assert!(body.updates.is_empty());
     }
 }
