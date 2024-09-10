@@ -25,6 +25,10 @@
       "name": "pragma-feeds",
     },
     {
+      "path": "cairo",
+      "name": "===== CAIRO =====",
+    },
+    {
       "path": "solidity",
       "name": "===== SOLIDITY =====",
     },

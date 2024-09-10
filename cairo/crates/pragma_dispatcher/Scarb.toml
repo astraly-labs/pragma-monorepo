@@ -1,0 +1,27 @@
+[package]
+name = "pragma_dispatcher"
+version = "0.1.0"
+edition = "2024_07"
+
+# See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
+
+[dependencies]
+starknet.workspace = true
+
+[tool]
+fmt.workspace = true
+
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
+
+[lib]
+name = "pragma_dispatcher"
+
+[dev-dependencies]
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry.git", tag = "v0.30.0" }
+assert_macros = "2.8.2"
+
+[scripts]
+test = "snforge test --max-n-steps 4294967295"
+test-profiling = "snforge test --max-n-steps 4294967295 --build-profile"
