@@ -30,7 +30,7 @@
 //!
 //! Supported feed types include:
 //! - Spot Median (21325)
-//! - TWAP (21591)
+//! - Twap (21591)
 //! - Realized Volatility (21078)
 //! - Options (20304)
 //! - Perp (20560)
@@ -69,7 +69,7 @@ impl TryFrom<u8> for AssetClass {
 pub enum FeedType {
     #[strum(serialize = "Spot Median")]
     SpotMedian = 21325,
-    TWAP = 21591,
+    Twap = 21591,
     #[strum(serialize = "Realized Volatility")]
     RealizedVolatility = 21078,
     Options = 20304,
@@ -82,7 +82,7 @@ impl TryFrom<u16> for FeedType {
     fn try_from(value: u16) -> anyhow::Result<Self> {
         match value {
             21325 => Ok(FeedType::SpotMedian),
-            21591 => Ok(FeedType::TWAP),
+            21591 => Ok(FeedType::Twap),
             21078 => Ok(FeedType::RealizedVolatility),
             20304 => Ok(FeedType::Options),
             20560 => Ok(FeedType::Perp),
@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn test_feed_type_display() {
         assert_eq!(FeedType::SpotMedian.to_string(), "Spot Median");
-        assert_eq!(FeedType::TWAP.to_string(), "TWAP");
+        assert_eq!(FeedType::Twap.to_string(), "Twap");
         assert_eq!(FeedType::RealizedVolatility.to_string(), "Realized Volatility");
         assert_eq!(FeedType::Options.to_string(), "Options");
         assert_eq!(FeedType::Perp.to_string(), "Perp");
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn test_feed_type_from_u16() {
         assert_eq!(FeedType::try_from(21325).unwrap(), FeedType::SpotMedian);
-        assert_eq!(FeedType::try_from(21591).unwrap(), FeedType::TWAP);
+        assert_eq!(FeedType::try_from(21591).unwrap(), FeedType::Twap);
         assert_eq!(FeedType::try_from(21078).unwrap(), FeedType::RealizedVolatility);
         assert_eq!(FeedType::try_from(20304).unwrap(), FeedType::Options);
         assert_eq!(FeedType::try_from(20560).unwrap(), FeedType::Perp);
