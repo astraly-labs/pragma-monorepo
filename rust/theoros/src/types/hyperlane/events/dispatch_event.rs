@@ -36,13 +36,14 @@ pub struct DispatchEvent {
 //        - update (per data_feed) =>
 //            - felt => asset_class
 //            - felt => data_type (given it, we know update_size)
+//            [depending on the asset_class <=> data_type tuple, update below...]
+//            [for example for SpotMedian below]
 //            - felt => pair_id
 //            - felt => price
 //            - felt => volume
 //            - felt => decimals
 //            - felt => timestamp
 //            - felt => sources_aggregated
-//            - IF FUTURE: felt => expiration_timestamp
 impl FromStarknetEventData for DispatchEvent {
     fn from_starknet_event_data(data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         let mut data = data.into_iter();
