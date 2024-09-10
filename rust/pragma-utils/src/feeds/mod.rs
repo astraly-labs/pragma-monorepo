@@ -1,3 +1,37 @@
+//! This module provides functionality for parsing and representing Pragma data feeds.
+//!
+//! # Feed Encoding
+//!
+//! Feeds are encoded as hexadecimal strings with the following structure:
+//!
+//! ```text
+//! [ASSET_CLASS] [FEED_TYPE] [PAIR_ID]
+//! ```
+//!
+//! - `ASSET_CLASS`: 1 byte representing the asset class (e.g., 1 for Crypto)
+//! - `FEED_TYPE`: 2 bytes representing the type of feed (e.g., 534d for Spot Median)
+//! - `PAIR_ID`: Remaining bytes representing the trading pair (e.g., "BTC/USD")
+//!
+//! Example feed ID: `0x01534d4254432f555344`
+//!
+//! # Parsing
+//!
+//! Feeds can be parsed from hexadecimal strings (with or without a "0x" prefix) using the `FromStr` trait.
+//! The `Feed` struct represents a parsed feed, containing the asset class, feed type, and pair ID.
+//!
+//! # Asset Classes
+//!
+//! Currently, only the Crypto asset class is supported (represented by the value 1).
+//!
+//! # Feed Types
+//!
+//! Supported feed types include:
+//! - Spot Median (21325)
+//! - TWAP (21591)
+//! - Realized Volatility (21078)
+//! - Options (20304)
+//! - Perp (20560)
+//!
 use std::convert::TryFrom;
 use std::str::FromStr;
 
@@ -5,18 +39,29 @@ use anyhow::{anyhow, bail, Context};
 use hex;
 use strum_macros::{Display, EnumString};
 
-/// TODO: At the moment, the asset class isn't present in the feed_id.
-/// We consider everything to be Crypto.
-#[derive(Debug, PartialEq, Display, EnumString)]
-pub enum AssetClass {
-    Crypto,
-}
-
 #[derive(Debug, PartialEq)]
 pub struct Feed {
     pub asset_class: AssetClass,
     pub feed_type: FeedType,
     pub pair_id: String,
+}
+
+/// TODO: At the moment, the asset class isn't present in the feed_id.
+/// We consider everything to be Crypto.
+#[derive(Debug, PartialEq, Display, EnumString)]
+pub enum AssetClass {
+    Crypto = 1,
+}
+
+impl TryFrom<u8> for AssetClass {
+    type Error = anyhow::Error;
+
+    fn try_from(value: u8) -> anyhow::Result<Self> {
+        match value {
+            1 => Ok(AssetClass::Crypto),
+            _ => Err(anyhow!("Unknown asset class: {}", value)),
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Display, EnumString)]
@@ -52,20 +97,17 @@ impl FromStr for Feed {
         let feed_id = feed_id.strip_prefix("0x").unwrap_or(feed_id);
         let bytes = hex::decode(feed_id)?;
 
-        if bytes.len() < 45 {
-            // * 2 bytes for type
-            // * 11 bytes for metadata
-            // * 32 bytes for pair_id
+        if bytes.len() < 3 {
+            // 1 byte for asset class + 2 bytes for feed type
             bail!("Feed ID is too short");
         }
 
-        let feed_type = FeedType::try_from(u16::from_be_bytes([bytes[0], bytes[1]]))?;
+        let asset_class = AssetClass::try_from(bytes[0] as u8)?;
+        let feed_type = FeedType::try_from(u16::from_be_bytes([bytes[1], bytes[2]]))?;
 
-        // Skip metadata (11 bytes) and parse pair_id (32 bytes)
-        let pair_id_bytes = &bytes[13..45];
+        let pair_id_bytes = &bytes[3..];
         let pair_id = String::from_utf8(pair_id_bytes.to_vec())
             .context("Invalid UTF-8 sequence for pair_id")?
-            .trim_start_matches('\0')
             .trim_end_matches('\0')
             .to_string();
 
@@ -73,7 +115,7 @@ impl FromStr for Feed {
             bail!("Empty pair ID");
         }
 
-        Ok(Feed { asset_class: AssetClass::Crypto, feed_type, pair_id })
+        Ok(Feed { asset_class, feed_type, pair_id })
     }
 }
 
@@ -83,8 +125,7 @@ mod tests {
 
     #[test]
     fn test_feed_from_str() {
-        let feed_id =
-            "0x534D000000000000000000000000004254432F55534400000000000000000000000000000000000000000000000000";
+        let feed_id = "0x01534d4254432f555344";
         let result: Feed = feed_id.parse().unwrap();
 
         assert_eq!(result.asset_class, AssetClass::Crypto);
@@ -118,16 +159,24 @@ mod tests {
 
     #[test]
     fn test_feed_from_str_invalid_id() {
-        let feed_id = "0x1234"; // Too short
+        let feed_id = "0x12"; // Too short
         let result: anyhow::Result<Feed> = feed_id.parse();
         assert!(result.is_err());
     }
 
     #[test]
     fn test_feed_from_str_without_0x_prefix() {
-        let feed_id = "534D000000000000000000000000004254432F55534400000000000000000000000000000000000000000000000000";
+        let feed_id = "0x01534d4254432f555344";
         let result: Feed = feed_id.parse().unwrap();
+        assert_eq!(result.asset_class, AssetClass::Crypto);
         assert_eq!(result.feed_type, FeedType::SpotMedian);
         assert_eq!(result.pair_id, "BTC/USD");
+    }
+
+    #[test]
+    fn test_feed_from_str_invalid_asset_class() {
+        let feed_id = "0x02534d4254432f555344";
+        let result: anyhow::Result<Feed> = feed_id.parse();
+        assert!(result.is_err());
     }
 }
