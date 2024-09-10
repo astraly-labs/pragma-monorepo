@@ -9,7 +9,7 @@ use utoipauto::utoipauto;
 #[derive(OpenApi)]
 #[openapi(
     tags(
-        (name = "theoros", description = "Theoros - the Pragma Consultant")
+        (name = "theoros", description = "Theoros - The Pragma Consultant")
     )
 )]
 pub struct ApiDoc;

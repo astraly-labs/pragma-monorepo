@@ -1,8 +1,8 @@
-pub mod event_storage;
-pub mod validators_storage;
+pub mod event;
+pub mod validators;
 
-pub use event_storage::*;
-pub use validators_storage::*;
+pub use event::*;
+pub use validators::*;
 
 use std::collections::HashSet;
 
@@ -19,9 +19,9 @@ use crate::{
 ///   * a mapping of all the validators and their fetchers.
 #[derive(Default)]
 pub struct TheorosStorage {
-    pub data_feeds: HashSet<String>,
-    pub validators: ValidatorsStorage,
-    pub dispatch_events: EventStorage<DispatchEvent>,
+    data_feeds: HashSet<String>,
+    validators: ValidatorStorage,
+    dispatch_events: EventStorage<DispatchEvent>,
 }
 
 impl TheorosStorage {
@@ -40,5 +40,17 @@ impl TheorosStorage {
         let supported_data_feeds = rpc_client.get_data_feeds(pragma_wrapper_address).await?;
         theoros_storage.data_feeds = supported_data_feeds.into_iter().collect();
         Ok(theoros_storage)
+    }
+
+    pub fn data_feeds(&self) -> &HashSet<String> {
+        &self.data_feeds
+    }
+
+    pub fn validators(&self) -> &ValidatorStorage {
+        &self.validators
+    }
+
+    pub fn dispatch_events(&self) -> &EventStorage<DispatchEvent> {
+        &self.dispatch_events
     }
 }
