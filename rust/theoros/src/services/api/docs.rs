@@ -5,7 +5,7 @@ use serde_json::to_string_pretty;
 use utoipa::OpenApi;
 use utoipauto::utoipauto;
 
-#[utoipauto(paths = "./theoros/src, ./pragma-utils/src")]
+#[utoipauto(paths = "./theoros/src, ./pragma-feeds/src")]
 #[derive(OpenApi)]
 #[openapi(
     tags(

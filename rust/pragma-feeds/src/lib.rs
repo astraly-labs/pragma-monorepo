@@ -38,7 +38,6 @@ use std::convert::TryFrom;
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context};
-use hex;
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumString};
 

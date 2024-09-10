@@ -35,4 +35,5 @@ rusoto_core = { workspace = true }
 alloy = { workspace = true }
 lazy_static = { workspace = true }
 
-pragma-utils = { path = "../pragma-utils" }
+pragma-utils = { workspace = true }
+pragma-feeds = { workspace = true }

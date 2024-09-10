@@ -1,8 +1,9 @@
 use axum::extract::State;
 use axum::Json;
-use pragma_utils::feeds::Feed;
 use serde::{Deserialize, Serialize};
 use utoipa::{ToResponse, ToSchema};
+
+use pragma_feeds::Feed;
 
 use crate::errors::GetDataFeedsError;
 use crate::AppState;

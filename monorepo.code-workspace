@@ -21,6 +21,10 @@
       "name": "pragma-utils",
     },
     {
+      "path": "rust/pragma-feeds",
+      "name": "pragma-feeds",
+    },
+    {
       "path": "solidity",
       "name": "===== SOLIDITY =====",
     },
