@@ -8,12 +8,12 @@ name = "pragma"
 path = "src/main.rs"
 
 [dependencies]
+alloy = { workspace = true }
 anyhow = { workspace = true }
 bollard = { workspace = true }
 clap = { workspace = true }
 dirs = { workspace = true }
 env_logger = { workspace = true }
-alloy = { workspace = true }
 eyre = { workspace = true }
 futures-util = { workspace = true }
 git2 = { workspace = true }

@@ -3557,14 +3557,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "pragma-feeds"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "apibara-core",
+ "async-trait",
+ "hex",
+ "rusoto_core",
+ "serde",
+ "starknet 0.11.0",
+ "strum",
+ "strum_macros",
+ "tokio",
+ "tracing",
+ "tracing-axiom",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "pragma-utils"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "apibara-core",
  "async-trait",
+ "hex",
  "rusoto_core",
+ "serde",
  "starknet 0.11.0",
+ "strum",
+ "strum_macros",
  "tokio",
  "tracing",
  "tracing-axiom",
@@ -5301,6 +5324,7 @@ dependencies = [
  "hyper 0.14.30",
  "lazy_static",
  "opentelemetry 0.24.0",
+ "pragma-feeds",
  "pragma-utils",
  "prometheus",
  "rusoto_core",

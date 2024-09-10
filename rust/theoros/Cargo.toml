@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+alloy = { workspace = true }
 anyhow = { workspace = true }
 apibara-core = { workspace = true }
 apibara-sdk = { workspace = true }
@@ -16,8 +17,11 @@ dotenvy = { workspace = true }
 envy = { workspace = true }
 futures-util = { workspace = true }
 hyper = { workspace = true, features = ["server"] }
+lazy_static = { workspace = true }
 opentelemetry = { workspace = true }
 prometheus = { workspace = true }
+rusoto_core = { workspace = true }
+rusoto_s3 = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 starknet = { workspace = true }
@@ -30,9 +34,6 @@ utoipa = { workspace = true, features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipauto = { workspace = true }
 ya-gcp = { workspace = true }
-rusoto_s3 = { workspace = true }
-rusoto_core = { workspace = true }
-alloy = { workspace = true }
-lazy_static = { workspace = true }
 
-pragma-utils = { path = "../pragma-utils" }
+pragma-feeds = { workspace = true }
+pragma-utils = { workspace = true }

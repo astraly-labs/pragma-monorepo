@@ -1,6 +1,7 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use apibara_core::starknet::v1alpha2::FieldElement;
 use bigdecimal::BigDecimal;
+use pragma_feeds::{AssetClass, FeedType};
 use starknet::core::types::U256;
 
 use pragma_utils::conversions::apibara::FromFieldBytes;
@@ -33,13 +34,16 @@ pub struct DispatchEvent {
 //    b. body:
 //        - felt => nbr data_feeds updated
 //        - update (per data_feed) =>
+//            - felt => asset_class
 //            - felt => data_type (given it, we know update_size)
-//            - felt => ID
+//            [depending on the asset_class <=> data_type tuple, update below...]
+//            [for example for SpotMedian below]
+//            - felt => pair_id
 //            - felt => price
+//            - felt => volume
 //            - felt => decimals
 //            - felt => timestamp
 //            - felt => sources_aggregated
-//            - IF FUTURE: felt => expiration_timestamp
 impl FromStarknetEventData for DispatchEvent {
     fn from_starknet_event_data(data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         let mut data = data.into_iter();
@@ -134,60 +138,58 @@ impl FromStarknetEventData for DispatchMessageBody {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum UpdateType {
-    Spot = 0,
-    Future = 1,
-}
-
-impl UpdateType {
-    fn from_u8(value: u8) -> Result<Self> {
-        match value {
-            0 => Ok(UpdateType::Spot),
-            1 => Ok(UpdateType::Future),
-            _ => Err(anyhow!("Invalid update type: {}", value)),
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub enum DispatchUpdate {
-    Spot(SpotUpdate),
-    Future(FutureUpdate),
+    SpotMedian(SpotMedianUpdate),
 }
 
 impl FromStarknetEventData for DispatchUpdate {
     fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let data_type =
-            UpdateType::from_u8(u8::from_field_bytes(data.next().context("Missing data type")?.to_bytes()))?;
+        // Asset class is always Crypto for now.
+        #[allow(unused)]
+        let asset_class =
+            AssetClass::try_from(u8::from_field_bytes(data.next().context("Missing asset class")?.to_bytes()))?;
 
-        match data_type {
-            UpdateType::Spot => Ok(DispatchUpdate::Spot(SpotUpdate::from_starknet_event_data(&mut data)?)),
-            UpdateType::Future => Ok(DispatchUpdate::Future(FutureUpdate::from_starknet_event_data(&mut data)?)),
-        }
+        let feed_type =
+            FeedType::try_from(u16::from_field_bytes(data.next().context("Missing data type")?.to_bytes()))?;
+
+        let update = match feed_type {
+            FeedType::SpotMedian => DispatchUpdate::SpotMedian(SpotMedianUpdate::from_starknet_event_data(&mut data)?),
+            _ => unimplemented!("TODO: Implement the other updates"),
+        };
+
+        Ok(update)
     }
 }
 
 #[derive(Debug, Clone)]
-#[allow(unused)]
-pub struct SpotUpdate {
-    pub feed_id: U256,
-    pub price: BigDecimal,
-    pub decimals: u32,
+pub struct MetadataUpdate {
     pub timestamp: u64,
     pub num_sources_aggregated: u32,
+    pub decimals: u32,
 }
 
-impl FromStarknetEventData for SpotUpdate {
+#[derive(Debug, Clone)]
+#[allow(unused)]
+pub struct SpotMedianUpdate {
+    pub pair_id: U256,
+    pub metadata: MetadataUpdate,
+    pub price: BigDecimal,
+    pub volume: u128,
+}
+
+impl FromStarknetEventData for SpotMedianUpdate {
     fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let feed_id = U256::from_words(
-            u128::from_field_bytes(data.next().context("Missing feed ID part 1")?.to_bytes()),
-            u128::from_field_bytes(data.next().context("Missing feed ID part 2")?.to_bytes()),
+        let pair_id = U256::from_words(
+            u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes()),
+            u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes()),
         );
 
         let price_felt = data.next().context("Missing price")?;
+        let volume = u128::from_field_bytes(data.next().context("Missing volume")?.to_bytes());
         let decimals = u32::from_field_bytes(data.next().context("Missing decimals")?.to_bytes());
+
         let price =
             BigDecimal::from(u128::from_field_bytes(price_felt.to_bytes())) / BigDecimal::from(10u32.pow(decimals));
 
@@ -195,40 +197,7 @@ impl FromStarknetEventData for SpotUpdate {
         let num_sources_aggregated =
             u32::from_field_bytes(data.next().context("Missing sources aggregated")?.to_bytes());
 
-        Ok(Self { feed_id, price, decimals, timestamp, num_sources_aggregated })
-    }
-}
-
-#[derive(Debug, Clone)]
-#[allow(unused)]
-pub struct FutureUpdate {
-    pub feed_id: U256,
-    pub price: BigDecimal,
-    pub decimals: u32,
-    pub timestamp: u64,
-    pub expiration_timestamp: u64,
-    pub num_sources_aggregated: u32,
-}
-
-impl FromStarknetEventData for FutureUpdate {
-    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let feed_id = U256::from_words(
-            u128::from_field_bytes(data.next().context("Missing feed ID part 1")?.to_bytes()),
-            u128::from_field_bytes(data.next().context("Missing feed ID part 2")?.to_bytes()),
-        );
-
-        let price_felt = data.next().context("Missing price")?;
-        let decimals = u32::from_field_bytes(data.next().context("Missing decimals")?.to_bytes());
-        let price =
-            BigDecimal::from(u128::from_field_bytes(price_felt.to_bytes())) / BigDecimal::from(10u32.pow(decimals));
-
-        let timestamp = u64::from_field_bytes(data.next().context("Missing timestamp")?.to_bytes());
-        let num_sources_aggregated =
-            u32::from_field_bytes(data.next().context("Missing sources aggregated")?.to_bytes());
-        let expiration_timestamp =
-            u64::from_field_bytes(data.next().context("Missing expiration timestamp")?.to_bytes());
-
-        Ok(Self { feed_id, price, decimals, timestamp, expiration_timestamp, num_sources_aggregated })
+        Ok(Self { pair_id, metadata: MetadataUpdate { decimals, timestamp, num_sources_aggregated }, price, volume })
     }
 }
 
@@ -258,10 +227,12 @@ mod tests {
             create_field_element(8),          // recipient part 1
             create_field_element(0),          // recipient part 2
             create_field_element(1),          // nb_updated
-            create_field_element(0),          // update type (Spot)
-            create_field_element(9),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
+            create_field_element(1),          // asset class (Crypto)
+            create_field_element(21325),      // update type (SpotMedian)
+            create_field_element(9),          // pair_id part 1
+            create_field_element(0),          // pair_id part 2
             create_field_element(1000),       // price
+            create_field_element(0),          // volume
             create_field_element(2),          // decimals
             create_field_element(1234567890), // timestamp
             create_field_element(5),          // num_sources_aggregated
@@ -286,137 +257,52 @@ mod tests {
         assert_eq!(body.updates.len(), 1);
 
         match &body.updates[0] {
-            DispatchUpdate::Spot(update) => {
-                assert_eq!(update.feed_id, U256::from(9_u32));
+            DispatchUpdate::SpotMedian(update) => {
+                assert_eq!(update.pair_id, U256::from(9_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
-                assert_eq!(update.decimals, 2);
-                assert_eq!(update.timestamp, 1234567890);
-                assert_eq!(update.num_sources_aggregated, 5);
+                assert_eq!(update.volume, 0_u128);
+                assert_eq!(update.metadata.decimals, 2);
+                assert_eq!(update.metadata.timestamp, 1234567890);
+                assert_eq!(update.metadata.num_sources_aggregated, 5);
             }
-            DispatchUpdate::Future(_) => panic!("Expected Spot update"),
         }
     }
 
     #[test]
-    fn test_dispatch_message_header_from_event_data() {
-        let header_data = vec![
-            create_field_element(1), // version
-            create_field_element(2), // nonce
-            create_field_element(3), // origin
-            create_field_element(4), // sender part 1
+    fn test_dispatch_event_from_event_data_no_updates() {
+        let event_data = vec![
+            create_field_element(1), // sender part 1
             create_field_element(0), // sender part 2
-            create_field_element(5), // destination
-            create_field_element(6), // recipient part 1
+            create_field_element(2), // destination_domain
+            create_field_element(3), // recipient part 1
             create_field_element(0), // recipient part 2
+            create_field_element(1), // version
+            create_field_element(4), // nonce
+            create_field_element(5), // origin
+            create_field_element(6), // sender part 1
+            create_field_element(0), // sender part 2
+            create_field_element(7), // destination
+            create_field_element(8), // recipient part 1
+            create_field_element(0), // recipient part 2
+            create_field_element(0), // nb_updated
         ];
 
-        let header = DispatchMessageHeader::from_starknet_event_data(header_data.into_iter()).unwrap();
+        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data.into_iter()).unwrap();
 
+        assert_eq!(dispatch_event.sender, U256::from(1_u32));
+        assert_eq!(dispatch_event.destination_domain, 2);
+        assert_eq!(dispatch_event.recipient_address, U256::from(3_u32));
+
+        let header = &dispatch_event.message.header;
         assert_eq!(header.version, 1);
-        assert_eq!(header.nonce, 2);
-        assert_eq!(header.origin, 3);
-        assert_eq!(header.sender, U256::from(4_u32));
-        assert_eq!(header.destination, 5);
-        assert_eq!(header.recipient, U256::from(6_u32));
-    }
+        assert_eq!(header.nonce, 4);
+        assert_eq!(header.origin, 5);
+        assert_eq!(header.sender, U256::from(6_u32));
+        assert_eq!(header.destination, 7);
+        assert_eq!(header.recipient, U256::from(8_u32));
 
-    #[test]
-    fn test_dispatch_message_body_from_event_data() {
-        let body_data = vec![
-            create_field_element(2),          // nb_updated
-            create_field_element(0),          // update type (Spot)
-            create_field_element(1),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
-            create_field_element(1000),       // price
-            create_field_element(2),          // decimals
-            create_field_element(1234567890), // timestamp
-            create_field_element(5),          // num_sources_aggregated
-            create_field_element(1),          // update type (Future)
-            create_field_element(2),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
-            create_field_element(2000),       // price
-            create_field_element(3),          // decimals
-            create_field_element(1234567891), // timestamp
-            create_field_element(6),          // num_sources_aggregated
-            create_field_element(1234567892), // expiration_timestamp
-        ];
-
-        let body = DispatchMessageBody::from_starknet_event_data(body_data.into_iter()).unwrap();
-
-        assert_eq!(body.nb_updated, 2);
-        assert_eq!(body.updates.len(), 2);
-
-        match &body.updates[0] {
-            DispatchUpdate::Spot(update) => {
-                assert_eq!(update.feed_id, U256::from(1_u32));
-                assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
-                assert_eq!(update.decimals, 2);
-                assert_eq!(update.timestamp, 1234567890);
-                assert_eq!(update.num_sources_aggregated, 5);
-            }
-            DispatchUpdate::Future(_) => panic!("Expected Spot update"),
-        }
-
-        match &body.updates[1] {
-            DispatchUpdate::Future(update) => {
-                assert_eq!(update.feed_id, U256::from(2_u32));
-                assert_eq!(update.price, BigDecimal::from(2)); // 2000 / 10^3
-                assert_eq!(update.decimals, 3);
-                assert_eq!(update.timestamp, 1234567891);
-                assert_eq!(update.num_sources_aggregated, 6);
-                assert_eq!(update.expiration_timestamp, 1234567892);
-            }
-            DispatchUpdate::Spot(_) => panic!("Expected Future update"),
-        }
-    }
-
-    #[test]
-    fn test_update_from_event_data() {
-        let spot_data = vec![
-            create_field_element(0),          // update type (Spot)
-            create_field_element(1),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
-            create_field_element(1000),       // price
-            create_field_element(2),          // decimals
-            create_field_element(1234567890), // timestamp
-            create_field_element(5),          // num_sources_aggregated
-        ];
-
-        let future_data = vec![
-            create_field_element(1),          // update type (Future)
-            create_field_element(2),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
-            create_field_element(2000),       // price
-            create_field_element(3),          // decimals
-            create_field_element(1234567891), // timestamp
-            create_field_element(6),          // num_sources_aggregated
-            create_field_element(1234567892), // expiration_timestamp
-        ];
-
-        let spot_update = DispatchUpdate::from_starknet_event_data(spot_data.into_iter()).unwrap();
-        let future_update = DispatchUpdate::from_starknet_event_data(future_data.into_iter()).unwrap();
-
-        match spot_update {
-            DispatchUpdate::Spot(update) => {
-                assert_eq!(update.feed_id, U256::from(1_u32));
-                assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
-                assert_eq!(update.decimals, 2);
-                assert_eq!(update.timestamp, 1234567890);
-                assert_eq!(update.num_sources_aggregated, 5);
-            }
-            DispatchUpdate::Future(_) => panic!("Expected Spot update"),
-        }
-
-        match future_update {
-            DispatchUpdate::Future(update) => {
-                assert_eq!(update.feed_id, U256::from(2_u32));
-                assert_eq!(update.price, BigDecimal::from(2)); // 2000 / 10^3
-                assert_eq!(update.decimals, 3);
-                assert_eq!(update.timestamp, 1234567891);
-                assert_eq!(update.num_sources_aggregated, 6);
-                assert_eq!(update.expiration_timestamp, 1234567892);
-            }
-            DispatchUpdate::Spot(_) => panic!("Expected Future update"),
-        }
+        let body = &dispatch_event.message.body;
+        assert_eq!(body.nb_updated, 0);
+        assert!(body.updates.is_empty());
     }
 }

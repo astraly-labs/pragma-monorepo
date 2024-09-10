@@ -9,31 +9,7 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/v1/calldata": {
-      "get": {
-        "tags": [
-          "crate::handlers::get_data_feeds"
-        ],
-        "operationId": "get_data_feeds",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Get all the available data feeds",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GetDataFeedsResponse"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/calldata/{data_feed_id}": {
+    "/v1/calldata/{feed_id}": {
       "get": {
         "tags": [
           "crate::handlers::get_calldata"
@@ -42,13 +18,36 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Constructs the calldata used to update the data feed id specified",
+            "description": "Constructs the calldata used to update the feed id specified",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/GetCalldataResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/data_feeds": {
+      "get": {
+        "tags": [
+          "crate::handlers::get_data_feeds"
+        ],
+        "operationId": "get_data_feeds",
+        "responses": {
+          "200": {
+            "description": "Get all the available feed ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GetDataFeedsResponse"
                   }
                 }
               }
@@ -82,19 +81,30 @@
         }
       },
       "GetDataFeedsError": {
-        "type": "string",
-        "enum": [
-          "InternalServerError",
-          "DatabaseConnection"
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "ParsingFeedId"
+            ],
+            "properties": {
+              "ParsingFeedId": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "string",
+            "enum": [
+              "InternalServerError"
+            ]
+          }
         ]
-      },
-      "GetDataFeedsQuery": {
-        "type": "object"
       },
       "GetDataFeedsResponse": {
         "type": "array",
         "items": {
-          "type": "string"
+          "$ref": "#/components/schemas/Feed"
         }
       }
     },
@@ -124,7 +134,7 @@
             "schema": {
               "type": "array",
               "items": {
-                "type": "string"
+                "$ref": "#/components/schemas/Feed"
               }
             }
           }
@@ -135,7 +145,7 @@
   "tags": [
     {
       "name": "theoros",
-      "description": "Theoros - the Pragma Consultant"
+      "description": "Theoros - The Pragma Consultant"
     }
   ]
 }

@@ -35,7 +35,7 @@ const APIBARA_DNA_URL: &str = "https://sepolia.starknet.a5a.ch"; // TODO: Should
 const SERVER_HOST: &str = "0.0.0.0";
 const SERVER_PORT: u16 = 3000;
 
-const PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt = Felt::ZERO;
+const _PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt = Felt::ZERO;
 const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt = Felt::ZERO;
 
 #[derive(Clone)]
@@ -55,9 +55,11 @@ async fn main() -> Result<()> {
     let rpc_client = StarknetRpc::new(rpc_url);
 
     // New storage + initialization
-    let theoros_storage =
-        TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_WRAPPER_CONTRACT_ADDRESS, &HYPERLANE_CORE_CONTRACT_ADDRESS)
-            .await?;
+    // let theoros_storage =
+    //     TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_WRAPPER_CONTRACT_ADDRESS, &HYPERLANE_CORE_CONTRACT_ADDRESS)
+    //         .await?;
+    // TODO: remove & uncomment line above when we can fetch from pragma wrapper + hyperlane
+    let theoros_storage = TheorosStorage::testing_state();
 
     // Theoros metrics
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;

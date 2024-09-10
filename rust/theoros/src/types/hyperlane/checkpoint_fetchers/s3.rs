@@ -14,7 +14,7 @@ use tokio::time::timeout;
 
 use pragma_utils::http::http_client_with_timeout;
 
-use crate::types::hyperlane::{CheckpointFetcher, CheckpointWithMessageId};
+use crate::types::hyperlane::{CheckpointWithMessageId, FetchFromStorage};
 
 /// The timeout for S3 requests. Rusoto doesn't offer timeout configuration
 /// out of the box, so S3 requests must be wrapped with a timeout.
@@ -103,7 +103,7 @@ impl S3Storage {
 }
 
 #[async_trait]
-impl CheckpointFetcher for S3Storage {
+impl FetchFromStorage for S3Storage {
     async fn fetch(&self, index: u32) -> Result<Option<CheckpointWithMessageId>> {
         self.anonymously_read_from_bucket(S3Storage::checkpoint_key(index))
             .await?

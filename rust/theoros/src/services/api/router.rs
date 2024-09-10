@@ -29,7 +29,7 @@ async fn handler_404() -> impl IntoResponse {
 }
 
 fn calldata_routes(state: AppState) -> Router<AppState> {
-    Router::new().route("/calldata", get(get_calldata)).with_state(state)
+    Router::new().route("/calldata/:feed_id", get(get_calldata)).with_state(state)
 }
 
 fn data_feeds_routes(state: AppState) -> Router<AppState> {

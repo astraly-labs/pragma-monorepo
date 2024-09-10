@@ -21,6 +21,13 @@ impl FromFieldBytes for u8 {
     }
 }
 
+impl FromFieldBytes for u16 {
+    fn from_field_bytes(bytes: [u8; 32]) -> Self {
+        let last_two_bytes: [u8; 2] = bytes[30..32].try_into().expect("Slice with incorrect length");
+        u16::from_be_bytes(last_two_bytes)
+    }
+}
+
 impl FromFieldBytes for u32 {
     fn from_field_bytes(bytes: [u8; 32]) -> Self {
         let last_four_bytes: [u8; 4] = bytes[28..32].try_into().expect("Slice with incorrect length");
@@ -41,6 +48,7 @@ impl FromFieldBytes for u128 {
         u128::from_be_bytes(last_sixteen_bytes)
     }
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;

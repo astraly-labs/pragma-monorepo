@@ -25,7 +25,7 @@ use super::CheckpointWithMessageId;
 #[allow(unused)]
 /// A generic trait to read/write Checkpoints offchain
 #[async_trait]
-pub trait CheckpointFetcher: Debug + Send + Sync {
+pub trait FetchFromStorage: Debug + Send + Sync {
     /// Attempt to fetch the signed (checkpoint, messageId) tuple at this index
     async fn fetch(&self, index: u32) -> Result<Option<CheckpointWithMessageId>>;
     /// Return the announcement storage location for this syncer
@@ -33,13 +33,13 @@ pub trait CheckpointFetcher: Debug + Send + Sync {
 }
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
-pub enum CheckpointFetcherConf {
-    /// A local checkpoint syncer
+pub enum CheckpointStorage {
+    /// A local checkpoint storage
     LocalStorage {
         /// Path
         path: PathBuf,
     },
-    /// A checkpoint syncer on S3
+    /// A checkpoint storage on S3
     S3 {
         /// Bucket name
         bucket: String,
@@ -48,7 +48,7 @@ pub enum CheckpointFetcherConf {
         /// S3 Region
         region: Region,
     },
-    /// A checkpoint syncer on Google Cloud Storage
+    /// A checkpoint storage on Google Cloud
     Gcs {
         /// Bucket name
         bucket: String,
@@ -62,8 +62,8 @@ pub enum CheckpointFetcherConf {
     },
 }
 
-/// Builds a [CheckpointFetcherConf] from a storage location.
-impl FromStr for CheckpointFetcherConf {
+/// Builds a [CheckpointStorage] from a storage location.
+impl FromStr for CheckpointStorage {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self> {
@@ -83,13 +83,13 @@ impl FromStr for CheckpointFetcherConf {
                         "Error parsing storage location; could not split bucket, region and folder ({suffix})"
                     )),
                 }?;
-                Ok(CheckpointFetcherConf::S3 {
+                Ok(CheckpointStorage::S3 {
                     bucket: bucket.into(),
                     folder,
                     region: region.parse().context("Invalid region when parsing storage location")?,
                 })
             }
-            "file" => Ok(CheckpointFetcherConf::LocalStorage { path: suffix.into() }),
+            "file" => Ok(CheckpointStorage::LocalStorage { path: suffix.into() }),
             // for google cloud both options (with or without folder) from str are for anonymous access only
             // or env variables parsing
             "gs" => {
@@ -112,15 +112,15 @@ impl FromStr for CheckpointFetcherConf {
     }
 }
 
-impl CheckpointFetcherConf {
+impl CheckpointStorage {
     /// Turn conf info a Checkpoint Syncer
-    pub async fn build(&self) -> Result<Box<dyn CheckpointFetcher>> {
+    pub async fn build(&self) -> Result<Box<dyn FetchFromStorage>> {
         Ok(match self {
-            CheckpointFetcherConf::LocalStorage { path } => Box::new(LocalStorage::new(path.clone())?),
-            CheckpointFetcherConf::S3 { bucket, folder, region } => {
+            CheckpointStorage::LocalStorage { path } => Box::new(LocalStorage::new(path.clone())?),
+            CheckpointStorage::S3 { bucket, folder, region } => {
                 Box::new(S3Storage::new(bucket.clone(), folder.clone(), region.clone()))
             }
-            CheckpointFetcherConf::Gcs { bucket, folder, service_account_key, user_secrets } => {
+            CheckpointStorage::Gcs { bucket, folder, service_account_key, user_secrets } => {
                 let auth = if let Some(path) = service_account_key {
                     AuthFlow::ServiceAccount(ServiceAccountAuth::Path(path.into()))
                 } else if let Some(path) = user_secrets {

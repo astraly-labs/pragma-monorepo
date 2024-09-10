@@ -129,14 +129,14 @@ impl IndexerService {
                 tracing::info!("Received a DispatchEvent");
                 let dispatch_event = DispatchEvent::from_starknet_event_data(event.data.into_iter())
                     .context("Failed to parse DispatchEvent")?;
-                self.state.storage.dispatch_events.add(dispatch_event).await;
+                self.state.storage.dispatch_events().add(dispatch_event).await;
             }
             selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {
                 tracing::info!("Received a ValidatorAnnouncementEvent");
                 let validator_announcement_event =
                     ValidatorAnnouncementEvent::from_starknet_event_data(event.data.into_iter())
                         .context("Failed to parse ValidatorAnnouncementEvent")?;
-                self.state.storage.validators.add_from_announcement_event(validator_announcement_event).await?;
+                self.state.storage.validators().add_from_announcement_event(validator_announcement_event).await?;
             }
             _ => panic!("Unexpected event selector - should never happen."),
         }

@@ -5,11 +5,11 @@ use serde_json::to_string_pretty;
 use utoipa::OpenApi;
 use utoipauto::utoipauto;
 
-#[utoipauto(paths = "./theoros/src")]
+#[utoipauto(paths = "./theoros/src, ./pragma-feeds/src")]
 #[derive(OpenApi)]
 #[openapi(
     tags(
-        (name = "theoros", description = "Theoros - the Pragma Consultant")
+        (name = "theoros", description = "Theoros - The Pragma Consultant")
     )
 )]
 pub struct ApiDoc;
