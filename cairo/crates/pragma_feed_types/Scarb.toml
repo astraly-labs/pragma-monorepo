@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2024_07"
 
 [dependencies]
-starknet.workspace = true
 alexandria_bytes.workspace = true
+starknet.workspace = true
 
 [tool]
 fmt.workspace = true

@@ -11,7 +11,7 @@ openzeppelin_access.workspace = true
 openzeppelin_upgrades.workspace = true
 openzeppelin_security.workspace = true
 openzeppelin_governance.workspace = true
-alexandria_storage.workspace = true 
+alexandria_storage.workspace = true
 
 [tool]
 fmt.workspace = true
