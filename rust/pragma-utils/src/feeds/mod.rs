@@ -1,4 +1,4 @@
-//! This module provides functionality for parsing and representing financial data feeds.
+//! This module provides functionality for parsing and representing Pragma data feeds.
 //!
 //! # Feed Encoding
 //!
