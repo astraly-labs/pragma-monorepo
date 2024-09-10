@@ -5,9 +5,6 @@ use anyhow::{anyhow, Context};
 use hex;
 use strum_macros::{Display, EnumString};
 
-/// We consider everything to be Crypto related.
-pub const FEED_CATEGORY: &str = "Crypto";
-
 /// TODO: At the moment, the asset class isn't present in the feed_id.
 /// We consider everything to be Crypto.
 #[derive(Debug, PartialEq, Display, EnumString)]
@@ -17,6 +14,7 @@ pub enum AssetClass {
 
 #[derive(Debug, PartialEq)]
 pub struct Feed {
+    pub asset_class: AssetClass,
     pub feed_type: FeedType,
     pub pair_id: String,
 }
@@ -74,7 +72,7 @@ impl FromStr for Feed {
             return Err(anyhow!("Empty pair ID"));
         }
 
-        Ok(Feed { feed_type, pair_id })
+        Ok(Feed { asset_class: AssetClass::Crypto, feed_type, pair_id })
     }
 }
 
