@@ -1,4 +1,4 @@
-//! This module provides functionality for parsing and representing Pragma data feeds.
+//! This module provides functionality for parsing and representing financial data feeds.
 //!
 //! # Feed Encoding
 //!
@@ -10,9 +10,12 @@
 //!
 //! - `ASSET_CLASS`: 1 byte representing the asset class (e.g., 1 for Crypto)
 //! - `FEED_TYPE`: 2 bytes representing the type of feed (e.g., 534d for Spot Median)
-//! - `PAIR_ID`: Remaining bytes representing the trading pair (e.g., "BTC/USD")
+//! - `PAIR_ID`: 32 bytes representing the trading pair (e.g., "BTC/USD")
+//!   If the provided pair ID is shorter than 32 bytes, it will be right-padded with zeros.
 //!
-//! Example feed ID: `0x01534d4254432f555344`
+//! Total length: Always 35 bytes (70 hexadecimal characters)
+//!
+//! Example feed ID: `0x01534d4254432f555344` (will be padded to 35 bytes internally)
 //!
 //! # Parsing
 //!
@@ -31,7 +34,6 @@
 //! - Realized Volatility (21078)
 //! - Options (20304)
 //! - Perp (20560)
-//!
 use std::convert::TryFrom;
 use std::str::FromStr;
 
@@ -93,18 +95,23 @@ impl FromStr for Feed {
 
     fn from_str(feed_id: &str) -> anyhow::Result<Self> {
         let feed_id = feed_id.strip_prefix("0x").unwrap_or(feed_id);
-        let bytes = hex::decode(feed_id)?;
+        let mut bytes = hex::decode(feed_id)?;
 
         if bytes.len() < 3 {
-            // 1 byte for asset class + 2 bytes for feed type
             bail!("Feed ID is too short");
         }
 
-        let asset_class = AssetClass::try_from(bytes[0] as u8)?;
+        if bytes.len() > 35 {
+            bail!("Feed ID is too long");
+        }
+
+        // Pad the bytes to 35 if necessary
+        bytes.resize(35, 0);
+
+        let asset_class = AssetClass::try_from(bytes[0])?;
         let feed_type = FeedType::try_from(u16::from_be_bytes([bytes[1], bytes[2]]))?;
 
-        let pair_id_bytes = &bytes[3..];
-        let pair_id = String::from_utf8(pair_id_bytes.to_vec())
+        let pair_id = String::from_utf8(bytes[3..].to_vec())
             .context("Invalid UTF-8 sequence for pair_id")?
             .trim_end_matches('\0')
             .to_string();
