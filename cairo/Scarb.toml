@@ -27,6 +27,7 @@ alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.g
 pragma_feed_types = { path = "crates/pragma_feed_types" }
 pragma_feed_registry = { path = "crates/pragma_feed_registry" }
 pragma_dispatcher = { path = "crates/pragma_dispatcher" }
+pragma_maths = { path = "crates/pragma_maths" }
 
 # Test dependencies
 snforge_std = "0.30.0"

@@ -41,6 +41,10 @@
       "name": "pragma_feed_types",
     },
     {
+      "path": "cairo/crates/pragma_maths",
+      "name": "pragma_maths",
+    },
+    {
       "path": "solidity",
       "name": "===== SOLIDITY =====",
     },

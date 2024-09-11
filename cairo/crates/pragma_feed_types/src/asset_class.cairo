@@ -1,7 +1,3 @@
-use alexandria_bytes::{Bytes, BytesTrait};
-
-use pragma_feed_types::traits::IntoBytes;
-
 #[derive(Debug, Drop, Clone, Serde, PartialEq, Hash)]
 pub enum AssetClass {
     Crypto,
@@ -31,14 +27,5 @@ impl FeltTryIntoAssetClass of TryInto<felt252, AssetClass> {
     fn try_into(self: felt252) -> Option<AssetClass> {
         let value: AssetClassId = self.try_into()?;
         value.try_into()
-    }
-}
-
-impl AssetClassIntoBytes of IntoBytes<AssetClass> {
-    fn into_bytes(self: AssetClass) -> Bytes {
-        let asset_class_id: AssetClassId = self.into();
-        let mut bytes = BytesTrait::new_empty();
-        bytes.append_u16(asset_class_id);
-        bytes
     }
 }

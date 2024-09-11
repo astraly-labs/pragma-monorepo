@@ -1,7 +1,4 @@
-use alexandria_bytes::{Bytes, BytesTrait};
-use pragma_feed_types::traits::IntoBytes;
-
-use pragma_feed_types::types::{AssetClass, AssetClassId};
+use pragma_feed_types::{AssetClass, AssetClassId};
 
 #[test]
 fn test_asset_class_into_asset_class_id() {

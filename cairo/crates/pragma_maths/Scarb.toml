@@ -1,5 +1,5 @@
 [package]
-name = "pragma_feeds_registry"
+name = "pragma_maths"
 version = "0.1.0"
 edition = "2024_07"
 
@@ -7,10 +7,6 @@ edition = "2024_07"
 
 [dependencies]
 starknet.workspace = true
-openzeppelin_upgrades.workspace = true
-openzeppelin_access.workspace = true
-
-pragma_feed_types.workspace = true
 
 [tool]
 fmt.workspace = true
@@ -20,7 +16,7 @@ casm = true
 casm-add-pythonic-hints = true
 
 [lib]
-name = "pragma_feeds_registry"
+name = "pragma_maths"
 
 [dev-dependencies]
 snforge_std.workspace = true

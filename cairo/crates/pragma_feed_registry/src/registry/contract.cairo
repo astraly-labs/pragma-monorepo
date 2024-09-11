@@ -1,12 +1,11 @@
 #[starknet::contract]
 mod PragmaFeedRegistry {
-    use alexandria_bytes::BytesStore;
-
     use crate::registry::interface::IPragmaRegistry;
+
     use openzeppelin_access::ownable::OwnableComponent;
     use openzeppelin_upgrades::{UpgradeableComponent, interface::IUpgradeable};
 
-    use pragma_feed_types::types::{FeedId, Feed, feed::{FeedIdTryIntoFeed}};
+    use pragma_feed_types::{FeedId, Feed, feed::{FeedIdTryIntoFeed}};
     use starknet::storage::{
         StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait, MutableVecTrait
     };
@@ -29,8 +28,7 @@ mod PragmaFeedRegistry {
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
-        // All supported feed ids
-        feed_ids: Vec<FeedId>
+        feed_ids: Vec<FeedId> // All supported feed ids
     }
 
     #[event]
@@ -61,6 +59,7 @@ mod PragmaFeedRegistry {
             self.ownable.assert_only_owner();
 
             let new_feed_option: Option<Feed> = feed_id.clone().try_into();
+            // TODO(akhercha): errors module
             assert(new_feed_option.is_some(), 'INVALID FEED ID FORMAT');
 
             for i in 0
@@ -87,14 +86,14 @@ mod PragmaFeedRegistry {
             all_feeds
         }
 
-        fn feed_exists(self: @ContractState, searched_feed_id: FeedId) -> bool {
+        fn feed_exists(self: @ContractState, feed_id: FeedId) -> bool {
             let mut found = false;
             for i in 0
                 ..self
                     .feed_ids
                     .len() {
-                        let feed_id = self.feed_ids.at(i).read();
-                        if feed_id == searched_feed_id {
+                        let ith_feed_id = self.feed_ids.at(i).read();
+                        if feed_id == ith_feed_id {
                             found = true;
                             break;
                         }

@@ -1,7 +1,3 @@
-use alexandria_bytes::{Bytes, BytesTrait};
-
-use pragma_feed_types::traits::IntoBytes;
-
 #[derive(Debug, Drop, Clone, Serde, PartialEq, Hash)]
 pub enum FeedType {
     SpotMedian,
@@ -43,14 +39,5 @@ impl FeltTryIntoFeedType of TryInto<felt252, FeedType> {
     fn try_into(self: felt252) -> Option<FeedType> {
         let value: FeedTypeId = self.try_into()?;
         value.try_into()
-    }
-}
-
-impl FeedTypeIntoBytes of IntoBytes<FeedType> {
-    fn into_bytes(self: FeedType) -> Bytes {
-        let feed_type_id: FeedTypeId = self.into();
-        let mut bytes = BytesTrait::new_empty();
-        bytes.append_u16(feed_type_id);
-        bytes
     }
 }
