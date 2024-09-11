@@ -11,8 +11,6 @@ env:
 
 jobs:
   build:
-    env:
-      working-directory: ./cairo
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -22,22 +20,24 @@ jobs:
         uses: software-mansion/setup-scarb@v1
 
       - name: Build contracts
+        working-directory: cairo
         run: scarb build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         with:
           name: pragma-dispatcher-contracts-build
-          path: target/dev
+          path: cairo/target/dev
 
   tests-unit:
-    env:
-      working-directory: ./cairo
     runs-on: ubuntu-latest-16-cores
     steps:
       - uses: actions/checkout@v3
       - uses: foundry-rs/setup-snfoundry@v3
       - uses: software-mansion/setup-scarb@v1
       - run: scarb fmt --check
+        working-directory: cairo
       - run: scarb build
+        working-directory: cairo
       - run: scarb test
+        working-directory: cairo
