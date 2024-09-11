@@ -5,7 +5,7 @@ mod PragmaFeedRegistry {
     use openzeppelin_access::ownable::OwnableComponent;
     use openzeppelin_upgrades::{UpgradeableComponent, interface::IUpgradeable};
 
-    use pragma_feed_types::{FeedId, Feed, feed::{FeedIdTryIntoFeed}};
+    use pragma_feed_types::{FeedId, Feed, FeedTrait};
     use starknet::storage::{
         StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait, MutableVecTrait
     };
@@ -59,7 +59,7 @@ mod PragmaFeedRegistry {
         fn add_feed_id(ref self: ContractState, feed_id: FeedId) {
             self.ownable.assert_only_owner();
 
-            let new_feed_option: Option<Feed> = feed_id.clone().try_into();
+            let new_feed_option: Option<Feed> = FeedTrait::from_id(feed_id);
             // TODO(akhercha): errors module
             assert(new_feed_option.is_some(), 'INVALID FEED ID FORMAT');
 

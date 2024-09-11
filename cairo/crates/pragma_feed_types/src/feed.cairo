@@ -11,12 +11,33 @@ pub struct Feed {
     pub pair_id: PairId,
 }
 
-pub impl FeedIntoFeedId of Into<Feed, FeedId> {
-    fn into(self: Feed) -> FeedId {
-        let asset_class_id: AssetClassId = self.asset_class.into();
+pub trait FeedTrait {
+    fn from_id(id: FeedId) -> Option<Feed>;
+    fn id(self: @Feed) -> FeedId;
+}
+
+pub impl FeedTraitImpl of FeedTrait {
+    fn from_id(id: FeedId) -> Option<Feed> {
+        let asset_class_felt = id / 0x100000000000000000000000000000000_felt252;
+        let asset_class: AssetClass = asset_class_felt.try_into().unwrap();
+
+        // Extract feed_type (middle 64 bits)
+        let feed_type_felt = (id / 0x100000000000000_felt252) & 0xFFFFFFFFFFFFFFFF_felt252;
+        let feed_type: FeedType = feed_type_felt.try_into().unwrap();
+
+        // Extract pair_id (remaining bits, maximum 28 bytes)
+        let pair_id = id
+            - (asset_class_felt * 0x100000000000000000000000000000000_felt252)
+            - (feed_type_felt * 0x100000000000000_felt252);
+
+        Option::Some(Feed { asset_class, feed_type, pair_id })
+    }
+
+    fn id(self: @Feed) -> FeedId {
+        let asset_class_id: AssetClassId = self.asset_class.clone().into();
         let asset_class_felt: felt252 = asset_class_id.into();
 
-        let feed_type_id: FeedTypeId = self.feed_type.into();
+        let feed_type_id: FeedTypeId = self.feed_type.clone().into();
         let feed_type_felt: felt252 = feed_type_id.into();
 
         let shifted_asset_class = asset_class_felt
@@ -24,24 +45,6 @@ pub impl FeedIntoFeedId of Into<Feed, FeedId> {
         let shifted_feed_type = feed_type_felt * 0x100000000000000_felt252; // Shift left by 64 bits
 
         // Combine all fields
-        shifted_asset_class + shifted_feed_type + self.pair_id
-    }
-}
-
-pub impl FeedIdTryIntoFeed of TryInto<FeedId, Feed> {
-    fn try_into(self: felt252) -> Option<Feed> {
-        let asset_class_felt = self / 0x100000000000000000000000000000000_felt252;
-        let asset_class: AssetClass = asset_class_felt.try_into().unwrap();
-
-        // Extract feed_type (middle 64 bits)
-        let feed_type_felt = (self / 0x100000000000000_felt252) & 0xFFFFFFFFFFFFFFFF_felt252;
-        let feed_type: FeedType = feed_type_felt.try_into().unwrap();
-
-        // Extract pair_id (remaining bits, maximum 28 bytes)
-        let pair_id = self
-            - (asset_class_felt * 0x100000000000000000000000000000000_felt252)
-            - (feed_type_felt * 0x100000000000000_felt252);
-
-        Option::Some(Feed { asset_class, feed_type, pair_id })
+        shifted_asset_class + shifted_feed_type + *self.pair_id
     }
 }
