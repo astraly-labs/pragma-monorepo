@@ -6,7 +6,6 @@ edition = "2024_07"
 # See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 
 [dependencies]
-alexandria_storage.workspace = true
 openzeppelin_access.workspace = true
 openzeppelin_governance.workspace = true
 openzeppelin_security.workspace = true

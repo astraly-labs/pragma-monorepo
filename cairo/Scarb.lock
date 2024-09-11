@@ -2,11 +2,6 @@
 version = 1
 
 [[package]]
-name = "alexandria_storage"
-version = "0.3.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git#82088715b454d8cf197b9c54c31525ca0cb57a05"
-
-[[package]]
 name = "openzeppelin_access"
 version = "0.16.0"
 source = "registry+https://scarbs.xyz/"
@@ -54,7 +49,6 @@ checksum = "sha256:a494aeb5f1371db7f22e922196aa41d1d1698877a766a838350c0b6ffe49f
 name = "pragma_dispatcher"
 version = "0.1.0"
 dependencies = [
- "alexandria_storage",
  "openzeppelin_access",
  "openzeppelin_governance",
  "openzeppelin_security",
