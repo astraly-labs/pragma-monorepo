@@ -2,7 +2,7 @@ use alexandria_bytes::{Bytes, BytesTrait};
 
 use pragma_feed_types::traits::IntoBytes;
 
-#[derive(Drop, Clone, Serde, starknet::Store)]
+#[derive(Debug, Drop, Clone, Serde, PartialEq, starknet::Store)]
 pub enum FeedType {
     SpotMedian,
     Twap,

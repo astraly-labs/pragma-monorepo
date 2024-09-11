@@ -21,6 +21,7 @@ openzeppelin_governance = "0.16.0"
 alexandria_data_structures = "0.1.0"
 alexandria_storage = "0.1.0"
 alexandria_bytes = "0.1.0"
+alexandria_math = "0.1.0"
 
 # Pragma Dispatcher crates
 pragma_feed_types = { path = "crates/pragma_feed_types" }

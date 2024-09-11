@@ -115,6 +115,7 @@ name = "pragma_feed_types"
 version = "0.1.0"
 dependencies = [
  "alexandria_bytes",
+ "alexandria_math",
  "snforge_std",
 ]
 
