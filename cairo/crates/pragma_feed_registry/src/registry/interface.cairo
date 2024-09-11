@@ -1,7 +1,7 @@
 use pragma_feed_types::{FeedId};
 
 #[starknet::interface]
-pub trait IPragmaRegistry<TContractState> {
+pub trait IPragmaFeedRegistry<TContractState> {
     fn add_feed(ref self: TContractState, feed_id: FeedId);
     fn remove_feed(ref self: TContractState, feed_id: FeedId);
     fn get_all_feeds(self: @TContractState) -> Array<FeedId>;

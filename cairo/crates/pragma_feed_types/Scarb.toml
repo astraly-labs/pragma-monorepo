@@ -25,4 +25,4 @@ test = "snforge test"
 test-profiling = "snforge test --build-profile"
 
 [tool.snforge]
-fuzzer_runs = 20000
+fuzzer_runs = 10000

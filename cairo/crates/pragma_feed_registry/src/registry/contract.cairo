@@ -1,12 +1,9 @@
 #[starknet::contract]
 mod PragmaFeedRegistry {
     use crate::registry::errors;
-
-    use crate::registry::interface::IPragmaRegistry;
-
+    use crate::registry::interface::IPragmaFeedRegistry;
     use openzeppelin_access::ownable::OwnableComponent;
     use openzeppelin_upgrades::{UpgradeableComponent, interface::IUpgradeable};
-
     use pragma_feed_types::{FeedId, FeedTrait};
     use starknet::storage::StoragePathEntry;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess, Map};
@@ -80,7 +77,7 @@ mod PragmaFeedRegistry {
     // ================== PUBLIC ABI ==================
 
     #[abi(embed_v0)]
-    impl PragmaRegistry of IPragmaRegistry<ContractState> {
+    impl PragmaFeedRegistry of IPragmaFeedRegistry<ContractState> {
         /// Adds a feed_id into the Registry.
         ///
         /// Panics if:
