@@ -1,4 +1,4 @@
-use pragma_feed_types::{AssetClass, AssetClassId, FeedId, FeedType, Feed, FeedTrait};
+use pragma_feed_types::{AssetClass, FeedId, FeedType, Feed, FeedTrait};
 
 fn create_random_feed(asset_class: AssetClass, feed_type: FeedType, pair_id: felt252) -> Feed {
     Feed { asset_class, feed_type, pair_id }
