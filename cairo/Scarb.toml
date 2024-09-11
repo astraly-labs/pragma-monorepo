@@ -18,10 +18,10 @@ openzeppelin_access = "0.16.0"
 openzeppelin_upgrades = "0.16.0"
 openzeppelin_security = "0.16.0"
 openzeppelin_governance = "0.16.0"
-alexandria_data_structures = "0.1.0"
-alexandria_storage = "0.1.0"
-alexandria_bytes = "0.1.0"
-alexandria_math = "0.1.0"
+alexandria_data_structures = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
+alexandria_storage = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
+alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
+alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
 
 # Pragma Dispatcher crates
 pragma_feed_types = { path = "crates/pragma_feed_types" }
