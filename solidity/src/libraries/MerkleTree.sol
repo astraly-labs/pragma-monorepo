@@ -3,6 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "./UnsafeCalldataBytesLib.sol";
+import "forge-std/console2.sol";
 
 /**
  * @dev This library provides methods to construct and verify Merkle Tree proofs efficiently.
@@ -40,26 +41,24 @@ library MerkleTree {
     /// `proofOffset` parameters. It is the caller's responsibility to ensure
     /// that the `encodedProof` is long enough to contain the proof and the
     /// `proofOffset` is not out of bound.
-    function isProofValid(bytes calldata encodedProof, uint256 proofOffset, bytes32 root, bytes calldata leafData)
+    function isProofValid(bytes calldata encodedProof, uint256 offset, bytes32 root, bytes calldata leafData)
         internal
         pure
         returns (bool valid, uint256 endOffset)
     {
         unchecked {
             bytes32 currentDigest = MerkleTree.leafHash(leafData);
-
-            uint8 proofSize = UnsafeCalldataBytesLib.toUint8(encodedProof, proofOffset);
-            proofOffset += 1;
-
-            for (uint256 i = 0; i < proofSize; i++) {
+            uint256 proofOffset = 0;
+            uint16 proofSizeArray = UnsafeCalldataBytesLib.toUint16(encodedProof, proofOffset);
+            proofOffset +=2;
+            for (uint256 i = 0; i < proofSizeArray; i++) {
                 bytes32 siblingDigest = bytes32(UnsafeCalldataBytesLib.toBytes32(encodedProof, proofOffset));
-                proofOffset += 20;
+                proofOffset += 32;  // TO CHECK
 
                 currentDigest = MerkleTree.nodeHash(currentDigest, siblingDigest);
             }
-
             valid = currentDigest == root;
-            endOffset = proofOffset;
+            endOffset = offset + proofOffset;
         }
     }
 

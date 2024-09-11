@@ -33,11 +33,11 @@ interface IHyperlane {
     function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         external
         view
-        returns (HyMsg memory hyMsg, bool valid, string memory reason);
+        returns (HyMsg memory hyMsg, bool valid, string memory reason, uint256 index);
 
     /// @notice Parses an Hyperlane message.
     /// @dev message should be encoded following the specs (TODO: add docs)
     /// @param encodedHyMsg The encoded Hyperlane message.
     /// @return hyMsg The parsed Hyperlane message.
-    function parseHyMsg(bytes calldata encodedHyMsg) external pure returns (HyMsg memory hyMsg);
+    function parseHyMsg(bytes calldata encodedHyMsg) external pure returns (HyMsg memory hyMsg, uint256 index);
 }

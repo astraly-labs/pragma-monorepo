@@ -19,9 +19,9 @@ contract Hyperlane is IHyperlane {
     function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         public
         view
-        returns (HyMsg memory hyMsg, bool valid, string memory reason)
+        returns (HyMsg memory hyMsg, bool valid, string memory reason, uint256 index)
     {
-        hyMsg = parseHyMsg(encodedHyMsg);
+        (hyMsg, index) = parseHyMsg(encodedHyMsg);
         (valid, reason) = verifyHyMsg(hyMsg);
     }
 
@@ -65,8 +65,7 @@ contract Hyperlane is IHyperlane {
         return (true, "");
     }
 
-    function parseHyMsg(bytes calldata encodedHyMsg) public pure returns (HyMsg memory hyMsg) {
-        uint256 index = 0;
+    function parseHyMsg(bytes calldata encodedHyMsg) public pure returns (HyMsg memory hyMsg, uint256 index ) {
 
         hyMsg.version = encodedHyMsg.toUint8(index);
         index += 1;
@@ -76,15 +75,11 @@ contract Hyperlane is IHyperlane {
         uint256 signersLen = encodedHyMsg.toUint8(index);
         index += 1;
         hyMsg.signatures = new Signature[](signersLen);
-        console2.logUint(signersLen);
-
         for (uint256 i = 0; i < signersLen; i++) {
             hyMsg.signatures[i].validatorIndex = encodedHyMsg.toUint8(index);
             index += 1;
 
             hyMsg.signatures[i].r = encodedHyMsg.toBytes32(index);
-            console2.logBytes32(hyMsg.signatures[i].r );
-
             index += 32;
             hyMsg.signatures[i].s = encodedHyMsg.toBytes32(index);
             index += 32;

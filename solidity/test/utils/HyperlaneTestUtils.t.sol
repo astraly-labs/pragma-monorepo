@@ -93,30 +93,26 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         assertEq(hyMsg.payload, TEST_PAYLOAD);
         // parseAndVerifyHyMsg() returns an empty signatures array for gas savings since it's not used
         // after its been verified. parseHyMsg() returns the full signatures array.
-        hyMsg = hyperlane.parseHyMsg(updateData);
+        (hyMsg, ) = hyperlane.parseHyMsg(updateData);
         assertEq(hyMsg.signatures.length, TEST_NUM_SIGNERS);
     }
 
     function testGenerateUpdateDataWorks() public {
-        address[5] memory signaturesAddresses = [
-            address(0x00df5d84a8877f990291daacbc5596d2fbc31a0335),
-            address(0x00381ae5e8dd55310922fb238ac7564c7edc2269b3),
-            address(0x0075579685c2dc4e12932e38472b4540616dc8ed95),
-            address(0x00ed8df2d3a15d50f220f3d2bfeb263bf79d7a6c68),
-            address(0x002791ba31fadd992776502d750ba2ba0e08f78f01)
-        ];
-        address[] memory dynamicSignaturesAddresses = new address[](signaturesAddresses.length);
-        for (uint256 i = 0; i < signaturesAddresses.length; i++) {
-            dynamicSignaturesAddresses[i] = signaturesAddresses[i];
-        }
-        IHyperlane hyperlane =
-            IHyperlane(setUpHyperlane(uint8(dynamicSignaturesAddresses.length), dynamicSignaturesAddresses));
+        address[] memory validators = new address[](5);
+        validators[0] = address(0x00df5d84a8877f990291daacbc5596d2fbc31a0335);
+        validators[1] = address(0x00381ae5e8dd55310922fb238ac7564c7edc2269b3);
+        validators[2] = address(0x0075579685c2dc4e12932e38472b4540616dc8ed95);
+        validators[3] = address(0x00ed8df2d3a15d50f220f3d2bfeb263bf79d7a6c68);
+        validators[4] = address(0x002791ba31fadd992776502d750ba2ba0e08f78f01);
+
+        // Set up the Hyperlane contract with the provided validators
+        IHyperlane hyperlane = IHyperlane(setUpHyperlane(uint8(validators.length), validators));
 
         bytes memory updateData = generateUpdateData(
             TEST_NONCE, TEST_UPDATE_TIMESTAMP, TEST_EMITTER_CHAIN_ID, TEST_EMITTER_ADDR, TEST_PAYLOAD, TEST_NUM_SIGNERS
         );
 
-        (HyMsg memory hyMsg, bool valid, string memory reason) = hyperlane.parseAndVerifyHyMsg(updateData);
+        (HyMsg memory hyMsg, bool valid, string memory reason,) = hyperlane.parseAndVerifyHyMsg(updateData);
         assertHyMsgMatchesTestValues(hyMsg, valid, reason, updateData, hyperlane);
     }
 
@@ -146,7 +142,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         address[] memory addresses;
         IHyperlane hyperlane = IHyperlane(setUpHyperlane(0, addresses));
         // Parse the message
-        HyMsg memory parsedMsg = hyperlane.parseHyMsg(encodedHyMsg);
+       ( HyMsg memory parsedMsg,) = hyperlane.parseHyMsg(encodedHyMsg);
 
         // Verify parsed fields
         assertEq(parsedMsg.version, 1, "Incorrect version");

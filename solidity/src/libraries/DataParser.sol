@@ -4,10 +4,10 @@ pragma solidity ^0.8.0;
 import "./BytesLib.sol";
 
 struct Metadata {
+    bytes feed_id;
     uint64 timestamp;
     uint16 number_of_sources;
     uint8 decimals;
-    bytes32 pair_id;
 }
 
 struct SpotMedian {
@@ -61,7 +61,7 @@ struct Perp {
 }
 
 struct ParsedData {
-    uint16 dataType;
+    FeedType dataType;
     SpotMedian spot;
     TWAP twap;
     RealizedVolatility rv;
@@ -69,29 +69,32 @@ struct ParsedData {
     Perp perp;
 }
 
+enum FeedType {
+    SpotMedian, 
+    Twap,
+    RealizedVolatility, 
+    Options, 
+    Perpetuals
+}
+
 library DataParser {
     using BytesLib for bytes;
 
-    uint16 constant SM = 21325;
-    uint16 constant TW = 21591;
-    uint16 constant RV = 21078;
-    uint16 constant OP = 20304;
-    uint16 constant PP = 20560;
-
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
-        uint16 dataType = data.toUint16(0);
+        uint16 rawDataType = data.toUint16(0);
+        FeedType dataType = FeedType(rawDataType);
 
         ParsedData memory parsedData;
         parsedData.dataType = dataType;
-        if (dataType == SM) {
+        if (dataType == FeedType.SpotMedian) {
             parsedData.spot = parseSpotData(data);
-        } else if (dataType == TW) {
+        } else if (dataType == FeedType.Twap) {
             parsedData.twap = parseTWAPData(data);
-        } else if (dataType == RV) {
+        } else if (dataType == FeedType.RealizedVolatility) {
             parsedData.rv = parseRealizedVolatilityData(data);
-        } else if (dataType == OP) {
+        } else if (dataType == FeedType.Options) {
             parsedData.options = parseOptionsData(data);
-        } else if (dataType == PP) {
+        } else if (dataType == FeedType.Perpetuals) {
             parsedData.perp = parsePerpData(data);
         } else {
             revert("Unknown data type");
@@ -103,6 +106,11 @@ library DataParser {
     function parseMetadata(bytes memory data, uint256 startIndex) internal pure returns (Metadata memory, uint256) {
         Metadata memory metadata;
         uint256 index = startIndex;
+        uint16 feed_length = 35;
+
+        metadata.feed_id = bytes(data.slice(index,feed_length));
+        index += feed_length;
+
 
         metadata.timestamp = data.toUint64(index);
         index += 8;
@@ -112,9 +120,6 @@ library DataParser {
 
         metadata.decimals = uint8(data.toUint8(index));
         index += 1;
-
-        metadata.pair_id = bytes32(data.toUint256(index));
-        index += 32;
 
         return (metadata, index);
     }
