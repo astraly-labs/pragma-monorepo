@@ -50,10 +50,10 @@ library MerkleTree {
             bytes32 currentDigest = MerkleTree.leafHash(leafData);
             uint256 proofOffset = 0;
             uint16 proofSizeArray = UnsafeCalldataBytesLib.toUint16(encodedProof, proofOffset);
-            proofOffset +=2;
+            proofOffset += 2;
             for (uint256 i = 0; i < proofSizeArray; i++) {
                 bytes32 siblingDigest = bytes32(UnsafeCalldataBytesLib.toBytes32(encodedProof, proofOffset));
-                proofOffset += 32;  // TO CHECK
+                proofOffset += 32; // TO CHECK
 
                 currentDigest = MerkleTree.nodeHash(currentDigest, siblingDigest);
             }

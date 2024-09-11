@@ -41,21 +41,21 @@ contract PragmaDecoderHarness is PragmaDecoder {
         return perpFeeds[dataId];
     }
 
-    function _isProofValid(
-        bytes calldata encodedProof,
-        uint256 offset,
-        bytes32 root,
-        bytes calldata leafData
-    ) internal virtual override returns (bool valid, uint256 endOffset) {
+    function _isProofValid(bytes calldata encodedProof, uint256 offset, bytes32 root, bytes calldata leafData)
+        internal
+        virtual
+        override
+        returns (bool valid, uint256 endOffset)
+    {
         // valid set to true for testing
-       unchecked {
+        unchecked {
             bytes32 currentDigest = MerkleTree.leafHash(leafData);
             uint256 proofOffset = 0;
             uint16 proofSizeArray = UnsafeCalldataBytesLib.toUint16(encodedProof, proofOffset);
-            proofOffset +=2;
+            proofOffset += 2;
             for (uint256 i = 0; i < proofSizeArray; i++) {
                 bytes32 siblingDigest = bytes32(UnsafeCalldataBytesLib.toBytes32(encodedProof, proofOffset));
-                proofOffset += 32;  // TO CHECK
+                proofOffset += 32; // TO CHECK
 
                 currentDigest = MerkleTree.nodeHash(currentDigest, siblingDigest);
             }
@@ -81,13 +81,11 @@ contract PragmaDecoderTest is Test {
     function setUp() public {
         // Default setup with a specific data type, e.g., FeedType.SpotMedian
         _setUp(FeedType.SpotMedian, false);
-         
     }
 
     function _setUp(FeedType dataType, bool is_multiple) public {
         address[][] memory validatorSets = new address[][](5);
-        if (!is_multiple){
-     
+        if (!is_multiple) {
             // SPOT MEDIAN
             validatorSets[0] = new address[](5);
             validatorSets[0][0] = address(0x00168068bae701a75eacce4c41ddbe379289e8f8ae);
@@ -96,7 +94,7 @@ contract PragmaDecoderTest is Test {
             validatorSets[0][3] = address(0x0006bfa6bb0a40fabc6d56b376011ae985bd1eda41);
             validatorSets[0][4] = address(0x007963989f4fefaecba30c8edce53dd47cedb487c2);
 
-        // TWAP
+            // TWAP
 
             validatorSets[1] = new address[](5);
             validatorSets[1][0] = address(0x005472c2afb8c5d5bdedd6fb15538aba4e5e954b68);
@@ -104,7 +102,7 @@ contract PragmaDecoderTest is Test {
             validatorSets[1][2] = address(0x00e04aa374e71c6b42009660ca18d64d48f1b49567);
             validatorSets[1][3] = address(0x0093eeea4ec6424ca2f0fd2d5473a5b109b36e8aba);
             validatorSets[1][4] = address(0x00d80848530176c5ec4d389d0a4a31c48710a51a11);
-            
+
             // Realized volatility
 
             validatorSets[2] = new address[](5);
@@ -112,7 +110,7 @@ contract PragmaDecoderTest is Test {
             validatorSets[2][1] = address(0x0075c554efa4c4061f5319cce671342c3a5ee7ca4f);
             validatorSets[2][2] = address(0x00ac532f8758c2562be11476fea2a0c5a03e49ed1c);
             validatorSets[2][3] = address(0x00b4902be8b8e9a3b2c1a2dda4b503caa6669935ec);
-            validatorSets[2][4] = address(0x00b472cd1688acb23bbe561353ad0a7d6be287b4f8);                       
+            validatorSets[2][4] = address(0x00b472cd1688acb23bbe561353ad0a7d6be287b4f8);
             // Options
 
             validatorSets[3] = new address[](5);
@@ -130,8 +128,8 @@ contract PragmaDecoderTest is Test {
             validatorSets[4][2] = address(0x003dbecdde82fd8c8823daf0841bd1e75342588a41);
             validatorSets[4][3] = address(0x004f437c9e4c5cbbe927945838601b8277d68e69e6);
             validatorSets[4][4] = address(0x00fa73934abc5b756599d973d2906b2db58f506284);
-}
-   uint8 validatorSetIndex;
+        }
+        uint8 validatorSetIndex;
         if (dataType == FeedType.SpotMedian) {
             validatorSetIndex = 0;
         } else if (dataType == FeedType.Twap) {
@@ -162,12 +160,15 @@ contract PragmaDecoderTest is Test {
     function testUpdateDataInfoFromUpdateSpotMedian() public {
         bool is_multiple = false;
         _setUp(FeedType.SpotMedian, is_multiple);
-         bytes32 feedId = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(0),  //SPOT
-            bytes32("ETH/USD")
-        ));
-        bytes memory encodedUpdate = createEncodedUpdate(FeedType.SpotMedian, feedId,is_multiple);
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(0), //SPOT
+                bytes32("ETH/USD")
+            )
+        );
+        bytes memory encodedUpdate = createEncodedUpdate(FeedType.SpotMedian, feedId, is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
@@ -187,22 +188,25 @@ contract PragmaDecoderTest is Test {
     function testUpdateDataInfoFromUpdateTWAP() public {
         bool is_multiple = false;
         _setUp(FeedType.Twap, is_multiple);
-        bytes32 feedId = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(1),  //TWAP
-            bytes32("BTC/USD")
-        ));
-        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Twap,feedId ,is_multiple);
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(1), //TWAP
+                bytes32("BTC/USD")
+            )
+        );
+        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Twap, feedId, is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
-        
+
         TWAP memory twap = pragmaDecoder.exposed_twapFeeds(feedId);
 
         assertEq(twap.metadata.timestamp, block.timestamp, "Timestamp should match");
         assertEq(twap.metadata.number_of_sources, 5, "Number of sources should be 5");
         assertEq(twap.metadata.decimals, 8, "Decimals should be 8");
-        assertEq(twap.metadata.feed_id,feedId, "Feed ID should match");
+        assertEq(twap.metadata.feed_id, feedId, "Feed ID should match");
         assertEq(twap.twap_price, 30000 * 1e8, "TWAP price should match");
         assertEq(twap.time_period, 3600, "Time period should match");
         assertEq(twap.start_price, 29000 * 1e8, "Start price should match");
@@ -215,13 +219,16 @@ contract PragmaDecoderTest is Test {
 
     function testUpdateDataInfoFromUpdateRealizedVolatility() public {
         bool is_multiple = false;
-        _setUp(FeedType.RealizedVolatility,is_multiple);
-        bytes32 feedId = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(2),  //RV
-            bytes32("ETH/USD")
-        ));        
-        bytes memory encodedUpdate = createEncodedUpdate(FeedType.RealizedVolatility, feedId,is_multiple);
+        _setUp(FeedType.RealizedVolatility, is_multiple);
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(2), //RV
+                bytes32("ETH/USD")
+            )
+        );
+        bytes memory encodedUpdate = createEncodedUpdate(FeedType.RealizedVolatility, feedId, is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
         RealizedVolatility memory rv = pragmaDecoder.exposed_rvFeeds(feedId);
 
@@ -242,14 +249,17 @@ contract PragmaDecoderTest is Test {
     }
 
     function testUpdateDataInfoFromUpdateOptions() public {
-        bool is_multiple=false;
-        _setUp(FeedType.Options,is_multiple);
-        bytes32 feedId = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(3),  //Options
-            bytes32("ETH/USD")
-        ));  
-        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Options, feedId,is_multiple);
+        bool is_multiple = false;
+        _setUp(FeedType.Options, is_multiple);
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(3), //Options
+                bytes32("ETH/USD")
+            )
+        );
+        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Options, feedId, is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
@@ -277,13 +287,16 @@ contract PragmaDecoderTest is Test {
 
     function testUpdateDataInfoFromUpdatePerp() public {
         bool is_multiple = false;
-        _setUp(FeedType.Perpetuals,is_multiple);
-        bytes32 feedId = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(4),  //Perp
-            bytes32("ETH/USD")
-        ));  
-        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Perpetuals, feedId,is_multiple);
+        _setUp(FeedType.Perpetuals, is_multiple);
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(4), //Perp
+                bytes32("ETH/USD")
+            )
+        );
+        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Perpetuals, feedId, is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
@@ -301,10 +314,12 @@ contract PragmaDecoderTest is Test {
         assertEq(pragmaDecoder.latestPublishTimes(feedId), block.timestamp, "Latest publish time should be updated");
     }
 
-
     // Helper functions to create encoded updates
-    function createEncodedUpdate(FeedType dataType, bytes32 feedId, bool is_multiple) internal view returns (bytes memory) {
-
+    function createEncodedUpdate(FeedType dataType, bytes32 feedId, bool is_multiple)
+        internal
+        view
+        returns (bytes memory)
+    {
         bytes memory updateData = abi.encodePacked(
             feedId,
             uint64(block.timestamp), // timestamp
@@ -364,12 +379,11 @@ contract PragmaDecoderTest is Test {
         }
 
         bytes memory proof = abi.encodePacked(
-            uint16(3),  // proof length in array
+            uint16(3), // proof length in array
             bytes32(0x1012312123213123213231231233421341341234134142341123331123123123),
             bytes32(0x1012312312312312312311231233434342421414123413413123331123123123),
             bytes32(0x1012312312312312312312323324234234234234324234212123331123123123)
         );
-
 
         bytes memory hyMsgPayload = abi.encodePacked(
             bytes32(uint256(1)), // checkpointRoot
@@ -378,7 +392,7 @@ contract PragmaDecoderTest is Test {
             uint16(proof.length),
             proof,
             updateData,
-            feedId,  // dataId
+            feedId, // dataId
             uint64(block.timestamp) // publishTime
         );
 
@@ -393,12 +407,10 @@ contract PragmaDecoderTest is Test {
         );
     }
 
-
     function extractUpdateData(bytes memory encodedUpdate) internal pure returns (bytes memory) {
         // Skip the header (22 bytes) and extract the update data
         return encodedUpdate.slice(22, encodedUpdate.length - 22);
     }
-
 
     function createHyperlaneMessage(bytes memory payload, bool is_multiple) internal view returns (bytes memory) {
         bytes memory signatures = abi.encodePacked(
@@ -432,7 +444,6 @@ contract PragmaDecoderTest is Test {
             bytes32(uint256(0x1234)), // emitterAddress
             payload
         );
-
 
         bytes32 hash = keccak256(abi.encodePacked(keccak256(body)));
 

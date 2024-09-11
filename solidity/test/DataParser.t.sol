@@ -6,11 +6,14 @@ import "../src/libraries/DataParser.sol";
 
 contract DataParserTest is Test {
     function testParseSpotMedianEntry() public pure {
-        bytes32 feed_id = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(0),  //SPOT
-            bytes32("BTC/USD")
-        ));
+        bytes32 feed_id = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(0), //SPOT
+                bytes32("BTC/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
             feed_id,
             uint64(1625097600), // timestamp
@@ -32,11 +35,14 @@ contract DataParserTest is Test {
     }
 
     function testParseTWAPEntry() public pure {
-        bytes32 feed_id = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(1),  //TWAP
-            bytes32("ETH/USD")
-        ));
+        bytes32 feed_id = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(1), //TWAP
+                bytes32("ETH/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
             feed_id,
             uint64(1625097600), // timestamp
@@ -52,7 +58,7 @@ contract DataParserTest is Test {
 
         ParsedData memory result = DataParser.parse(data);
 
-        assert (result.dataType == FeedType.Twap);
+        assert(result.dataType == FeedType.Twap);
         assertEq(result.twap.metadata.timestamp, 1625097600);
         assertEq(result.twap.metadata.number_of_sources, 3);
         assertEq(result.twap.metadata.decimals, 8);
@@ -66,11 +72,14 @@ contract DataParserTest is Test {
     }
 
     function testParseRealizedVolatilityEntry() public pure {
-        bytes32 feed_id = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(2),  //RV
-            bytes32("BTC/USD")
-        ));
+        bytes32 feed_id = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(2), //RV
+                bytes32("BTC/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
             feed_id,
             uint64(1625097600), // timestamp
@@ -87,7 +96,7 @@ contract DataParserTest is Test {
 
         ParsedData memory result = DataParser.parse(data);
 
-        assert(result.dataType ==  FeedType.RealizedVolatility);
+        assert(result.dataType == FeedType.RealizedVolatility);
         assertEq(result.rv.metadata.timestamp, 1625097600);
         assertEq(result.rv.metadata.number_of_sources, 3);
         assertEq(result.rv.metadata.decimals, 8);
@@ -102,14 +111,16 @@ contract DataParserTest is Test {
     }
 
     function testParseOptionsEntry() public pure {
-
-        bytes32 feed_id = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(3),  //Option
-            bytes32("ETH/USD")
-        ));
+        bytes32 feed_id = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(3), //Option
+                bytes32("ETH/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
-           feed_id,
+            feed_id,
             uint64(1625097600), // timestamp
             uint16(3),
             uint8(8),
@@ -128,7 +139,7 @@ contract DataParserTest is Test {
 
         ParsedData memory result = DataParser.parse(data);
 
-        assert(result.dataType ==  FeedType.Options);
+        assert(result.dataType == FeedType.Options);
         assertEq(result.options.metadata.timestamp, 1625097600);
         assertEq(result.options.metadata.number_of_sources, 3);
         assertEq(result.options.metadata.decimals, 8);
@@ -147,12 +158,14 @@ contract DataParserTest is Test {
     }
 
     function testParsePerpEntry() public pure {
-
-        bytes32 feed_id = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(4),  //PERP
-            bytes32("BTC/USD")
-        ));
+        bytes32 feed_id = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(4), //PERP
+                bytes32("BTC/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
             feed_id,
             uint64(1625097600), // timestamp
@@ -166,7 +179,7 @@ contract DataParserTest is Test {
 
         ParsedData memory result = DataParser.parse(data);
 
-        assert(result.dataType ==  FeedType.Perpetuals);
+        assert(result.dataType == FeedType.Perpetuals);
         assertEq(result.perp.metadata.timestamp, 1625097600);
         assertEq(result.perp.metadata.number_of_sources, 3);
         assertEq(result.perp.metadata.decimals, 8);
@@ -178,12 +191,15 @@ contract DataParserTest is Test {
     }
 
     function testParseUnknownDataType() public {
-         bytes32 feed_id = bytes32(abi.encodePacked(
-            uint16(0), ///CRYPTO
-            uint16(10),  //Unkown data type
-            bytes32("BTC/USD")
-        ));
-         bytes memory data = abi.encodePacked(
+        bytes32 feed_id = bytes32(
+            abi.encodePacked(
+                uint16(0),
+                ///CRYPTO
+                uint16(10), //Unkown data type
+                bytes32("BTC/USD")
+            )
+        );
+        bytes memory data = abi.encodePacked(
             feed_id,
             uint64(1625097600), // timestamp
             uint16(3),

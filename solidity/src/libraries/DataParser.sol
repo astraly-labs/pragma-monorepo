@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import "./BytesLib.sol";
 
-
 struct Metadata {
     bytes32 feed_id;
     uint64 timestamp;
@@ -71,10 +70,10 @@ struct ParsedData {
 }
 
 enum FeedType {
-    SpotMedian, 
+    SpotMedian,
     Twap,
-    RealizedVolatility, 
-    Options, 
+    RealizedVolatility,
+    Options,
     Perpetuals
 }
 
@@ -82,7 +81,7 @@ library DataParser {
     using BytesLib for bytes;
 
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
-        uint8 offset =2; // type feed stored after asset class
+        uint8 offset = 2; // type feed stored after asset class
         uint16 rawDataType = data.toUint16(offset);
         FeedType dataType = FeedType(rawDataType);
 
@@ -236,7 +235,7 @@ library DataParser {
 
     function parsePerpData(bytes memory data) internal pure returns (Perp memory) {
         Perp memory entry;
-        uint256 index = 0; 
+        uint256 index = 0;
 
         (entry.metadata, index) = parseMetadata(data, index);
 

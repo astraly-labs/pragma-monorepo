@@ -64,8 +64,7 @@ contract Hyperlane is IHyperlane {
         return (true, "");
     }
 
-    function parseHyMsg(bytes calldata encodedHyMsg) public pure returns (HyMsg memory hyMsg, uint256 index ) {
-
+    function parseHyMsg(bytes calldata encodedHyMsg) public pure returns (HyMsg memory hyMsg, uint256 index) {
         hyMsg.version = encodedHyMsg.toUint8(index);
         index += 1;
         require(hyMsg.version == 1, "unsupported version");
