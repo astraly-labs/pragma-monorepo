@@ -2,7 +2,7 @@ use alexandria_bytes::{Bytes, BytesTrait};
 
 use pragma_feed_types::traits::IntoBytes;
 
-#[derive(Debug, Drop, Clone, Serde, PartialEq, starknet::Store)]
+#[derive(Debug, Drop, Clone, Serde, PartialEq, Hash)]
 pub enum AssetClass {
     Crypto,
 }

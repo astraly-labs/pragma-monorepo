@@ -1,30 +1,20 @@
 #[starknet::contract]
-mod PragmaDispatcher {
-    use starknet::ClassHash;
-    use starknet::ContractAddress;
-    use starknet::storage::Map;
-    use alexandria_bytes::{Bytes, BytesTrait, BytesStore};
+mod PragmaFeedRegistry {
+    use alexandria_bytes::BytesStore;
 
-    use alexandria_storage::list::{List, ListTrait};
-    use starknet::storage_access::{
-        Store, StorageBaseAddress, storage_address_from_base,
-        storage_address_from_base_and_offset, storage_base_address_from_felt252
-    };
-    use pragma_feed_types::types::feed::FeedIdTryIntoFeed;
-    use starknet::storage_access;
-
+    use crate::registry::interface::IPragmaRegistry;
     use openzeppelin_access::ownable::OwnableComponent;
     use openzeppelin_upgrades::{UpgradeableComponent, interface::IUpgradeable};
 
-    use pragma_feed_types::types::{AssetClass, AssetClassId, FeedType, FeedTypeId, FeedId};
-    use starknet::{SyscallResult, SyscallResultTrait};
-
-    use crate::registry::interface::IPragmaRegistry;
+    use pragma_feed_types::types::{FeedId, Feed, feed::{FeedIdTryIntoFeed}};
+    use starknet::storage::{
+        StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait, MutableVecTrait
+    };
+    use starknet::{ClassHash, ContractAddress};
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
 
-   
     // Ownable Mixin
     #[abi(embed_v0)]
     impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
@@ -39,8 +29,8 @@ mod PragmaDispatcher {
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
-        feed_ids_len: u32,
-        feed_ids : LegacyMap<u32, FeedId>
+        // All supported feed ids
+        feed_ids: Vec<FeedId>
     }
 
     #[event]
@@ -67,24 +57,33 @@ mod PragmaDispatcher {
 
     #[abi(embed_v0)]
     impl PragmaRegistry of IPragmaRegistry<ContractState> {
-        fn add_feed_id(ref self: ContractState, feed_id: ByteArray) {
-            let length = self.feed_ids_len.read();
-            self.feed_ids.write(length,feed_id.into()); 
-            self.feed_ids_len.write(length +1);
+        fn add_feed_id(ref self: ContractState, feed_id: FeedId) {
+            self.ownable.assert_only_owner();
+            let new_feed_option: Option<Feed> = feed_id.clone().try_into();
+            assert(new_feed_option.is_some(), 'INVALID FEED ID FORMAT');
+
+            for i in 0
+                ..self
+                    .feed_ids
+                    .len() {
+                        let ith_feed_id = self.feed_ids.at(i).read();
+                        // TODO(akhercha): errors module
+                        assert(ith_feed_id != feed_id, 'FEED IF ALREADY REGISTERED');
+                    };
+
+            self.feed_ids.append().write(feed_id);
         }
 
-        fn get_all_feeds(self: @ContractState) -> Span<FeedId> {
-            let mut cur_idx =0;
-            let length = self.feed_ids_len.read();
-            let mut arr = array![];
-            loop {
-                if (cur_idx >= length){
-                    break;
-                }
-                arr.append(self.feed_ids.read(cur_idx));
-                cur_idx +=1;
-            };
-           arr.span()
+        fn get_all_feeds(self: @ContractState) -> Array<FeedId> {
+            let mut all_feeds: Array<FeedId> = array![];
+            for i in 0
+                ..self
+                    .feed_ids
+                    .len() {
+                        let feed_id = self.feed_ids.at(i).read();
+                        all_feeds.append(feed_id);
+                    };
+            all_feeds
         }
     }
 }

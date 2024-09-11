@@ -24,3 +24,7 @@ snforge_std.workspace = true
 [scripts]
 test = "snforge test"
 test-profiling = "snforge test --build-profile"
+
+[tool.snforge]
+fuzzer_runs = 10000
+fuzzer_seed = 42424242675876
