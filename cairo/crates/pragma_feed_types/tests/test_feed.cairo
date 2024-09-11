@@ -56,9 +56,13 @@ fn test_no_collision_different_pair_id() {
 }
 
 #[test]
-fn test_no_collision_random_feeds(pair_id1: felt252, pair_id2: felt252) {
-    let feed1 = create_random_feed(AssetClass::Crypto, FeedType::SpotMedian, pair_id1);
-    let feed2 = create_random_feed(AssetClass::Crypto, FeedType::SpotMedian, pair_id2);
+fn test_no_collision_random_feeds(
+    pair_id1: felt252, feed_type_1: u8, pair_id2: felt252, feed_type_2: u8,
+) {
+    let feed_type_1: felt252 = (feed_type_1 % 4 + 1).into();
+    let feed_type_2: felt252 = (feed_type_2 % 4 + 1).into();
+    let feed1 = create_random_feed(AssetClass::Crypto, feed_type_1.try_into().unwrap(), pair_id1);
+    let feed2 = create_random_feed(AssetClass::Crypto, feed_type_2.try_into().unwrap(), pair_id2);
 
     let id1: FeedId = feed1.clone().into();
     let id2: FeedId = feed2.clone().into();

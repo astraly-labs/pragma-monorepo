@@ -59,6 +59,7 @@ mod PragmaFeedRegistry {
     impl PragmaRegistry of IPragmaRegistry<ContractState> {
         fn add_feed_id(ref self: ContractState, feed_id: FeedId) {
             self.ownable.assert_only_owner();
+
             let new_feed_option: Option<Feed> = feed_id.clone().try_into();
             assert(new_feed_option.is_some(), 'INVALID FEED ID FORMAT');
 
@@ -68,7 +69,7 @@ mod PragmaFeedRegistry {
                     .len() {
                         let ith_feed_id = self.feed_ids.at(i).read();
                         // TODO(akhercha): errors module
-                        assert(ith_feed_id != feed_id, 'FEED IF ALREADY REGISTERED');
+                        assert(ith_feed_id != feed_id, 'FEED ID ALREADY REGISTERED');
                     };
 
             self.feed_ids.append().write(feed_id);
@@ -84,6 +85,21 @@ mod PragmaFeedRegistry {
                         all_feeds.append(feed_id);
                     };
             all_feeds
+        }
+
+        fn feed_exists(self: @ContractState, searched_feed_id: FeedId) -> bool {
+            let mut found = false;
+            for i in 0
+                ..self
+                    .feed_ids
+                    .len() {
+                        let feed_id = self.feed_ids.at(i).read();
+                        if feed_id == searched_feed_id {
+                            found = true;
+                            break;
+                        }
+                    };
+            found
         }
     }
 }
