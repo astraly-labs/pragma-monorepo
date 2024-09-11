@@ -38,6 +38,7 @@ mod PragmaFeedRegistry {
         OwnableEvent: OwnableComponent::Event,
         #[flat]
         UpgradeableEvent: UpgradeableComponent::Event
+        // TODO(akhercha): New feed id added event
     }
 
     #[constructor]
