@@ -8,7 +8,6 @@ import "../src/interfaces/IHyperlane.sol";
 import "../src/libraries/ErrorsLib.sol";
 import "./../src/Hyperlane.sol";
 import "../src/libraries/BytesLib.sol";
-
 import "forge-std/console2.sol";
 
 contract PragmaDecoderHarness is PragmaDecoder {
@@ -22,23 +21,23 @@ contract PragmaDecoderHarness is PragmaDecoder {
         return updateDataInfoFromUpdate(updateData);
     }
 
-    function exposed_spotMedianFeeds(bytes memory dataId) external view returns (SpotMedian memory) {
+    function exposed_spotMedianFeeds(bytes32 dataId) external view returns (SpotMedian memory) {
         return spotMedianFeeds[dataId];
     }
 
-    function exposed_twapFeeds(bytes memory dataId) external view returns (TWAP memory) {
+    function exposed_twapFeeds(bytes32 dataId) external view returns (TWAP memory) {
         return twapFeeds[dataId];
     }
 
-    function exposed_rvFeeds(bytes memory dataId) external view returns (RealizedVolatility memory) {
+    function exposed_rvFeeds(bytes32 dataId) external view returns (RealizedVolatility memory) {
         return rvFeeds[dataId];
     }
 
-    function exposed_optionsFeeds(bytes memory dataId) external view returns (Options memory) {
+    function exposed_optionsFeeds(bytes32 dataId) external view returns (Options memory) {
         return optionsFeeds[dataId];
     }
 
-    function exposed_perpFeeds(bytes memory dataId) external view returns (Perp memory) {
+    function exposed_perpFeeds(bytes32 dataId) external view returns (Perp memory) {
         return perpFeeds[dataId];
     }
 
@@ -87,94 +86,52 @@ contract PragmaDecoderTest is Test {
 
     function _setUp(FeedType dataType, bool is_multiple) public {
         address[][] memory validatorSets = new address[][](5);
-        if (!is_multiple)
-{
+        if (!is_multiple){
+     
             // SPOT MEDIAN
             validatorSets[0] = new address[](5);
-            validatorSets[0][0] = address(0x000ef4d3842fab2e93a7432204161279295cfb56be);
-            validatorSets[0][1] = address(0x0057b4de4c28740eb6a4f8366c19135b524d8585af);
-            validatorSets[0][2] = address(0x00f4fea01052a71f6f00d2b970ae69cf2260609aed);
-            validatorSets[0][3] = address(0x00a5a173cb34486bae04959be51a206d828bcd1bc3);
-            validatorSets[0][4] = address(0x007051cc33689c3d1a26404eedd1a9a03622cc7d77);
+            validatorSets[0][0] = address(0x00168068bae701a75eacce4c41ddbe379289e8f8ae);
+            validatorSets[0][1] = address(0x0061beeef8bfa33c8e179950889e76b060e074ffa7);
+            validatorSets[0][2] = address(0x0069d27c84c3c027856d478ab03dd193d5716a13e3);
+            validatorSets[0][3] = address(0x0006bfa6bb0a40fabc6d56b376011ae985bd1eda41);
+            validatorSets[0][4] = address(0x007963989f4fefaecba30c8edce53dd47cedb487c2);
 
         // TWAP
 
             validatorSets[1] = new address[](5);
-            validatorSets[1][0] = address(0x008fa8c74a65136cbcdd2626b68ca3eb8eea63acfc);
-            validatorSets[1][1] = address(0x000bca088eec72533a3a4980480ade06faafe1f50f);
-            validatorSets[1][2] = address(0x00e45163f8e455309f1e6867a2c84a08784216f9a6);
-            validatorSets[1][3] = address(0x00bc0efa2f350f6d361d3966bbd8097141abfae9a6);
-            validatorSets[1][4] = address(0x00d1830991b42ffc44ecdaf031cfef11983168c880);
+            validatorSets[1][0] = address(0x005472c2afb8c5d5bdedd6fb15538aba4e5e954b68);
+            validatorSets[1][1] = address(0x009ee8d4936be96299e8eba08b99fc70962c56d476);
+            validatorSets[1][2] = address(0x00e04aa374e71c6b42009660ca18d64d48f1b49567);
+            validatorSets[1][3] = address(0x0093eeea4ec6424ca2f0fd2d5473a5b109b36e8aba);
+            validatorSets[1][4] = address(0x00d80848530176c5ec4d389d0a4a31c48710a51a11);
             
             // Realized volatility
 
             validatorSets[2] = new address[](5);
-            validatorSets[2][0] = address(0x00899fa4ffe896b3dc242eef434729bb3dce51fdf0);
-            validatorSets[2][1] = address(0x00113ea1a998d83c04b56bc43e45c659f49515640d);
-            validatorSets[2][2] = address(0x000c322d77a5fafc1605dcf0619e13d268922d9f84);
-            validatorSets[2][3] = address(0x00b4187559a872c643d01d98f346f06af2ffc545b8);
-            validatorSets[2][4] = address(0x00e1cd2d3467cede6cb3599eb5929a01bfcc0cce46);
+            validatorSets[2][0] = address(0x0081113a12d0677bfd9055722826be0608a79e485f);
+            validatorSets[2][1] = address(0x0075c554efa4c4061f5319cce671342c3a5ee7ca4f);
+            validatorSets[2][2] = address(0x00ac532f8758c2562be11476fea2a0c5a03e49ed1c);
+            validatorSets[2][3] = address(0x00b4902be8b8e9a3b2c1a2dda4b503caa6669935ec);
+            validatorSets[2][4] = address(0x00b472cd1688acb23bbe561353ad0a7d6be287b4f8);                       
             // Options
 
             validatorSets[3] = new address[](5);
-            validatorSets[3][0] = address(0x002ee99bdbf7f92437d44a1726c695233faf0f12a2);
-            validatorSets[3][1] = address(0x004664224a07be4f9a638389a446bc8fbc6c53aa30);
-            validatorSets[3][2] = address(0x0041438e3f52b967b074f688f44e3a03d29d16a4de);
-            validatorSets[3][3] = address(0x00648026ce5f492db0c411e5990658fce52ac68e14);
-            validatorSets[3][4] = address(0x001b6253cc165c4e19c468451a61c371114ac794bd);
+            validatorSets[3][0] = address(0x000d1bd3a53d455401d7e9b35f2ebefa1e86d879f5);
+            validatorSets[3][1] = address(0x00059c488fdac0d66ccb790db20ac3881f2f81a0c6);
+            validatorSets[3][2] = address(0x003e961cf87c7e0d13b848f0654b6d37faea1e5666);
+            validatorSets[3][3] = address(0x006b78b4d7b33a15edd8bbc5b3b1e679ad3e6c0d27);
+            validatorSets[3][4] = address(0x009cc8b348632e9f38e88ebd2ca564542c4b7297c5);
+
             // Perp
 
             validatorSets[4] = new address[](5);
-            validatorSets[4][0] = address(0x000cdafa30d7e008dc97f5589c67cfc2ff210e3997);
-            validatorSets[4][1] = address(0x00d7389b2a2cadaafb296f1d43f5253266dd413ef5);
-            validatorSets[4][2] = address(0x002445ad199e1976fe87d0a436128454baa9a51ded);
-            validatorSets[4][3] = address(0x002a71bcf2deff27d96b4bd1f3db58230bbe1d8906);
-            validatorSets[4][4] = address(0x0016659cb6d1c9b56a2a74f97d54daa014d4f152df);
+            validatorSets[4][0] = address(0x0054ef2963f3e6b6a77fffc3f7bbd5fc0e479412c2);
+            validatorSets[4][1] = address(0x000b78cc20dc1b484781c56d0ea806f34693833bd5);
+            validatorSets[4][2] = address(0x003dbecdde82fd8c8823daf0841bd1e75342588a41);
+            validatorSets[4][3] = address(0x004f437c9e4c5cbbe927945838601b8277d68e69e6);
+            validatorSets[4][4] = address(0x00fa73934abc5b756599d973d2906b2db58f506284);
 }
-else {
-     // SPOT MEDIAN
-            validatorSets[0] = new address[](5);
-            validatorSets[0][0] = address(0x000ef4d3842fab2e93a7432204161279295cfb56be);
-            validatorSets[0][1] = address(0x0057b4de4c28740eb6a4f8366c19135b524d8585af);
-            validatorSets[0][2] = address(0x00f4fea01052a71f6f00d2b970ae69cf2260609aed);
-            validatorSets[0][3] = address(0x00a5a173cb34486bae04959be51a206d828bcd1bc3);
-            validatorSets[0][4] = address(0x007051cc33689c3d1a26404eedd1a9a03622cc7d77);
-
-        // TWAP
-
-            validatorSets[1] = new address[](5);
-            validatorSets[1][0] = address(0x008fa8c74a65136cbcdd2626b68ca3eb8eea63acfc);
-            validatorSets[1][1] = address(0x000bca088eec72533a3a4980480ade06faafe1f50f);
-            validatorSets[1][2] = address(0x00e45163f8e455309f1e6867a2c84a08784216f9a6);
-            validatorSets[1][3] = address(0x00bc0efa2f350f6d361d3966bbd8097141abfae9a6);
-            validatorSets[1][4] = address(0x00d1830991b42ffc44ecdaf031cfef11983168c880);
-            
-            // Realized volatility
-
-            validatorSets[2] = new address[](5);
-            validatorSets[2][0] = address(0x00899fa4ffe896b3dc242eef434729bb3dce51fdf0);
-            validatorSets[2][1] = address(0x00113ea1a998d83c04b56bc43e45c659f49515640d);
-            validatorSets[2][2] = address(0x000c322d77a5fafc1605dcf0619e13d268922d9f84);
-            validatorSets[2][3] = address(0x00b4187559a872c643d01d98f346f06af2ffc545b8);
-            validatorSets[2][4] = address(0x00e1cd2d3467cede6cb3599eb5929a01bfcc0cce46);
-            // Options
-
-            validatorSets[3] = new address[](5);
-            validatorSets[3][0] = address(0x002ee99bdbf7f92437d44a1726c695233faf0f12a2);
-            validatorSets[3][1] = address(0x004664224a07be4f9a638389a446bc8fbc6c53aa30);
-            validatorSets[3][2] = address(0x0041438e3f52b967b074f688f44e3a03d29d16a4de);
-            validatorSets[3][3] = address(0x00648026ce5f492db0c411e5990658fce52ac68e14);
-            validatorSets[3][4] = address(0x001b6253cc165c4e19c468451a61c371114ac794bd);
-            // Perp
-
-            validatorSets[4] = new address[](5);
-            validatorSets[4][0] = address(0x000cdafa30d7e008dc97f5589c67cfc2ff210e3997);
-            validatorSets[4][1] = address(0x00d7389b2a2cadaafb296f1d43f5253266dd413ef5);
-            validatorSets[4][2] = address(0x002445ad199e1976fe87d0a436128454baa9a51ded);
-            validatorSets[4][3] = address(0x002a71bcf2deff27d96b4bd1f3db58230bbe1d8906);
-            validatorSets[4][4] = address(0x0016659cb6d1c9b56a2a74f97d54daa014d4f152df);
-}
-        uint8 validatorSetIndex;
+   uint8 validatorSetIndex;
         if (dataType == FeedType.SpotMedian) {
             validatorSetIndex = 0;
         } else if (dataType == FeedType.Twap) {
@@ -205,17 +162,15 @@ else {
     function testUpdateDataInfoFromUpdateSpotMedian() public {
         bool is_multiple = false;
         _setUp(FeedType.SpotMedian, is_multiple);
-        bytes memory encodedUpdate = createEncodedUpdate(FeedType.SpotMedian, "ETH/USD",is_multiple);
+         bytes32 feedId = bytes32(abi.encodePacked(
+            uint16(0), ///CRYPTO
+            uint16(0),  //SPOT
+            bytes32("ETH/USD")
+        ));
+        bytes memory encodedUpdate = createEncodedUpdate(FeedType.SpotMedian, feedId,is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
-
-
-        bytes memory feedId = abi.encodePacked(
-            uint8(0), ///CRYPTO
-            uint16(0),  //SPOT
-            bytes32("ETH/USD")
-        );
 
         SpotMedian memory spotMedian = pragmaDecoder.exposed_spotMedianFeeds(feedId);
 
@@ -232,16 +187,15 @@ else {
     function testUpdateDataInfoFromUpdateTWAP() public {
         bool is_multiple = false;
         _setUp(FeedType.Twap, is_multiple);
-        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Twap, "BTC/USD" ,is_multiple);
+        bytes32 feedId = bytes32(abi.encodePacked(
+            uint16(0), ///CRYPTO
+            uint16(1),  //TWAP
+            bytes32("BTC/USD")
+        ));
+        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Twap,feedId ,is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
-
-                bytes memory feedId = abi.encodePacked(
-            uint8(0), ///CRYPTO
-            uint16(1),  //TWAP
-            bytes32("BTC/USD")
-        );
         
         TWAP memory twap = pragmaDecoder.exposed_twapFeeds(feedId);
 
@@ -262,17 +216,16 @@ else {
     function testUpdateDataInfoFromUpdateRealizedVolatility() public {
         bool is_multiple = false;
         _setUp(FeedType.RealizedVolatility,is_multiple);
-        bytes memory feedId = abi.encodePacked(
-            uint8(0), ///CRYPTO
+        bytes32 feedId = bytes32(abi.encodePacked(
+            uint16(0), ///CRYPTO
             uint16(2),  //RV
             bytes32("ETH/USD")
-        );        RealizedVolatility memory rv = pragmaDecoder.exposed_rvFeeds(feedId);
+        ));        
         bytes memory encodedUpdate = createEncodedUpdate(FeedType.RealizedVolatility, feedId,is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
+        RealizedVolatility memory rv = pragmaDecoder.exposed_rvFeeds(feedId);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
-
-
         assertEq(rv.metadata.timestamp, block.timestamp, "Timestamp should match");
         assertEq(rv.metadata.number_of_sources, 5, "Number of sources should be 5");
         assertEq(rv.metadata.decimals, 8, "Decimals should be 8");
@@ -291,18 +244,22 @@ else {
     function testUpdateDataInfoFromUpdateOptions() public {
         bool is_multiple=false;
         _setUp(FeedType.Options,is_multiple);
-        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Options, "ETH/USD",is_multiple);
+        bytes32 feedId = bytes32(abi.encodePacked(
+            uint16(0), ///CRYPTO
+            uint16(3),  //Options
+            bytes32("ETH/USD")
+        ));  
+        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Options, feedId,is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
 
-        bytes32 dataId = keccak256("ETH/USD");
-        Options memory options = pragmaDecoder.exposed_optionsFeeds(dataId);
+        Options memory options = pragmaDecoder.exposed_optionsFeeds(feedId);
 
         assertEq(options.metadata.timestamp, block.timestamp, "Timestamp should match");
         assertEq(options.metadata.number_of_sources, 5, "Number of sources should be 5");
         assertEq(options.metadata.decimals, 8, "Decimals should be 8");
-        assertEq(options.metadata.pair_id, bytes32("ETH/USD"), "Pair ID should match");
+        assertEq(options.metadata.feed_id, feedId, "Feed ID should match");
         assertEq(options.strike_price, 2000 * 1e8, "Strike price should match");
         assertEq(options.implied_volatility, 50 * 1e6, "Implied volatility should match");
         assertEq(options.time_to_expiry, 604800, "Time to expiry should match");
@@ -315,59 +272,38 @@ else {
         assertEq(options.theta, -5 * 1e6, "Theta should match");
         assertEq(options.rho, 3 * 1e6, "Rho should match");
 
-        assertEq(pragmaDecoder.latestPublishTimes(dataId), block.timestamp, "Latest publish time should be updated");
+        assertEq(pragmaDecoder.latestPublishTimes(feedId), block.timestamp, "Latest publish time should be updated");
     }
 
     function testUpdateDataInfoFromUpdatePerp() public {
         bool is_multiple = false;
         _setUp(FeedType.Perpetuals,is_multiple);
-        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Perpetuals, "ETH/USD",is_multiple);
+        bytes32 feedId = bytes32(abi.encodePacked(
+            uint16(0), ///CRYPTO
+            uint16(4),  //Perp
+            bytes32("ETH/USD")
+        ));  
+        bytes memory encodedUpdate = createEncodedUpdate(FeedType.Perpetuals, feedId,is_multiple);
         uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
-
-        bytes32 dataId = keccak256("ETH/USD");
-        Perp memory perp = pragmaDecoder.exposed_perpFeeds(dataId);
+        Perp memory perp = pragmaDecoder.exposed_perpFeeds(feedId);
 
         assertEq(perp.metadata.timestamp, block.timestamp, "Timestamp should match");
         assertEq(perp.metadata.number_of_sources, 5, "Number of sources should be 5");
         assertEq(perp.metadata.decimals, 8, "Decimals should be 8");
-        assertEq(perp.metadata.pair_id, bytes32("ETH/USD"), "Pair ID should match");
+        assertEq(perp.metadata.feed_id, feedId, "Feed ID should match");
         assertEq(perp.mark_price, 2000 * 1e8, "Mark price should match");
         assertEq(perp.funding_rate, 1 * 1e6, "Funding rate should match"); // 0.1% funding rate
         assertEq(perp.open_interest, 10000 * 1e18, "Open interest should match");
         assertEq(perp.volume, 50000 * 1e18, "Volume should match");
 
-        assertEq(pragmaDecoder.latestPublishTimes(dataId), block.timestamp, "Latest publish time should be updated");
+        assertEq(pragmaDecoder.latestPublishTimes(feedId), block.timestamp, "Latest publish time should be updated");
     }
 
-    // function testMultipleUpdatesInSingleCall() public {
-    //     bytes memory encodedUpdate = createMultipleEncodedUpdates();
-    //     uint8 numUpdates = pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
-
-    //     assertEq(numUpdates, 3, "Number of updates should be 3");
-
-    //     // Check SpotMedian update
-    //     bytes32 spotDataId = keccak256("ETH/USD");
-    //     SpotMedian memory spotMedian = pragmaDecoder.exposed_spotMedianFeeds(spotDataId);
-    //     assertEq(spotMedian.metadata.timestamp, block.timestamp, "SpotMedian timestamp should match");
-    //     assertEq(spotMedian.price, 2000 * 1e8, "SpotMedian price should match");
-
-    //     // Check TWAP update
-    //     bytes32 twapDataId = keccak256("BTC/USD");
-    //     TWAP memory twap = pragmaDecoder.exposed_twapFeeds(twapDataId);
-    //     assertEq(twap.metadata.timestamp, block.timestamp, "TWAP timestamp should match");
-    //     assertEq(twap.twap_price, 30000 * 1e8, "TWAP price should match");
-
-    //     // Check Options update
-    //     bytes32 optionsDataId = keccak256("ETH-OPTIONS");
-    //     Options memory options = pragmaDecoder.exposed_optionsFeeds(optionsDataId);
-    //     assertEq(options.metadata.timestamp, block.timestamp, "Options timestamp should match");
-    //     assertEq(options.option_price, 100 * 1e8, "Option price should match");
-    // }
 
     // Helper functions to create encoded updates
-    function createEncodedUpdate(FeedType dataType, bytes memory feedId, bool is_multiple) internal view returns (bytes memory) {
+    function createEncodedUpdate(FeedType dataType, bytes32 feedId, bool is_multiple) internal view returns (bytes memory) {
 
         bytes memory updateData = abi.encodePacked(
             feedId,
@@ -442,7 +378,7 @@ else {
             uint16(proof.length),
             proof,
             updateData,
-            bytes32(0x1234),  // dataId
+            feedId,  // dataId
             uint64(block.timestamp) // publishTime
         );
 

@@ -5,7 +5,6 @@ pragma experimental ABIEncoderV2;
 
 import {HyMsg, Signature, IHyperlane} from "./interfaces/IHyperlane.sol";
 import "./libraries/BytesLib.sol";
-import "forge-std/console2.sol";
 
 contract Hyperlane is IHyperlane {
     using BytesLib for bytes;

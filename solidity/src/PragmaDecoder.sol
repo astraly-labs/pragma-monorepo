@@ -12,7 +12,6 @@ import "./libraries/BytesLib.sol";
 import "./libraries/MerkleTree.sol";
 import "./libraries/UnsafeCalldataBytesLib.sol";
 import "./libraries/UnsafeBytesLib.sol";
-import "forge-std/console2.sol";
 
 contract PragmaDecoder {
     using BytesLib for bytes;
@@ -24,11 +23,11 @@ contract PragmaDecoder {
     mapping(bytes32 => bool) public _isValidDataSource;
     mapping(bytes32 => uint64) public latestPublishTimes;
 
-    mapping(bytes => SpotMedian) public spotMedianFeeds;
-    mapping(bytes => TWAP) public twapFeeds;
-    mapping(bytes => RealizedVolatility) public rvFeeds;
-    mapping(bytes => Options) public optionsFeeds;
-    mapping(bytes => Perp) public perpFeeds;
+    mapping(bytes32 => SpotMedian) public spotMedianFeeds;
+    mapping(bytes32 => TWAP) public twapFeeds;
+    mapping(bytes32 => RealizedVolatility) public rvFeeds;
+    mapping(bytes32 => Options) public optionsFeeds;
+    mapping(bytes32 => Perp) public perpFeeds;
 
     constructor(
         address _hyperlane,
@@ -157,7 +156,7 @@ contract PragmaDecoder {
 
     function extractDataInfoFromUpdate(bytes calldata encoded, uint256 offset, bytes32 checkpointRoot)
         internal 
-        returns (uint256 endOffset, ParsedData memory parsedData)
+        returns (uint256 endOffset, ParsedData memory parsedData, bytes32 dataId, uint64 publishTime)
     {
         unchecked {
             bytes calldata encodedUpdate;
@@ -182,7 +181,7 @@ contract PragmaDecoder {
             bool valid;
             (valid, endOffset) = _isProofValid(encodedProof, offset,checkpointRoot, encodedUpdate);
             if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
-            parsedData = parseDataFeed(fulldataFeed);
+            (parsedData, dataId, publishTime) = parseDataFeed(fulldataFeed);
             endOffset +=40;
         }
     }
@@ -190,17 +189,18 @@ contract PragmaDecoder {
     function parseDataFeed(bytes calldata encodedDataFeed)
         private
         pure
-        returns (ParsedData memory parsedData)
+        returns (ParsedData memory parsedData, bytes32 dataId, uint64 publishTime)
     {
         parsedData = DataParser.parse(encodedDataFeed);
 
-        // // Assuming dataId and publishTime are appended at the end of encodedDataFeed
-        // uint256 offset = encodedDataFeed.length - 40; // 32 bytes for dataId, 8 bytes for publishTime
-        // dataId = bytes32(UnsafeCalldataBytesLib.toUint256(encodedDataFeed, offset));
-        // offset += 32;
-        // publishTime = UnsafeCalldataBytesLib.toUint64(encodedDataFeed, offset);
+        // Assuming dataId and publishTime are appended at the end of encodedDataFeed
+        uint256 offset = encodedDataFeed.length - 40; // 32 bytes for dataId, 8 bytes for publishTime
+        dataId = bytes32(UnsafeCalldataBytesLib.toUint256(encodedDataFeed,offset));
+        offset += 32;
+        publishTime = UnsafeBytesLib.toUint64(encodedDataFeed, offset);
     }
-
+  
+  
     function updateDataInfoFromUpdate(bytes calldata updateData) internal returns (uint8 numUpdates) {
         // Extract header metadata
         uint256 encodedOffset = extractMetadataFromheader(updateData);
@@ -216,8 +216,8 @@ contract PragmaDecoder {
                 ParsedData memory parsedData;
                 bytes32 dataId;
                 uint64 publishTime;
-                (offset, parsedData) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
-                updateLatestDataInfoIfNecessary( parsedData, publishTime);
+                (offset, parsedData, dataId, publishTime) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
+                updateLatestDataInfoIfNecessary(dataId, parsedData, publishTime);
             }
         }
         // We check that the offset is at the end of the encoded data.
@@ -225,32 +225,30 @@ contract PragmaDecoder {
         if (offset != encoded.length) revert ErrorsLib.InvalidUpdateData();
     }
 
-   function updateLatestDataInfoIfNecessary(ParsedData memory parsedData) internal {
-    (bytes32 feed_id, uint64 timestamp, address feedStorage) = getFeedInfo(parsedData);
+    function updateLatestDataInfoIfNecessary(bytes32 dataId, ParsedData memory parsedData, uint64 publishTime)
+        internal
+    {
+        if (publishTime > latestPublishTimes[dataId]) {
+            latestPublishTimes[dataId] = publishTime;
 
-    if (timestamp > latestPublishTimes[feed_id]) {
-        latestPublishTimes[feed_id] = timestamp;
-        assembly {
-            sstore(add(feedStorage, feed_id), mload(add(parsedData, 0x20)))
+            if (parsedData.dataType == FeedType.SpotMedian) {
+                spotMedianFeeds[dataId] = parsedData.spot;
+                emit EventsLib.SpotMedianUpdate(dataId, publishTime, parsedData.spot);
+            } else if (parsedData.dataType == FeedType.Twap) {
+                twapFeeds[dataId] = parsedData.twap;
+                emit EventsLib.TWAPUpdate(dataId, publishTime, parsedData.twap);
+            } else if (parsedData.dataType == FeedType.RealizedVolatility) {
+                rvFeeds[dataId] = parsedData.rv;
+                emit EventsLib.RealizedVolatilityUpdate(dataId, publishTime, parsedData.rv);
+            } else if (parsedData.dataType == FeedType.Options) {
+                optionsFeeds[dataId] = parsedData.options;
+                emit EventsLib.OptionsUpdate(dataId, publishTime, parsedData.options);
+            } else if (parsedData.dataType == FeedType.Perpetuals) {
+                perpFeeds[dataId] = parsedData.perp;
+                emit EventsLib.PerpUpdate(dataId, publishTime, parsedData.perp);
+            } else {
+                revert ErrorsLib.InvalidDataFeedType();
+            }
         }
-        emitUpdateEvent(parsedData, feed_id, timestamp);
     }
-}
-
-function getFeedInfo(ParsedData memory parsedData) private view returns (bytes memory, uint64, address) {
-    if (parsedData.dataType == FeedType.SpotMedian) return (parsedData.spot.metadata.feed_id, parsedData.spot.metadata.timestamp, address(spotMedianFeeds));
-    if (parsedData.dataType == FeedType.Twap) return (parsedData.twap.metadata.feed_id, parsedData.twap.metadata.timestamp, address(twapFeeds));
-    if (parsedData.dataType == FeedType.RealizedVolatility) return (parsedData.rv.metadata.feed_id, parsedData.rv.metadata.timestamp, address(rvFeeds));
-    if (parsedData.dataType == FeedType.Options) return (parsedData.options.metadata.feed_id, parsedData.options.metadata.timestamp, address(optionsFeeds));
-    if (parsedData.dataType == FeedType.Perpetuals) return (parsedData.perp.metadata.feed_id, parsedData.perp.metadata.timestamp, address(perpFeeds));
-    revert ErrorsLib.InvalidDataFeedType();
-}
-
-function emitUpdateEvent(ParsedData memory parsedData, bytes32 feed_id, uint64 timestamp) private {
-    if (parsedData.dataType == FeedType.SpotMedian) emit EventsLib.SpotMedianUpdate(feed_id, timestamp, parsedData.spot);
-    else if (parsedData.dataType == FeedType.Twap) emit EventsLib.TWAPUpdate(feed_id, timestamp, parsedData.twap);
-    else if (parsedData.dataType == FeedType.RealizedVolatility) emit EventsLib.RealizedVolatilityUpdate(feed_id, timestamp, parsedData.rv);
-    else if (parsedData.dataType == FeedType.Options) emit EventsLib.OptionsUpdate(feed_id, timestamp, parsedData.options);
-    else if (parsedData.dataType == FeedType.Perpetuals) emit EventsLib.PerpUpdate(feed_id, timestamp, parsedData.perp);
-}
 }

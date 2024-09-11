@@ -3,8 +3,9 @@ pragma solidity ^0.8.0;
 
 import "./BytesLib.sol";
 
+
 struct Metadata {
-    bytes feed_id;
+    bytes32 feed_id;
     uint64 timestamp;
     uint16 number_of_sources;
     uint8 decimals;
@@ -81,7 +82,8 @@ library DataParser {
     using BytesLib for bytes;
 
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
-        uint16 rawDataType = data.toUint16(0);
+        uint8 offset =2; // type feed stored after asset class
+        uint16 rawDataType = data.toUint16(offset);
         FeedType dataType = FeedType(rawDataType);
 
         ParsedData memory parsedData;
@@ -106,11 +108,9 @@ library DataParser {
     function parseMetadata(bytes memory data, uint256 startIndex) internal pure returns (Metadata memory, uint256) {
         Metadata memory metadata;
         uint256 index = startIndex;
-        uint16 feed_length = 35;
 
-        metadata.feed_id = bytes(data.slice(index,feed_length));
-        index += feed_length;
-
+        metadata.feed_id = bytes32(data.toUint256(index));
+        index += 32;
 
         metadata.timestamp = data.toUint64(index);
         index += 8;
@@ -126,7 +126,7 @@ library DataParser {
 
     function parseSpotData(bytes memory data) internal pure returns (SpotMedian memory) {
         SpotMedian memory entry;
-        uint256 index = 2;
+        uint256 index = 0;
 
         (entry.metadata, index) = parseMetadata(data, index);
 
@@ -140,7 +140,7 @@ library DataParser {
 
     function parseTWAPData(bytes memory data) internal pure returns (TWAP memory) {
         TWAP memory entry;
-        uint256 index = 2;
+        uint256 index = 0;
 
         (entry.metadata, index) = parseMetadata(data, index);
 
@@ -166,7 +166,7 @@ library DataParser {
 
     function parseRealizedVolatilityData(bytes memory data) internal pure returns (RealizedVolatility memory) {
         RealizedVolatility memory entry;
-        uint256 index = 2;
+        uint256 index = 0;
 
         (entry.metadata, index) = parseMetadata(data, index);
 
@@ -195,7 +195,7 @@ library DataParser {
 
     function parseOptionsData(bytes memory data) internal pure returns (Options memory) {
         Options memory entry;
-        uint256 index = 2;
+        uint256 index = 0;
 
         (entry.metadata, index) = parseMetadata(data, index);
 
@@ -236,7 +236,7 @@ library DataParser {
 
     function parsePerpData(bytes memory data) internal pure returns (Perp memory) {
         Perp memory entry;
-        uint256 index = 2; // Skip data type
+        uint256 index = 0; 
 
         (entry.metadata, index) = parseMetadata(data, index);
 
