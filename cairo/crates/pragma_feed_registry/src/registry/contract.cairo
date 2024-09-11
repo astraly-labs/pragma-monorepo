@@ -22,15 +22,6 @@ mod PragmaFeedRegistry {
     // Upgradeable
     impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
 
-    // Upgradeable impl
-    #[abi(embed_v0)]
-    impl UpgradeableImpl of IUpgradeable<ContractState> {
-        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
-            self.ownable.assert_only_owner();
-            self.upgradeable.upgrade(new_class_hash);
-        }
-    }
-
     // ================== STORAGE ==================
 
     #[storage]
@@ -143,6 +134,16 @@ mod PragmaFeedRegistry {
                         }
                     };
             found
+        }
+    }
+    // ================== COMPONENTS IMPLEMENTATIONS ==================
+
+    // Upgradeable impl
+    #[abi(embed_v0)]
+    impl UpgradeableImpl of IUpgradeable<ContractState> {
+        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
+            self.ownable.assert_only_owner();
+            self.upgradeable.upgrade(new_class_hash);
         }
     }
 
