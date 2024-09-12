@@ -2,52 +2,52 @@
   "folders": [
     {
       "name": ".",
-      "path": "."
+      "path": ".",
     },
     {
       "name": "===== RUST =====",
-      "path": "rust"
+      "path": "rust",
     },
     {
       "name": "theoros",
-      "path": "rust/theoros"
+      "path": "rust/theoros",
     },
     {
       "name": "pragma-cli",
-      "path": "rust/pragma-cli"
+      "path": "rust/pragma-cli",
     },
     {
       "name": "pragma-utils",
-      "path": "rust/pragma-utils"
+      "path": "rust/pragma-utils",
     },
     {
       "name": "pragma-feeds",
-      "path": "rust/pragma-feeds"
+      "path": "rust/pragma-feeds",
     },
     {
       "name": "===== CAIRO =====",
-      "path": "cairo"
+      "path": "cairo",
     },
     {
       "name": "pragma_dispatcher",
-      "path": "cairo/crates/pragma_dispatcher"
+      "path": "cairo/crates/pragma_dispatcher",
     },
     {
       "name": "pragma_feed_registry",
-      "path": "cairo/crates/pragma_feed_registry"
+      "path": "cairo/crates/pragma_feed_registry",
     },
     {
       "name": "pragma_feed_types",
-      "path": "cairo/crates/pragma_feed_types"
+      "path": "cairo/crates/pragma_feed_types",
     },
     {
       "name": "pragma_maths",
-      "path": "cairo/crates/pragma_maths"
+      "path": "cairo/crates/pragma_maths",
     },
     {
       "name": "===== SOLIDITY =====",
-      "path": "solidity"
-    }
+      "path": "solidity",
+    },
   ],
   "settings": {},
 }
