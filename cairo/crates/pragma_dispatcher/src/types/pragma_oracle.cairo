@@ -24,3 +24,7 @@ pub enum DataType {
     FutureEntry: (felt252, u64),
     GenericEntry: felt252,
 }
+
+pub type Price = u128;
+pub type Decimals = u32;
+pub type SummaryStatsComputation = (Price, Decimals);

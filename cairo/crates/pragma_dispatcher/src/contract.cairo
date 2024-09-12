@@ -5,9 +5,11 @@ mod PragmaDispatcher {
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{interface::IUpgradeable, upgradeable::UpgradeableComponent};
     use pragma_dispatcher::interface::{
-        IPragmaDispatcher, IHyperlaneMailboxWrapper, IPragmaOracleWrapper
+        IPragmaDispatcher, IHyperlaneMailboxWrapper, IPragmaOracleWrapper, ISummaryStatsWrapper,
     };
-    use pragma_dispatcher::types::pragma_oracle::PragmaPricesResponse;
+    use pragma_dispatcher::types::pragma_oracle::{
+        PragmaPricesResponse, DataType, AggregationMode, SummaryStatsComputation
+    };
     use pragma_feed_types::{FeedId};
     use starknet::ClassHash;
     use starknet::ContractAddress;
@@ -33,6 +35,8 @@ mod PragmaDispatcher {
         upgradeable: UpgradeableComponent::Storage,
         // Pragma Oracle contract
         pragma_oracle_address: ContractAddress,
+        // Pragma Summary stats contract
+        summary_stats_address: ContractAddress,
         // Pragma Feed Registry containing all the supported feeds
         pragma_feed_registry_address: ContractAddress,
         // Hyperlane core contract
@@ -57,6 +61,7 @@ mod PragmaDispatcher {
         ref self: ContractState,
         owner: ContractAddress,
         pragma_oracle_address: ContractAddress,
+        summary_stats_address: ContractAddress,
         pragma_feed_registry_address: ContractAddress,
         hyperlane_mailbox_address: ContractAddress,
     ) {
@@ -64,6 +69,7 @@ mod PragmaDispatcher {
             .initializer(
                 owner,
                 pragma_oracle_address,
+                summary_stats_address,
                 pragma_feed_registry_address,
                 hyperlane_mailbox_address
             );
@@ -116,6 +122,7 @@ mod PragmaDispatcher {
             ref self: ContractState,
             owner: ContractAddress,
             pragma_oracle_address: ContractAddress,
+            summary_stats_address: ContractAddress,
             pragma_feed_registry_address: ContractAddress,
             hyperlane_mailbox_address: ContractAddress,
         ) {
@@ -125,18 +132,22 @@ mod PragmaDispatcher {
             // [Effect]
             self.ownable.initializer(owner);
             self.pragma_oracle_address.write(pragma_oracle_address);
+            self.summary_stats_address.write(summary_stats_address);
             self.pragma_feed_registry_address.write(pragma_feed_registry_address);
             self.hyperlane_mailbox_address.write(hyperlane_mailbox_address);
         }
     }
 
     impl HyperlaneMailboxWrapper of IHyperlaneMailboxWrapper<ContractState> {
-        fn _dispatch_caller(self: @ContractState, message_body: Bytes) {}
+        /// Calls dispatch from the Hyperlane Mailbox.
+        fn _call_dispatch(self: @ContractState, message_body: Bytes) {}
     }
 
-    #[abi(embed_v0)]
     impl PragmaOracleWrapper of IPragmaOracleWrapper<ContractState> {
-        fn _get_data_caller(self: @ContractState) -> PragmaPricesResponse {
+        /// Calls get_data from the Pragma Oracle.
+        fn _call_get_data(
+            self: @ContractState, data_type: DataType, aggregation_mode: AggregationMode,
+        ) -> PragmaPricesResponse {
             PragmaPricesResponse {
                 price: 0,
                 decimals: 0,
@@ -144,6 +155,42 @@ mod PragmaDispatcher {
                 num_sources_aggregated: 0,
                 expiration_timestamp: Option::None(())
             }
+        }
+    }
+
+    impl SummaryStatsWrapper of ISummaryStatsWrapper<ContractState> {
+        /// Calls calculate_mean from the Summary Stats contract.
+        fn _call_calculate_mean(
+            self: @ContractState,
+            data_type: DataType,
+            aggregation_mode: AggregationMode,
+            start_timestamp: u64,
+            end_timestamp: u64,
+        ) -> SummaryStatsComputation {
+            (0, 0)
+        }
+
+        /// Calls calculate_volatility from the Summary Stats contract.
+        fn _call_calculate_volatility(
+            self: @ContractState,
+            data_type: DataType,
+            aggregation_mode: AggregationMode,
+            start_timestamp: u64,
+            end_timestamp: u64,
+            num_samples: u64,
+        ) -> SummaryStatsComputation {
+            (0, 0)
+        }
+
+        /// Calls calculate_twap from the Summary Stats contract.
+        fn _call_calculate_twap(
+            self: @ContractState,
+            data_type: DataType,
+            aggregation_mode: AggregationMode,
+            start_timestamp: u64,
+            duration: u64,
+        ) -> SummaryStatsComputation {
+            (0, 0)
         }
     }
 }
