@@ -33,8 +33,8 @@
       "path": "cairo/crates/pragma_dispatcher",
     },
     {
-      "name": "pragma_feed_registry",
-      "path": "cairo/crates/pragma_feed_registry",
+      "name": "pragma_feeds_registry",
+      "path": "cairo/crates/pragma_feeds_registry",
     },
     {
       "name": "pragma_feed_types",

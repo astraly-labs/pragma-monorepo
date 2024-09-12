@@ -81,6 +81,7 @@ dependencies = [
  "hyperlane_starknet",
  "openzeppelin",
  "pragma_feed_types",
+ "pragma_feeds_registry",
  "snforge_std",
 ]
 

@@ -24,6 +24,15 @@ pub trait IPragmaDispatcher<TContractState> {
 }
 
 #[starknet::interface]
+pub trait IPragmaFeedsRegistryWrapper<TContractState> {
+    /// Calls feed_exists from the Pragma Feeds Registry contract.
+    fn call_feed_exists(self: @TContractState, feed_id: FeedId) -> bool;
+
+    /// Calls get_all_feeds from the Pragma Feeds Registry contract.
+    fn get_all_feeds(self: @TContractState) -> Array<FeedId>;
+}
+
+#[starknet::interface]
 pub trait IHyperlaneMailboxWrapper<TContractState> {
     /// Calls dispatch from the Hyperlane Mailbox contract.
     fn call_dispatch(self: @TContractState, message_body: Bytes) -> HyperlaneMessageId;

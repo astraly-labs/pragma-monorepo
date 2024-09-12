@@ -6,12 +6,14 @@ pub mod PragmaDispatcher {
     use openzeppelin::upgrades::{interface::IUpgradeable, upgradeable::UpgradeableComponent};
     use pragma_dispatcher::interface::{
         IPragmaDispatcher, IHyperlaneMailboxWrapper, IPragmaOracleWrapper, ISummaryStatsWrapper,
+        IPragmaFeedsRegistryWrapper,
     };
     use pragma_dispatcher::types::hyperlane::HyperlaneMessageId;
     use pragma_dispatcher::types::pragma_oracle::{
         PragmaPricesResponse, DataType, AggregationMode, SummaryStatsComputation
     };
     use pragma_feed_types::{FeedId};
+    use pragma_feeds_registry::{IPragmaFeedRegistryDispatcher, IPragmaFeedRegistryDispatcherTrait};
     use starknet::{ContractAddress, ClassHash, syscalls, SyscallResultTrait};
 
     // ================== COMPONENTS ==================
@@ -140,12 +142,46 @@ pub mod PragmaDispatcher {
         }
     }
 
+    // ================== PUBLIC CALLERS OF SUB CONTRACTS ==================
+
+    #[abi(embed_v0)]
+    impl PragmaFeedsRegistryWrapper of IPragmaFeedsRegistryWrapper<ContractState> {
+        /// Calls feed_exists from the Pragma Feeds Registry contract.
+        fn call_feed_exists(self: @ContractState, feed_id: FeedId) -> bool {
+            let registry_dispatcher = IPragmaFeedRegistryDispatcher {
+                contract_address: self.pragma_feed_registry_address.read()
+            };
+            registry_dispatcher.feed_exists(feed_id)
+        }
+
+        /// Calls get_all_feeds from the Pragma Feeds Registry contract.
+        fn get_all_feeds(self: @ContractState) -> Array<FeedId> {
+            let registry_dispatcher = IPragmaFeedRegistryDispatcher {
+                contract_address: self.pragma_feed_registry_address.read()
+            };
+            registry_dispatcher.get_all_feeds()
+        }
+    }
+
     // ================== PRIAVTE CALLERS OF SUB CONTRACTS ==================
 
     impl HyperlaneMailboxWrapper of IHyperlaneMailboxWrapper<ContractState> {
         /// Calls dispatch from the Hyperlane Mailbox contract.
         fn call_dispatch(self: @ContractState, message_body: Bytes) -> HyperlaneMessageId {
-            Default::default()
+            let mut call_data: Array<felt252> = array![];
+            Serde::serialize(@0_u32, ref call_data); // destination_domain
+            Serde::serialize(@0_u256, ref call_data); // _recipient_address
+            Serde::serialize(@message_body, ref call_data); // _message_body
+            Serde::serialize(@0_u256, ref call_data); // _fee_amount
+            Serde::serialize(@Option::<Bytes>::None(()), ref call_data); // _custom_hook_metadata
+            Serde::serialize(@Option::<ContractAddress>::None(()), ref call_data); // _custom_hook
+
+            let mut res = syscalls::call_contract_syscall(
+                self.hyperlane_mailbox_address.read(), selector!("dispatch"), call_data.span(),
+            )
+                .unwrap_syscall();
+
+            Serde::<HyperlaneMessageId>::deserialize(ref res).unwrap()
         }
     }
 
