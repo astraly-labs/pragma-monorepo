@@ -15,7 +15,8 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
 
     uint256 constant SINGLE_UPDATE_FEE_IN_WEI = 1;
     uint256 constant VALID_TIME_PERIOD_IN_SECONDS = 60;
-    uint64 constant MOCK_TIMESTAMP_VALUE= 1234;
+    uint32 constant MOCK_NONCE_VALUE= 1234;
+    uint64 constant MOCK_TIMESTAMP_VALUE=0;
 
     function setUpPragma(address hyperlane) public returns (address) {
         uint16[] memory emitterChainIds = new uint16[](1);
@@ -83,7 +84,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         bytes memory hyperlanePayload = abi.encodePacked(rootDigest);
 
         bytes memory updateData = generateUpdateData(
-            MOCK_TIMESTAMP_VALUE, 0, config.source_chain_id, config.source_emitter_address, hyperlanePayload, config.numSigners
+            MOCK_NONCE_VALUE, MOCK_TIMESTAMP_VALUE, config.source_chain_id, config.source_emitter_address, hyperlanePayload, config.numSigners
         );
 
         if (config.brokenSignature) {
