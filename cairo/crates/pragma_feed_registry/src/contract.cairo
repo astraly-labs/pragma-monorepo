@@ -1,12 +1,10 @@
 #[starknet::contract]
 mod PragmaFeedRegistry {
-    use crate::errors;
-    use crate::interface::IPragmaFeedRegistry;
-    use openzeppelin_access::ownable::OwnableComponent;
-    use openzeppelin_upgrades::{UpgradeableComponent, interface::IUpgradeable};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::upgrades::{UpgradeableComponent, interface::IUpgradeable};
     use pragma_feed_types::{FeedId, FeedTrait};
-    use starknet::storage::StoragePathEntry;
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess, Map};
+    use pragma_feeds_registry::errors;
+    use pragma_feeds_registry::interface::IPragmaFeedRegistry;
     use starknet::{ClassHash, ContractAddress, get_caller_address};
 
     // ================== COMPONENTS ==================
@@ -30,8 +28,10 @@ mod PragmaFeedRegistry {
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
+        // Total feed ids registered
         len_feed_ids: u32,
-        feed_ids: Map<u32, FeedId> // All supported feed ids
+        // All supported feed ids
+        feed_ids: LegacyMap::<u32, FeedId>
     }
 
     // ================== EVENTS ==================
@@ -69,7 +69,7 @@ mod PragmaFeedRegistry {
 
     #[abi(embed_v0)]
     impl PragmaFeedRegistry of IPragmaFeedRegistry<ContractState> {
-        /// Adds a feed_id into the Registry.
+        /// Adds the [feed_id] into the Registry.
         ///
         /// Panics if:
         ///     * the feed_id format is incorrect,
@@ -84,14 +84,14 @@ mod PragmaFeedRegistry {
 
             // [Effect] Insert new feed id
             let len_feed_ids = self.len_feed_ids.read();
-            self.feed_ids.entry(len_feed_ids).write(feed_id);
+            self.feed_ids.write(len_feed_ids, feed_id);
             self.len_feed_ids.write(len_feed_ids + 1);
 
-            // [Interaction] NewFeedId event emitted
+            // [Interaction] Event emitted
             self.emit(NewFeedId { sender: get_caller_address(), feed_id: feed_id, })
         }
 
-        /// Removes a feed_id from the Registry.
+        /// Removes the [feed_id] from the Registry.
         ///
         /// Panics if the feed_id is not in the Registry.
         fn remove_feed(ref self: ContractState, feed_id: FeedId) {
@@ -101,7 +101,7 @@ mod PragmaFeedRegistry {
             let feed_id_index: Option<u32> = self._get_feed_id_index(feed_id);
             assert(feed_id_index.is_some(), errors::FEED_NOT_REGISTERED);
 
-            // [Effect] Remove feed id
+            // [Effect] Remove feed id from the registry
             let len_feed_ids: u32 = self.len_feed_ids.read();
             if len_feed_ids == 1 {
                 self._remove_unique_feed_id();
@@ -109,20 +109,23 @@ mod PragmaFeedRegistry {
                 self._remove_feed_id(len_feed_ids, feed_id_index.unwrap());
             }
 
-            // [Interaction] RemovedFeedId event emitted
+            // [Interaction] Event emitted
             self.emit(RemovedFeedId { sender: get_caller_address(), feed_id: feed_id, })
         }
 
         /// Returns all the feed ids stored in the registry.
         fn get_all_feeds(self: @ContractState) -> Array<FeedId> {
             let mut all_feeds: Array<FeedId> = array![];
-            for i in 0
-                ..self
-                    .len_feed_ids
-                    .read() {
-                        let feed_id = self.feed_ids.entry(i).read();
-                        all_feeds.append(feed_id);
-                    };
+
+            let len_feed_ids: u32 = self.len_feed_ids.read();
+            let mut i: u32 = 0;
+            loop {
+                if i >= len_feed_ids {
+                    break;
+                }
+                let feed_id = self.feed_ids.read(i);
+                all_feeds.append(feed_id);
+            };
             all_feeds
         }
 
@@ -138,8 +141,10 @@ mod PragmaFeedRegistry {
     #[abi(embed_v0)]
     impl UpgradeableImpl of IUpgradeable<ContractState> {
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
+            // [Check] Only owner
             self.ownable.assert_only_owner();
-            self.upgradeable.upgrade(new_class_hash);
+            // [Effect] Upgrade contract
+            self.upgradeable._upgrade(new_class_hash);
         }
     }
 
@@ -150,16 +155,19 @@ mod PragmaFeedRegistry {
         /// Returns the index of the provided feed id if it exists, else None.
         fn _get_feed_id_index(self: @ContractState, feed_id: FeedId) -> Option<u32> {
             let mut feed_id_index: Option<u32> = Option::None(());
-            for i in 0
-                ..self
-                    .len_feed_ids
-                    .read() {
-                        let ith_feed_id = self.feed_ids.entry(i).read();
-                        if feed_id == ith_feed_id {
-                            feed_id_index = Option::Some(i);
-                            break;
-                        }
-                    };
+
+            let len_feed_ids: u32 = self.len_feed_ids.read();
+            let mut i: u32 = 0;
+            loop {
+                if i >= len_feed_ids {
+                    break;
+                }
+                let ith_feed_id = self.feed_ids.read(i);
+                if feed_id == ith_feed_id {
+                    feed_id_index = Option::Some(i);
+                    break;
+                }
+            };
 
             feed_id_index
         }
@@ -168,18 +176,18 @@ mod PragmaFeedRegistry {
         /// Little optimization to avoid non-necessary lookups when the storage length
         /// is 1.
         fn _remove_unique_feed_id(ref self: ContractState) {
-            self.feed_ids.entry(0).write(0);
+            self.feed_ids.write(0, 0);
             self.len_feed_ids.write(0);
         }
 
         /// Removes a feed id stored in the registry.
         fn _remove_feed_id(ref self: ContractState, len_feed_ids: u32, feed_id_index: u32) {
             if (feed_id_index == len_feed_ids - 1) {
-                self.feed_ids.entry(feed_id_index).write(0);
+                self.feed_ids.write(feed_id_index, 0);
                 self.len_feed_ids.write(0);
             } else {
-                let last_feed_id = self.feed_ids.entry(len_feed_ids - 1).read();
-                self.feed_ids.entry(feed_id_index).write(last_feed_id);
+                let last_feed_id = self.feed_ids.read(len_feed_ids - 1);
+                self.feed_ids.write(feed_id_index, last_feed_id);
                 self.len_feed_ids.write(len_feed_ids - 1);
             }
         }

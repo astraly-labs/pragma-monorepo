@@ -1,2 +1,2 @@
-// Pragma dispatcher smart contract
-pub mod dispatcher;
+pub mod contract;
+pub mod interface;

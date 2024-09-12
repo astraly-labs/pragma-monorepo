@@ -1,13 +1,12 @@
 #[starknet::contract]
 mod PragmaDispatcher {
     use core::num::traits::Zero;
-    use crate::dispatcher::interface::IPragmaDispatcher;
-    use openzeppelin_access::ownable::OwnableComponent;
-    use openzeppelin_upgrades::{UpgradeableComponent, interface::IUpgradeable};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::upgrades::{interface::IUpgradeable, upgradeable::UpgradeableComponent};
+    use pragma_dispatcher::interface::IPragmaDispatcher;
     use pragma_feed_types::{FeedId};
     use starknet::ClassHash;
     use starknet::ContractAddress;
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     // ================== COMPONENTS ==================
 
@@ -18,8 +17,6 @@ mod PragmaDispatcher {
     #[abi(embed_v0)]
     impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
-
-    // Upgradeable
     impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
 
     // ================== STORAGE ==================
@@ -87,12 +84,13 @@ mod PragmaDispatcher {
             self.hyperlane_mailbox_address.read()
         }
 
-        /// Returns the list of supported data feeds.
-        fn supported_data_feeds(self: @ContractState) -> Span<FeedId> {
+        /// Returns the list of supported feeds.
+        fn supported_feeds(self: @ContractState) -> Span<FeedId> {
             array![].span()
         }
 
-        /// Dispatch a list of feed ids.
+        /// Dispatch updates through the Hyperlane mailbox for the specified list
+        /// of [Span<FeedId>].
         fn dispatch(self: @ContractState, feed_ids: Span<FeedId>) {}
     }
 
@@ -102,7 +100,7 @@ mod PragmaDispatcher {
     impl UpgradeableImpl of IUpgradeable<ContractState> {
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
             self.ownable.assert_only_owner();
-            self.upgradeable.upgrade(new_class_hash);
+            self.upgradeable._upgrade(new_class_hash);
         }
     }
 
