@@ -4,6 +4,11 @@ fn create_random_feed(asset_class: AssetClass, feed_type: FeedType, pair_id: fel
     Feed { asset_class, feed_type, pair_id }
 }
 
+// Utility for conversion
+fn felt252_to_u256(nb: felt252) -> u256 {
+    Into::<felt252, u256>::into(nb)
+}
+
 #[test]
 fn test_valid_feed_id_conversion() {
     let expected_feed = Feed {
@@ -26,19 +31,11 @@ fn test_no_collision_random_feeds(
     let feed_type_2: felt252 = (feed_type_2 % 5).into();
 
     // Ugly lines to avoid pair id > 28 bytes
-    let pair_id1: felt252 = (Into::<
-        felt252, u256
-        >::into(pair_id1) % Into::<
-        felt252, u256
-    >::into(MAX_PAIR_ID))
+    let pair_id1: felt252 = (felt252_to_u256(pair_id1) % felt252_to_u256(MAX_PAIR_ID))
         .try_into()
         .unwrap();
     // Ugly lines to avoid pair id > 28 bytes
-    let pair_id2: felt252 = (Into::<
-        felt252, u256
-        >::into(pair_id2) % Into::<
-        felt252, u256
-    >::into(MAX_PAIR_ID))
+    let pair_id2: felt252 = (felt252_to_u256(pair_id2) % felt252_to_u256(MAX_PAIR_ID))
         .try_into()
         .unwrap();
 
@@ -54,3 +51,4 @@ fn test_no_collision_random_feeds(
         assert(id1 == id2, 'IDs should be same');
     }
 }
+
