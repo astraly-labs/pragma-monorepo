@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "./structs.sol";
+import "./PragmaStructs.sol";
 
 /// @title IHyperlane
 /// @author Pragma Labs

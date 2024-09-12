@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import {IHyperlane} from "./interfaces/IHyperlane.sol";
-import "./interfaces/structs.sol";
+import "./interfaces/PragmaStructs.sol";
 import "./libraries/BytesLib.sol";
 
 contract Hyperlane is IHyperlane {

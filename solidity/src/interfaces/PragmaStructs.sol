@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: Apache 2
+
+pragma solidity ^0.8.0;
+
 struct DataFeed {
     bytes32 feedId;
     uint64 publishTime;

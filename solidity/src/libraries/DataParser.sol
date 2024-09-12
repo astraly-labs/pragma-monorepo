@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./BytesLib.sol";
-import "../interfaces/structs.sol";
+import "../interfaces/PragmaStructs.sol";
 
 library DataParser {
     using BytesLib for bytes;
