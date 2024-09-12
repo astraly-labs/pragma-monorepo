@@ -157,7 +157,7 @@ contract PragmaDecoder {
 
     function extractDataInfoFromUpdate(bytes calldata encoded, uint256 offset, bytes32 checkpointRoot)
         internal
-        returns (uint256 endOffset, ParsedData memory parsedData, bytes32 dataId, uint64 publishTime)
+        returns (uint256 endOffset, ParsedData memory parsedData, bytes32 feedId, uint64 publishTime)
     {
         unchecked {
             bytes calldata encodedUpdate;
@@ -181,7 +181,7 @@ contract PragmaDecoder {
             bool valid;
             (valid, endOffset) = _isProofValid(encodedProof, offset, checkpointRoot, encodedUpdate);
             if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
-            (parsedData, dataId, publishTime) = parseDataFeed(fulldataFeed);
+            (parsedData, feedId, publishTime) = parseDataFeed(fulldataFeed);
             endOffset += 40;
         }
     }
@@ -189,13 +189,13 @@ contract PragmaDecoder {
     function parseDataFeed(bytes calldata encodedDataFeed)
         private
         pure
-        returns (ParsedData memory parsedData, bytes32 dataId, uint64 publishTime)
+        returns (ParsedData memory parsedData, bytes32 feedId, uint64 publishTime)
     {
         parsedData = DataParser.parse(encodedDataFeed);
 
-        // Assuming dataId and publishTime are appended at the end of encodedDataFeed
-        uint256 offset = encodedDataFeed.length - 40; // 32 bytes for dataId, 8 bytes for publishTime
-        dataId = bytes32(UnsafeCalldataBytesLib.toUint256(encodedDataFeed, offset));
+        // Assuming feedId and publishTime are appended at the end of encodedDataFeed
+        uint256 offset = encodedDataFeed.length - 40; // 32 bytes for feedId, 8 bytes for publishTime
+        feedId = bytes32(UnsafeCalldataBytesLib.toUint256(encodedDataFeed, offset));
         offset += 32;
         publishTime = UnsafeBytesLib.toUint64(encodedDataFeed, offset);
     }
@@ -213,10 +213,10 @@ contract PragmaDecoder {
         unchecked {
             for (uint256 i = 0; i < numUpdates; i++) {
                 ParsedData memory parsedData;
-                bytes32 dataId;
+                bytes32 feedId;
                 uint64 publishTime;
-                (offset, parsedData, dataId, publishTime) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
-                updateLatestDataInfoIfNecessary(dataId, parsedData, publishTime);
+                (offset, parsedData, feedId, publishTime) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
+                updateLatestDataInfoIfNecessary(feedId, parsedData, publishTime);
             }
         }
         // We check that the offset is at the end of the encoded data.
@@ -224,40 +224,38 @@ contract PragmaDecoder {
         if (offset != encoded.length) revert ErrorsLib.InvalidUpdateData();
     }
 
-    function updateLatestDataInfoIfNecessary(bytes32 dataId, ParsedData memory parsedData, uint64 publishTime)
+    function updateLatestDataInfoIfNecessary(bytes32 feedId, ParsedData memory parsedData, uint64 publishTime)
         internal
     {
-        if (publishTime > latestPublishTimes[dataId]) {
-            latestPublishTimes[dataId] = publishTime;
+        if (publishTime > latestPublishTimes[feedId]) {
+            latestPublishTimes[feedId] = publishTime;
 
             if (parsedData.dataType == FeedType.SpotMedian) {
-                spotMedianFeeds[dataId] = parsedData.spot;
-                _latestPriceInfo[dataId] =
-                    DataFeed(dataId, publishTime, parsedData.spot.metadata.numberOfSources, parsedData.spot.price);
-                emit EventsLib.SpotMedianUpdate(dataId, publishTime, parsedData.spot);
+                spotMedianFeeds[feedId] = parsedData.spot;
+                _latestPriceInfo[feedId] =
+                    DataFeed(feedId, publishTime, parsedData.spot.metadata.numberOfSources, parsedData.spot.price);
+                emit EventsLib.SpotMedianUpdate(feedId, publishTime, parsedData.spot);
             } else if (parsedData.dataType == FeedType.Twap) {
-                twapFeeds[dataId] = parsedData.twap;
-                _latestPriceInfo[dataId] = DataFeed(
-                    dataId, publishTime, parsedData.twap.metadata.numberOfSources, parsedData.twap.twapPrice
-                );
-                emit EventsLib.TWAPUpdate(dataId, publishTime, parsedData.twap);
+                twapFeeds[feedId] = parsedData.twap;
+                _latestPriceInfo[feedId] =
+                    DataFeed(feedId, publishTime, parsedData.twap.metadata.numberOfSources, parsedData.twap.twapPrice);
+                emit EventsLib.TWAPUpdate(feedId, publishTime, parsedData.twap);
             } else if (parsedData.dataType == FeedType.RealizedVolatility) {
-                rvFeeds[dataId] = parsedData.rv;
-                _latestPriceInfo[dataId] =
-                    DataFeed(dataId, publishTime, parsedData.rv.metadata.numberOfSources, parsedData.rv.endPrice);
-                emit EventsLib.RealizedVolatilityUpdate(dataId, publishTime, parsedData.rv);
+                rvFeeds[feedId] = parsedData.rv;
+                _latestPriceInfo[feedId] =
+                    DataFeed(feedId, publishTime, parsedData.rv.metadata.numberOfSources, parsedData.rv.endPrice);
+                emit EventsLib.RealizedVolatilityUpdate(feedId, publishTime, parsedData.rv);
             } else if (parsedData.dataType == FeedType.Options) {
-                optionsFeeds[dataId] = parsedData.options;
-                _latestPriceInfo[dataId] = DataFeed(
-                    dataId, publishTime, parsedData.options.metadata.numberOfSources, parsedData.options.optionPrice
+                optionsFeeds[feedId] = parsedData.options;
+                _latestPriceInfo[feedId] = DataFeed(
+                    feedId, publishTime, parsedData.options.metadata.numberOfSources, parsedData.options.optionPrice
                 );
-                emit EventsLib.OptionsUpdate(dataId, publishTime, parsedData.options);
+                emit EventsLib.OptionsUpdate(feedId, publishTime, parsedData.options);
             } else if (parsedData.dataType == FeedType.Perpetuals) {
-                perpFeeds[dataId] = parsedData.perp;
-                _latestPriceInfo[dataId] = DataFeed(
-                    dataId, publishTime, parsedData.perp.metadata.numberOfSources, parsedData.perp.markPrice
-                );
-                emit EventsLib.PerpUpdate(dataId, publishTime, parsedData.perp);
+                perpFeeds[feedId] = parsedData.perp;
+                _latestPriceInfo[feedId] =
+                    DataFeed(feedId, publishTime, parsedData.perp.metadata.numberOfSources, parsedData.perp.markPrice);
+                emit EventsLib.PerpUpdate(feedId, publishTime, parsedData.perp);
             } else {
                 revert ErrorsLib.InvalidDataFeedType();
             }

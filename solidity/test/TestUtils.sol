@@ -117,7 +117,7 @@ library TestUtils {
             uint16(proof.length),
             proof,
             updateData,
-            feedId, // dataId
+            feedId, // feedId
             uint64(block.timestamp) // publishTime
         );
 

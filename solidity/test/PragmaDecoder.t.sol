@@ -22,32 +22,32 @@ contract PragmaDecoderHarness is PragmaDecoder {
         return updateDataInfoFromUpdate(updateData);
     }
 
-    function exposed_spotMedianFeeds(bytes32 dataId) external view returns (SpotMedian memory) {
-        return spotMedianFeeds[dataId];
+    function exposed_spotMedianFeeds(bytes32 feedId) external view returns (SpotMedian memory) {
+        return spotMedianFeeds[feedId];
     }
 
-    function exposed_twapFeeds(bytes32 dataId) external view returns (TWAP memory) {
-        return twapFeeds[dataId];
+    function exposed_twapFeeds(bytes32 feedId) external view returns (TWAP memory) {
+        return twapFeeds[feedId];
     }
 
-    function exposed_rvFeeds(bytes32 dataId) external view returns (RealizedVolatility memory) {
-        return rvFeeds[dataId];
+    function exposed_rvFeeds(bytes32 feedId) external view returns (RealizedVolatility memory) {
+        return rvFeeds[feedId];
     }
 
-    function exposed_optionsFeeds(bytes32 dataId) external view returns (Options memory) {
-        return optionsFeeds[dataId];
+    function exposed_optionsFeeds(bytes32 feedId) external view returns (Options memory) {
+        return optionsFeeds[feedId];
     }
 
-    function exposed_latestPriceInfo(bytes32 dataId) external view returns (DataFeed memory) {
-        return _latestPriceInfo[dataId];
+    function exposed_latestPriceInfo(bytes32 feedId) external view returns (DataFeed memory) {
+        return _latestPriceInfo[feedId];
     }
 
-    function exposed_latestPublishTimes(bytes32 dataId) external view returns (uint64) {
-        return latestPublishTimes[dataId];
+    function exposed_latestPublishTimes(bytes32 feedId) external view returns (uint64) {
+        return latestPublishTimes[feedId];
     }
 
-    function exposed_perpFeeds(bytes32 dataId) external view returns (Perp memory) {
-        return perpFeeds[dataId];
+    function exposed_perpFeeds(bytes32 feedId) external view returns (Perp memory) {
+        return perpFeeds[feedId];
     }
 
     function _isProofValid(bytes calldata encodedProof, uint256 offset, bytes32 root, bytes calldata leafData)

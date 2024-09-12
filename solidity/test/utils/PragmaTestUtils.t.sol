@@ -37,7 +37,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
     // Utilities to help generating data feed messages and Hyperlane Checkpoints for them
 
     struct DataFeedMessage {
-        bytes32 dataId;
+        bytes32 feedId;
         int64 value;
         int32 expo;
         uint64 publishTime;
@@ -62,7 +62,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         for (uint256 i = 0; i < dataFeedMessages.length; i++) {
             encodedDataFeedMessages[i] = abi.encodePacked(
                 uint8(DataFeedType.SpotMedian),
-                dataFeedMessages[i].dataId,
+                dataFeedMessages[i].feedId,
                 dataFeedMessages[i].value,
                 dataFeedMessages[i].expo,
                 dataFeedMessages[i].publishTime,
