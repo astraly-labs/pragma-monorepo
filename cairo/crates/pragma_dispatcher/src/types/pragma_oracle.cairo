@@ -1,1 +1,3 @@
-pub type SummaryStatsComputation = (u128, u32);
+pub type Decimals = u32;
+pub type Price = u128;
+pub type SummaryStatsComputation = (Price, Decimals);
