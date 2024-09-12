@@ -15,7 +15,7 @@ pub trait IPragmaDispatcher<TContractState> {
     fn get_hyperlane_mailbox_address(self: @TContractState) -> ContractAddress;
 
     /// Returns the list of supported feeds.
-    fn supported_feeds(self: @TContractState) -> Span<FeedId>;
+    fn supported_feeds(self: @TContractState) -> Array<FeedId>;
 
     /// Dispatch updates through the Hyperlane mailbox for the specifieds
     /// [Span<FeedId>] and return the ID of the message dispatched.
@@ -28,7 +28,7 @@ pub trait IPragmaFeedsRegistryWrapper<TContractState> {
     fn call_feed_exists(self: @TContractState, feed_id: FeedId) -> bool;
 
     /// Calls get_all_feeds from the Pragma Feeds Registry contract.
-    fn get_all_feeds(self: @TContractState) -> Array<FeedId>;
+    fn call_get_all_feeds(self: @TContractState) -> Array<FeedId>;
 }
 
 #[starknet::interface]

@@ -102,8 +102,8 @@ pub mod PragmaDispatcher {
         }
 
         /// Returns the list of supported feeds.
-        fn supported_feeds(self: @ContractState) -> Span<FeedId> {
-            array![].span()
+        fn supported_feeds(self: @ContractState) -> Array<FeedId> {
+            self.call_get_all_feeds()
         }
 
         /// Dispatch updates through the Hyperlane mailbox for the specified list
@@ -123,9 +123,8 @@ pub mod PragmaDispatcher {
         }
     }
 
-    // ================== PUBLIC CALLERS OF SUB CONTRACTS ==================
+    // ================== PRIVATE CALLERS OF SUB CONTRACTS ==================
 
-    #[abi(embed_v0)]
     impl PragmaFeedsRegistryWrapper of IPragmaFeedsRegistryWrapper<ContractState> {
         /// Calls feed_exists from the Pragma Feeds Registry contract.
         fn call_feed_exists(self: @ContractState, feed_id: FeedId) -> bool {
@@ -136,15 +135,13 @@ pub mod PragmaDispatcher {
         }
 
         /// Calls get_all_feeds from the Pragma Feeds Registry contract.
-        fn get_all_feeds(self: @ContractState) -> Array<FeedId> {
+        fn call_get_all_feeds(self: @ContractState) -> Array<FeedId> {
             let registry_dispatcher = IPragmaFeedRegistryDispatcher {
                 contract_address: self.pragma_feed_registry_address.read()
             };
             registry_dispatcher.get_all_feeds()
         }
     }
-
-    // ================== PRIAVTE CALLERS OF SUB CONTRACTS ==================
 
     impl HyperlaneMailboxWrapper of IHyperlaneMailboxWrapper<ContractState> {
         /// Calls dispatch from the Hyperlane Mailbox contract.
