@@ -5,9 +5,12 @@ version = "0.1.0"
 
 [dependencies]
 starknet.workspace = true
+
+pragma_lib.workspace = true
 hyperlane_starknet.workspace = true
 alexandria_bytes.workspace = true
 openzeppelin.workspace = true
+
 pragma_feed_types.workspace = true
 pragma_feeds_registry.workspace = true
 

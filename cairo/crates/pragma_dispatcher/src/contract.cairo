@@ -2,19 +2,24 @@
 pub mod PragmaDispatcher {
     use alexandria_bytes::Bytes;
     use core::num::traits::Zero;
+    use hyperlane_starknet::interfaces::{IMailboxDispatcher, IMailboxDispatcherTrait};
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{interface::IUpgradeable, upgradeable::UpgradeableComponent};
     use pragma_dispatcher::interface::{
         IPragmaDispatcher, IHyperlaneMailboxWrapper, IPragmaOracleWrapper, ISummaryStatsWrapper,
         IPragmaFeedsRegistryWrapper,
     };
-    use pragma_dispatcher::types::hyperlane::HyperlaneMessageId;
-    use pragma_dispatcher::types::pragma_oracle::{
-        PragmaPricesResponse, DataType, AggregationMode, SummaryStatsComputation
+    use pragma_dispatcher::types::{
+        hyperlane::HyperlaneMessageId, pragma_oracle::SummaryStatsComputation,
     };
     use pragma_feed_types::{FeedId};
     use pragma_feeds_registry::{IPragmaFeedRegistryDispatcher, IPragmaFeedRegistryDispatcherTrait};
-    use starknet::{ContractAddress, ClassHash, syscalls, SyscallResultTrait};
+    use pragma_lib::abi::{
+        IPragmaABIDispatcher, IPragmaABIDispatcherTrait, ISummaryStatsABIDispatcher,
+        ISummaryStatsABIDispatcherTrait
+    };
+    use pragma_lib::types::{PragmaPricesResponse, AggregationMode, DataType};
+    use starknet::{ContractAddress, ClassHash};
 
     // ================== COMPONENTS ==================
 
@@ -118,30 +123,6 @@ pub mod PragmaDispatcher {
         }
     }
 
-    // ================== PRIVATE IMPLEMENTATIONS ==================
-
-    #[generate_trait]
-    impl InternalImpl of InternalTrait {
-        fn initializer(
-            ref self: ContractState,
-            owner: ContractAddress,
-            pragma_oracle_address: ContractAddress,
-            summary_stats_address: ContractAddress,
-            pragma_feed_registry_address: ContractAddress,
-            hyperlane_mailbox_address: ContractAddress,
-        ) {
-            // [Check]
-            assert(!owner.is_zero(), 'Owner cannot be 0');
-
-            // [Effect]
-            self.ownable.initializer(owner);
-            self.pragma_oracle_address.write(pragma_oracle_address);
-            self.summary_stats_address.write(summary_stats_address);
-            self.pragma_feed_registry_address.write(pragma_feed_registry_address);
-            self.hyperlane_mailbox_address.write(hyperlane_mailbox_address);
-        }
-    }
-
     // ================== PUBLIC CALLERS OF SUB CONTRACTS ==================
 
     #[abi(embed_v0)]
@@ -168,20 +149,19 @@ pub mod PragmaDispatcher {
     impl HyperlaneMailboxWrapper of IHyperlaneMailboxWrapper<ContractState> {
         /// Calls dispatch from the Hyperlane Mailbox contract.
         fn call_dispatch(self: @ContractState, message_body: Bytes) -> HyperlaneMessageId {
-            let mut call_data: Array<felt252> = array![];
-            Serde::serialize(@0_u32, ref call_data); // destination_domain
-            Serde::serialize(@0_u256, ref call_data); // _recipient_address
-            Serde::serialize(@message_body, ref call_data); // _message_body
-            Serde::serialize(@0_u256, ref call_data); // _fee_amount
-            Serde::serialize(@Option::<Bytes>::None(()), ref call_data); // _custom_hook_metadata
-            Serde::serialize(@Option::<ContractAddress>::None(()), ref call_data); // _custom_hook
+            let mailbox_dispatcher = IMailboxDispatcher {
+                contract_address: self.hyperlane_mailbox_address.read()
+            };
 
-            let mut res = syscalls::call_contract_syscall(
-                self.hyperlane_mailbox_address.read(), selector!("dispatch"), call_data.span(),
-            )
-                .unwrap_syscall();
-
-            Serde::<HyperlaneMessageId>::deserialize(ref res).unwrap()
+            mailbox_dispatcher
+                .dispatch(
+                    0_u32, // destination_domain
+                    0_u256, // recipient_address
+                    message_body,
+                    0_u256, // fee_amount
+                    Option::<Bytes>::None(()), // _custom_hook_metadata
+                    Option::<ContractAddress>::None(()), // _custom_hook
+                )
         }
     }
 
@@ -190,16 +170,11 @@ pub mod PragmaDispatcher {
         fn call_get_data(
             self: @ContractState, data_type: DataType, aggregation_mode: AggregationMode,
         ) -> PragmaPricesResponse {
-            let mut call_data: Array<felt252> = array![];
-            Serde::serialize(@data_type, ref call_data);
-            Serde::serialize(@aggregation_mode, ref call_data);
+            let pragma_dispatcher = IPragmaABIDispatcher {
+                contract_address: self.pragma_oracle_address.read()
+            };
 
-            let mut res = syscalls::call_contract_syscall(
-                self.pragma_oracle_address.read(), selector!("get_data"), call_data.span(),
-            )
-                .unwrap_syscall();
-
-            Serde::<PragmaPricesResponse>::deserialize(ref res).unwrap()
+            pragma_dispatcher.get_data(data_type, aggregation_mode)
         }
     }
 
@@ -212,18 +187,12 @@ pub mod PragmaDispatcher {
             start_timestamp: u64,
             end_timestamp: u64,
         ) -> SummaryStatsComputation {
-            let mut call_data: Array<felt252> = array![];
-            Serde::serialize(@data_type, ref call_data);
-            Serde::serialize(@start_timestamp, ref call_data);
-            Serde::serialize(@end_timestamp, ref call_data);
-            Serde::serialize(@aggregation_mode, ref call_data);
+            let summary_stats_dispatcher = ISummaryStatsABIDispatcher {
+                contract_address: self.summary_stats_address.read()
+            };
 
-            let mut res = syscalls::call_contract_syscall(
-                self.summary_stats_address.read(), selector!("calculate_mean"), call_data.span(),
-            )
-                .unwrap_syscall();
-
-            Serde::<SummaryStatsComputation>::deserialize(ref res).unwrap()
+            summary_stats_dispatcher
+                .calculate_mean(data_type, start_timestamp, end_timestamp, aggregation_mode)
         }
 
         /// Calls calculate_volatility from the Summary Stats contract.
@@ -235,21 +204,14 @@ pub mod PragmaDispatcher {
             end_timestamp: u64,
             num_samples: u64,
         ) -> SummaryStatsComputation {
-            let mut call_data: Array<felt252> = array![];
-            Serde::serialize(@data_type, ref call_data);
-            Serde::serialize(@start_timestamp, ref call_data);
-            Serde::serialize(@end_timestamp, ref call_data);
-            Serde::serialize(@num_samples, ref call_data);
-            Serde::serialize(@aggregation_mode, ref call_data);
+            let summary_stats_dispatcher = ISummaryStatsABIDispatcher {
+                contract_address: self.summary_stats_address.read()
+            };
 
-            let mut res = syscalls::call_contract_syscall(
-                self.summary_stats_address.read(),
-                selector!("calculate_volatility"),
-                call_data.span(),
-            )
-                .unwrap_syscall();
-
-            Serde::<SummaryStatsComputation>::deserialize(ref res).unwrap()
+            summary_stats_dispatcher
+                .calculate_volatility(
+                    data_type, start_timestamp, end_timestamp, num_samples, aggregation_mode
+                )
         }
 
         /// Calls calculate_twap from the Summary Stats contract.
@@ -260,18 +222,36 @@ pub mod PragmaDispatcher {
             start_timestamp: u64,
             duration: u64,
         ) -> SummaryStatsComputation {
-            let mut call_data: Array<felt252> = array![];
-            Serde::serialize(@data_type, ref call_data);
-            Serde::serialize(@aggregation_mode, ref call_data);
-            Serde::serialize(@duration, ref call_data);
-            Serde::serialize(@start_timestamp, ref call_data);
+            let summary_stats_dispatcher = ISummaryStatsABIDispatcher {
+                contract_address: self.summary_stats_address.read()
+            };
 
-            let mut res = syscalls::call_contract_syscall(
-                self.summary_stats_address.read(), selector!("calculate_twap"), call_data.span(),
-            )
-                .unwrap_syscall();
+            summary_stats_dispatcher
+                .calculate_twap(data_type, aggregation_mode, duration, start_timestamp)
+        }
+    }
 
-            Serde::<SummaryStatsComputation>::deserialize(ref res).unwrap()
+    // ================== PRIVATE IMPLEMENTATIONS ==================
+
+    #[generate_trait]
+    impl InternalImpl of InternalTrait {
+        fn initializer(
+            ref self: ContractState,
+            owner: ContractAddress,
+            pragma_oracle_address: ContractAddress,
+            summary_stats_address: ContractAddress,
+            pragma_feed_registry_address: ContractAddress,
+            hyperlane_mailbox_address: ContractAddress,
+        ) {
+            // [Check]
+            assert(!owner.is_zero(), 'Owner cannot be 0');
+
+            // [Effect]
+            self.ownable.initializer(owner);
+            self.pragma_oracle_address.write(pragma_oracle_address);
+            self.summary_stats_address.write(summary_stats_address);
+            self.pragma_feed_registry_address.write(pragma_feed_registry_address);
+            self.hyperlane_mailbox_address.write(hyperlane_mailbox_address);
         }
     }
 }

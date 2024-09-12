@@ -61,7 +61,7 @@ source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=bcdca7
 [[package]]
 name = "hyperlane_starknet"
 version = "0.0.6"
-source = "git+https://github.com/akhercha/hyperlane_starknet?branch=feat-token-extensions#b07e5aa9f416060aef67c487e0fdc3d06676a25a"
+source = "git+https://github.com/akhercha/hyperlane_starknet?branch=feat-token-extensions#81014b53b90289941cb2370c8646e3a1ecf3b45d"
 dependencies = [
  "alexandria_bytes",
  "alexandria_storage",
@@ -82,6 +82,7 @@ dependencies = [
  "openzeppelin",
  "pragma_feed_types",
  "pragma_feeds_registry",
+ "pragma_lib",
  "snforge_std",
 ]
 
@@ -101,6 +102,11 @@ dependencies = [
  "pragma_feed_types",
  "snforge_std",
 ]
+
+[[package]]
+name = "pragma_lib"
+version = "1.0.0"
+source = "git+https://github.com/astraly-labs/pragma-lib#8e05116b6350028bd6435f9975d2f656160b5d72"
 
 [[package]]
 name = "pragma_maths"

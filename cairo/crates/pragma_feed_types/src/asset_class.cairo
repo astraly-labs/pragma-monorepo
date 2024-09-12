@@ -8,7 +8,7 @@ pub type AssetClassId = u16;
 impl AssetClassIntoAssetClassId of Into<AssetClass, AssetClassId> {
     fn into(self: AssetClass) -> AssetClassId {
         match self {
-            AssetClass::Crypto => 1,
+            AssetClass::Crypto => 0,
         }
     }
 }
@@ -24,8 +24,7 @@ impl AssetClassIntoString of Into<AssetClass, ByteArray> {
 impl AssetClassIdTryIntoAssetClass of TryInto<AssetClassId, AssetClass> {
     fn try_into(self: u16) -> Option<AssetClass> {
         match self {
-            0 => Option::None(()), // must start from 0 else syntax error
-            1 => Option::Some(AssetClass::Crypto),
+            0 => Option::Some(AssetClass::Crypto),
             _ => Option::None(())
         }
     }

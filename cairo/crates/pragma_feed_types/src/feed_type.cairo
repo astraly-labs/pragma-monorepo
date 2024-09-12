@@ -12,11 +12,11 @@ pub type FeedTypeId = u16;
 impl FeedTypeIntoFeedTypeId of Into<FeedType, FeedTypeId> {
     fn into(self: FeedType) -> FeedTypeId {
         match self {
-            FeedType::SpotMedian => 1,
-            FeedType::Twap => 2,
-            FeedType::RealizedVolatility => 3,
-            FeedType::Option => 4,
-            FeedType::Perp => 5,
+            FeedType::SpotMedian => 0,
+            FeedType::Twap => 1,
+            FeedType::RealizedVolatility => 2,
+            FeedType::Option => 3,
+            FeedType::Perp => 4,
         }
     }
 }
@@ -36,12 +36,11 @@ impl FeedTypeIntoString of Into<FeedType, ByteArray> {
 impl FeedTypeIdTryIntoFeedType of TryInto<FeedTypeId, FeedType> {
     fn try_into(self: u16) -> Option<FeedType> {
         match self {
-            0 => Option::None(()), // must start from 0 else syntax error
-            1 => Option::Some(FeedType::SpotMedian),
-            2 => Option::Some(FeedType::Twap),
-            3 => Option::Some(FeedType::RealizedVolatility),
-            4 => Option::Some(FeedType::Option),
-            5 => Option::Some(FeedType::Perp),
+            0 => Option::Some(FeedType::SpotMedian),
+            1 => Option::Some(FeedType::Twap),
+            2 => Option::Some(FeedType::RealizedVolatility),
+            3 => Option::Some(FeedType::Option),
+            4 => Option::Some(FeedType::Perp),
             _ => Option::None(())
         }
     }

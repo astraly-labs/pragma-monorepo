@@ -16,6 +16,9 @@ starknet = "2.6.4"
 # OpenZeppelin components & utilities
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.14.0" }
 
+# Pragma Oracle
+pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib" }
+
 # Hyperlane core contracts
 hyperlane_starknet = { git = "https://github.com/akhercha/hyperlane_starknet", branch = "feat-token-extensions", rel_path = "cairo/" }
 

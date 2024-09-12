@@ -1,9 +1,8 @@
 use alexandria_bytes::Bytes;
 use pragma_dispatcher::types::hyperlane::HyperlaneMessageId;
-use pragma_dispatcher::types::pragma_oracle::{
-    SummaryStatsComputation, PragmaPricesResponse, DataType, AggregationMode
-};
+use pragma_dispatcher::types::pragma_oracle::{SummaryStatsComputation};
 use pragma_feed_types::{FeedId};
+use pragma_lib::types::{PragmaPricesResponse, DataType, AggregationMode};
 use starknet::ContractAddress;
 
 #[starknet::interface]
