@@ -11,6 +11,7 @@ openzeppelin_governance.workspace = true
 openzeppelin_security.workspace = true
 openzeppelin_upgrades.workspace = true
 starknet.workspace = true
+pragma_feed_types.workspace = true
 
 [tool]
 fmt.workspace = true

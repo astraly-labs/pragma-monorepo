@@ -1,7 +1,7 @@
 #[starknet::contract]
 mod PragmaFeedRegistry {
-    use crate::registry::errors;
-    use crate::registry::interface::IPragmaFeedRegistry;
+    use crate::errors;
+    use crate::interface::IPragmaFeedRegistry;
     use openzeppelin_access::ownable::OwnableComponent;
     use openzeppelin_upgrades::{UpgradeableComponent, interface::IUpgradeable};
     use pragma_feed_types::{FeedId, FeedTrait};
@@ -31,7 +31,7 @@ mod PragmaFeedRegistry {
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
         len_feed_ids: u32,
-        feed_ids: Map<u32, FeedId> // All supported feed ids & thei
+        feed_ids: Map<u32, FeedId> // All supported feed ids
     }
 
     // ================== EVENTS ==================
@@ -75,15 +75,19 @@ mod PragmaFeedRegistry {
         ///     * the feed_id format is incorrect,
         ///     * the feed_id is already registered.
         fn add_feed(ref self: ContractState, feed_id: FeedId) {
+            // [Check] Only owner
             self.ownable.assert_only_owner();
-
+            // [Check] Feed id not already registered
+            assert(!self.feed_exists(feed_id), errors::FEED_ALREADY_REGISTERED);
+            // [Check] Feed id format
             assert(FeedTrait::from_id(feed_id).is_some(), errors::INVALID_FEED_FORMAT);
-            assert(self._get_feed_id_index(feed_id).is_none(), errors::FEED_ALREADY_REGISTERED);
 
+            // [Effect] Insert new feed id
             let len_feed_ids = self.len_feed_ids.read();
             self.feed_ids.entry(len_feed_ids).write(feed_id);
             self.len_feed_ids.write(len_feed_ids + 1);
 
+            // [Interaction] NewFeedId event emitted
             self.emit(NewFeedId { sender: get_caller_address(), feed_id: feed_id, })
         }
 
@@ -91,18 +95,21 @@ mod PragmaFeedRegistry {
         ///
         /// Panics if the feed_id is not in the Registry.
         fn remove_feed(ref self: ContractState, feed_id: FeedId) {
+            // [Check] Only owner
             self.ownable.assert_only_owner();
+            // [Check] Feed id registered
+            let feed_id_index: Option<u32> = self._get_feed_id_index(feed_id);
+            assert(feed_id_index.is_some(), errors::FEED_NOT_REGISTERED);
 
+            // [Effect] Remove feed id
             let len_feed_ids: u32 = self.len_feed_ids.read();
             if len_feed_ids == 1 {
-                assert(self.feed_ids.entry(0).read() == feed_id, errors::FEED_NOT_REGISTERED);
                 self._remove_unique_feed_id();
             } else {
-                let feed_id_index: Option<u32> = self._get_feed_id_index(feed_id);
-                assert(feed_id_index.is_some(), errors::FEED_NOT_REGISTERED);
                 self._remove_feed_id(len_feed_ids, feed_id_index.unwrap());
             }
 
+            // [Interaction] RemovedFeedId event emitted
             self.emit(RemovedFeedId { sender: get_caller_address(), feed_id: feed_id, })
         }
 
@@ -122,18 +129,7 @@ mod PragmaFeedRegistry {
         /// Returns [true] if the [feed_id] provided is stored in the registry,
         /// else [false].
         fn feed_exists(self: @ContractState, feed_id: FeedId) -> bool {
-            let mut found = false;
-            for i in 0
-                ..self
-                    .len_feed_ids
-                    .read() {
-                        let ith_feed_id = self.feed_ids.entry(i).read();
-                        if feed_id == ith_feed_id {
-                            found = true;
-                            break;
-                        }
-                    };
-            found
+            self._get_feed_id_index(feed_id).is_some()
         }
     }
     // ================== COMPONENTS IMPLEMENTATIONS ==================

@@ -10,6 +10,7 @@ fn test_valid_feed_id_conversion() {
         asset_class: AssetClass::Crypto, feed_type: FeedType::SpotMedian, pair_id: 'BTC/USD',
     };
     let feed_id: FeedId = expected_feed.id();
+    println!("feed_id: {}", feed_id);
 
     let out_feed: Feed = FeedTrait::from_id(feed_id).unwrap();
     assert(out_feed.asset_class == expected_feed.asset_class, 'Incorrect asset_class');

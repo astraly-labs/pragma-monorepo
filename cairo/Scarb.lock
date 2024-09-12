@@ -53,6 +53,7 @@ dependencies = [
  "openzeppelin_governance",
  "openzeppelin_security",
  "openzeppelin_upgrades",
+ "pragma_feed_types",
  "snforge_std",
 ]
 

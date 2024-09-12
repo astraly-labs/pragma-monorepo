@@ -5,7 +5,9 @@ use starknet::ContractAddress;
 pub trait IPragmaDispatcher<TContractState> {
     fn get_pragma_oracle_address(self: @TContractState) -> ContractAddress;
     fn get_pragma_feed_registry_address(self: @TContractState) -> ContractAddress;
-    fn get_hyperlane_core_address(self: @TContractState) -> ContractAddress;
+    fn get_hyperlane_mailbox_address(self: @TContractState) -> ContractAddress;
 
-    fn dispatch_data_feeds(self: @TContractState, feed_ids: Span<FeedId>);
+    fn supported_data_feeds(self: @TContractState) -> Span<FeedId>;
+
+    fn dispatch(self: @TContractState, feed_ids: Span<FeedId>);
 }

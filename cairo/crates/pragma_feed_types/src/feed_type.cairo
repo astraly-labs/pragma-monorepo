@@ -21,6 +21,18 @@ impl FeedTypeIntoFeedTypeId of Into<FeedType, FeedTypeId> {
     }
 }
 
+impl FeedTypeIntoString of Into<FeedType, ByteArray> {
+    fn into(self: FeedType) -> ByteArray {
+        match self {
+            FeedType::SpotMedian => "Spot Median",
+            FeedType::Twap => "Twap",
+            FeedType::RealizedVolatility => "Realized Volatility",
+            FeedType::Option => "Option",
+            FeedType::Perp => "Perp",
+        }
+    }
+}
+
 impl FeedTypeIdTryIntoFeedType of TryInto<FeedTypeId, FeedType> {
     fn try_into(self: u16) -> Option<FeedType> {
         match self {

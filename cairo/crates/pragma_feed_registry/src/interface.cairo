@@ -1,4 +1,4 @@
-use pragma_feed_types::{FeedId};
+use pragma_feed_types::FeedId;
 
 #[starknet::interface]
 pub trait IPragmaFeedRegistry<TContractState> {

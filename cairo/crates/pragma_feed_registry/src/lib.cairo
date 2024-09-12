@@ -1,8 +1,8 @@
-pub mod registry;
+pub mod contract;
+pub mod errors;
+pub mod interface;
 
-pub use registry::{
-    interface::{
-        IPragmaFeedRegistry, IPragmaFeedRegistryDispatcher, IPragmaFeedRegistryDispatcherTrait
-    },
-    errors
+
+pub use interface::{
+    IPragmaFeedRegistry, IPragmaFeedRegistryDispatcher, IPragmaFeedRegistryDispatcherTrait
 };

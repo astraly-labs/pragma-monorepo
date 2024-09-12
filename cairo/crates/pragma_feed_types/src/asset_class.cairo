@@ -13,6 +13,14 @@ impl AssetClassIntoAssetClassId of Into<AssetClass, AssetClassId> {
     }
 }
 
+impl AssetClassIntoString of Into<AssetClass, ByteArray> {
+    fn into(self: AssetClass) -> ByteArray {
+        match self {
+            AssetClass::Crypto => "Crypto",
+        }
+    }
+}
+
 impl AssetClassIdTryIntoAssetClass of TryInto<AssetClassId, AssetClass> {
     fn try_into(self: u16) -> Option<AssetClass> {
         match self {

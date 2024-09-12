@@ -1,5 +1,6 @@
 #[starknet::contract]
 mod PragmaDispatcher {
+    use core::num::traits::Zero;
     use crate::dispatcher::interface::IPragmaDispatcher;
     use openzeppelin_access::ownable::OwnableComponent;
     use openzeppelin_upgrades::{UpgradeableComponent, interface::IUpgradeable};
@@ -34,7 +35,7 @@ mod PragmaDispatcher {
         // Pragma Feed Registry containing all the supported feeds
         pragma_feed_registry_address: ContractAddress,
         // Hyperlane core contract
-        hyperlane_core_address: ContractAddress,
+        hyperlane_mailbox_address: ContractAddress,
     }
 
     // ================== EVENTS ==================
@@ -56,13 +57,15 @@ mod PragmaDispatcher {
         owner: ContractAddress,
         pragma_oracle_address: ContractAddress,
         pragma_feed_registry_address: ContractAddress,
-        hyperlane_core_address: ContractAddress,
+        hyperlane_mailbox_address: ContractAddress,
     ) {
-        self.ownable.initializer(owner);
-
-        self.pragma_oracle_address.write(pragma_oracle_address);
-        self.pragma_feed_registry_address.write(pragma_feed_registry_address);
-        self.hyperlane_core_address.write(hyperlane_core_address);
+        self
+            .initializer(
+                owner,
+                pragma_oracle_address,
+                pragma_feed_registry_address,
+                hyperlane_mailbox_address
+            );
     }
 
     // ================== PUBLIC ABI ==================
@@ -79,15 +82,19 @@ mod PragmaDispatcher {
             self.pragma_feed_registry_address.read()
         }
 
-        /// Returns the registered Hyperlane Core contract address.
-        fn get_hyperlane_core_address(self: @ContractState) -> ContractAddress {
-            self.hyperlane_core_address.read()
+        /// Returns the registered Hyperlane Mailbox address.
+        fn get_hyperlane_mailbox_address(self: @ContractState) -> ContractAddress {
+            self.hyperlane_mailbox_address.read()
+        }
+
+        /// Returns the list of supported data feeds.
+        fn supported_data_feeds(self: @ContractState) -> Span<FeedId> {
+            array![].span()
         }
 
         /// Dispatch a list of feed ids.
-        fn dispatch_data_feeds(self: @ContractState, feed_ids: Span<FeedId>) {}
+        fn dispatch(self: @ContractState, feed_ids: Span<FeedId>) {}
     }
-
 
     // ================== COMPONENTS IMPLEMENTATIONS ==================
 
@@ -96,6 +103,26 @@ mod PragmaDispatcher {
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
             self.ownable.assert_only_owner();
             self.upgradeable.upgrade(new_class_hash);
+        }
+    }
+
+    #[generate_trait]
+    impl InternalImpl of InternalTrait {
+        fn initializer(
+            ref self: ContractState,
+            owner: ContractAddress,
+            pragma_oracle_address: ContractAddress,
+            pragma_feed_registry_address: ContractAddress,
+            hyperlane_mailbox_address: ContractAddress,
+        ) {
+            // [Check]
+            assert(!owner.is_zero(), 'Owner cannot be 0');
+
+            // [Effect]
+            self.ownable.initializer(owner);
+            self.pragma_oracle_address.write(pragma_oracle_address);
+            self.pragma_feed_registry_address.write(pragma_feed_registry_address);
+            self.hyperlane_mailbox_address.write(hyperlane_mailbox_address);
         }
     }
 }
