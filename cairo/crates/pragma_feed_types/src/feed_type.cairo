@@ -1,4 +1,4 @@
-#[derive(Debug, Drop, Clone, Serde, PartialEq, Hash)]
+#[derive(Debug, Drop, Copy, Serde, PartialEq, Hash)]
 pub enum FeedType {
     SpotMedian,
     Twap,

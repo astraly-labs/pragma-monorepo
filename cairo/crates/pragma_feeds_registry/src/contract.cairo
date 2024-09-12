@@ -1,5 +1,7 @@
 #[starknet::contract]
 pub mod PragmaFeedRegistry {
+    use core::num::traits::Zero;
+    use core::panic_with_felt252;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{UpgradeableComponent, interface::IUpgradeable};
     use pragma_feed_types::{FeedId, FeedTrait};
@@ -62,6 +64,9 @@ pub mod PragmaFeedRegistry {
 
     #[constructor]
     fn constructor(ref self: ContractState, owner: ContractAddress) {
+        // [Check]
+        assert(!owner.is_zero(), errors::OWNER_IS_ZERO);
+        // [Effect]
         self.ownable.initializer(owner);
     }
 
@@ -80,7 +85,10 @@ pub mod PragmaFeedRegistry {
             // [Check] Feed id not already registered
             assert(!self.feed_exists(feed_id), errors::FEED_ALREADY_REGISTERED);
             // [Check] Feed id format
-            assert(FeedTrait::from_id(feed_id).is_some(), errors::INVALID_FEED_FORMAT);
+            match FeedTrait::from_id(feed_id) {
+                Result::Ok(_) => {},
+                Result::Err(e) => panic_with_felt252(e.into())
+            };
 
             // [Effect] Insert new feed id
             let len_feed_ids = self.len_feed_ids.read();

@@ -5,6 +5,7 @@ pub mod PragmaDispatcher {
     use hyperlane_starknet::interfaces::{IMailboxDispatcher, IMailboxDispatcherTrait};
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{interface::IUpgradeable, upgradeable::UpgradeableComponent};
+    use pragma_dispatcher::errors;
     use pragma_dispatcher::interface::{
         IPragmaDispatcher, IHyperlaneMailboxWrapper, IPragmaOracleWrapper, ISummaryStatsWrapper,
         IPragmaFeedsRegistryWrapper,
@@ -241,7 +242,7 @@ pub mod PragmaDispatcher {
             hyperlane_mailbox_address: ContractAddress,
         ) {
             // [Check]
-            assert(!owner.is_zero(), 'Owner cannot be 0');
+            assert(!owner.is_zero(), errors::OWNER_IS_ZERO);
 
             // [Effect]
             self.ownable.initializer(owner);

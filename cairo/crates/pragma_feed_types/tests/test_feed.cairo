@@ -19,39 +19,6 @@ fn test_valid_feed_id_conversion() {
 }
 
 #[test]
-fn test_no_collision_same_asset_class_different_feed_type() {
-    let feed1 = create_random_feed(AssetClass::Crypto, FeedType::SpotMedian, 'BTC/USD');
-    let feed2 = create_random_feed(AssetClass::Crypto, FeedType::Twap, 'BTC/USD');
-
-    let id1: FeedId = feed1.id();
-    let id2: FeedId = feed2.id();
-
-    assert(id1 != id2, 'IDs should be different');
-}
-
-#[test]
-fn test_no_collision_different_asset_class_same_feed_type() {
-    let feed1 = create_random_feed(AssetClass::Crypto, FeedType::SpotMedian, 'BTC/USD');
-    let feed2 = create_random_feed(AssetClass::Crypto, FeedType::SpotMedian, 'EUR/USD');
-
-    let id1: FeedId = feed1.id();
-    let id2: FeedId = feed2.id();
-
-    assert(id1 != id2, 'IDs should be different');
-}
-
-#[test]
-fn test_no_collision_different_pair_id() {
-    let feed1 = create_random_feed(AssetClass::Crypto, FeedType::SpotMedian, 'BTC/USD');
-    let feed2 = create_random_feed(AssetClass::Crypto, FeedType::SpotMedian, 'ETH/USD');
-
-    let id1: FeedId = feed1.id();
-    let id2: FeedId = feed2.id();
-
-    assert(id1 != id2, 'IDs should be different');
-}
-
-#[test]
 fn test_no_collision_random_feeds(
     pair_id1: felt252, feed_type_1: u8, pair_id2: felt252, feed_type_2: u8,
 ) {
