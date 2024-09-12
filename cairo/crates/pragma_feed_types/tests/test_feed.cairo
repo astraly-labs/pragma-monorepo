@@ -1,4 +1,4 @@
-use pragma_feed_types::{AssetClass, FeedId, FeedType, Feed, FeedTrait};
+use pragma_feed_types::{AssetClass, FeedId, FeedType, Feed, FeedTrait, MAX_PAIR_ID};
 
 fn create_random_feed(asset_class: AssetClass, feed_type: FeedType, pair_id: felt252) -> Feed {
     Feed { asset_class, feed_type, pair_id }
@@ -22,8 +22,26 @@ fn test_valid_feed_id_conversion() {
 fn test_no_collision_random_feeds(
     pair_id1: felt252, feed_type_1: u8, pair_id2: felt252, feed_type_2: u8,
 ) {
-    let feed_type_1: felt252 = (feed_type_1 % 4 + 1).into();
-    let feed_type_2: felt252 = (feed_type_2 % 4 + 1).into();
+    let feed_type_1: felt252 = (feed_type_1 % 5).into();
+    let feed_type_2: felt252 = (feed_type_2 % 5).into();
+
+    // Ugly lines to avoid pair id > 28 bytes
+    let pair_id1: felt252 = (Into::<
+        felt252, u256
+        >::into(pair_id1) % Into::<
+        felt252, u256
+    >::into(MAX_PAIR_ID))
+        .try_into()
+        .unwrap();
+    // Ugly lines to avoid pair id > 28 bytes
+    let pair_id2: felt252 = (Into::<
+        felt252, u256
+        >::into(pair_id2) % Into::<
+        felt252, u256
+    >::into(MAX_PAIR_ID))
+        .try_into()
+        .unwrap();
+
     let feed1 = create_random_feed(AssetClass::Crypto, feed_type_1.try_into().unwrap(), pair_id1);
     let feed2 = create_random_feed(AssetClass::Crypto, feed_type_2.try_into().unwrap(), pair_id2);
 

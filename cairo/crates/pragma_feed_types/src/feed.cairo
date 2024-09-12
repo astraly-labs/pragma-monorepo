@@ -2,10 +2,10 @@ use pragma_feed_types::{AssetClass, AssetClassId, FeedType, FeedTypeId};
 use pragma_maths::felt252::{FeltBitAnd, FeltDiv, FeltOrd};
 
 // Constants used for felt manipulations when decoding the FeedId.
-const ASSET_CLASS_SHIFT: felt252 = 0x100000000000000000000000000000000; // 2^128
-const FEED_TYPE_SHIFT: felt252 = 0x100000000000000; // 2^64
-const FEED_TYPE_MASK: felt252 = 0xFFFFFFFFFFFFFFFF; // 2^64 - 1
-const MAX_PAIR_ID: felt252 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF; // 2^224 - 1 (28 bytes)
+pub const ASSET_CLASS_SHIFT: felt252 = 0x100000000000000000000000000000000; // 2^128
+pub const FEED_TYPE_SHIFT: felt252 = 0x100000000000000; // 2^64
+pub const FEED_TYPE_MASK: felt252 = 0xFFFFFFFFFFFFFFFF; // 2^64 - 1
+pub const MAX_PAIR_ID: felt252 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF; // 2^224 - 1 (28 bytes)
 
 // Type aliases for identifiers.
 pub type PairId = felt252;

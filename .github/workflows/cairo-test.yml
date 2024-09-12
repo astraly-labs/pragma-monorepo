@@ -33,7 +33,7 @@ jobs:
 
       - name: Run tests
         working-directory: cairo
-        run: scarb run test
+        run: snforge test
         id: test
 
       - name: Upload artifacts
