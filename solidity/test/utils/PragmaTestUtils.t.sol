@@ -14,7 +14,8 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
     bytes32 constant SOURCE_EMITTER_ADDRESS = 0x03dA250675D8c2BB7cef7E1b7FDFe17aA4D5752Ed82A9333e4F9a12b22E521aa;
 
     uint256 constant SINGLE_UPDATE_FEE_IN_WEI = 1;
-    uint256 constant VALID_timePeriod_IN_SECONDS = 60;
+    uint256 constant VALID_TIME_PERIOD_IN_SECONDS = 60;
+    uint64 constant MOCK_TIMESTAMP_VALUE= 1234;
 
     function setUpPragma(address hyperlane) public returns (address) {
         uint16[] memory emitterChainIds = new uint16[](1);
@@ -24,7 +25,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         emitterAddresses[0] = SOURCE_EMITTER_ADDRESS;
 
         Pragma pragma_ = new Pragma(
-            hyperlane, emitterChainIds, emitterAddresses, VALID_timePeriod_IN_SECONDS, SINGLE_UPDATE_FEE_IN_WEI
+            hyperlane, emitterChainIds, emitterAddresses, VALID_TIME_PERIOD_IN_SECONDS, SINGLE_UPDATE_FEE_IN_WEI
         );
 
         return address(pragma_);
@@ -82,7 +83,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         bytes memory hyperlanePayload = abi.encodePacked(rootDigest);
 
         bytes memory updateData = generateUpdateData(
-            1234, 0, config.source_chain_id, config.source_emitter_address, hyperlanePayload, config.numSigners
+            MOCK_TIMESTAMP_VALUE, 0, config.source_chain_id, config.source_emitter_address, hyperlanePayload, config.numSigners
         );
 
         if (config.brokenSignature) {

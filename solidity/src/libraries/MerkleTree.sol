@@ -3,7 +3,6 @@
 pragma solidity ^0.8.0;
 
 import "./UnsafeCalldataBytesLib.sol";
-import "forge-std/console2.sol";
 
 /**
  * @dev This library provides methods to construct and verify Merkle Tree proofs efficiently.

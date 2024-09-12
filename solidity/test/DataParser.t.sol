@@ -3,13 +3,14 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "../src/libraries/DataParser.sol";
+import "../src/libraries/ErrorsLib.sol";
+
 
 contract DataParserTest is Test {
     function testParseSpotMedianEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
+                uint16(0),///CRYPTO
                 uint16(0), //SPOT
                 bytes32("BTC/USD")
             )
@@ -37,8 +38,7 @@ contract DataParserTest is Test {
     function testParseTWAPEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
+                uint16(0),///CRYPTO
                 uint16(1), //TWAP
                 bytes32("ETH/USD")
             )
@@ -74,8 +74,7 @@ contract DataParserTest is Test {
     function testParseRealizedVolatilityEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
+                uint16(0),///CRYPTO
                 uint16(2), //RV
                 bytes32("BTC/USD")
             )
@@ -113,8 +112,7 @@ contract DataParserTest is Test {
     function testParseOptionsEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
+                uint16(0),///CRYPTO
                 uint16(3), //Option
                 bytes32("ETH/USD")
             )
@@ -160,8 +158,7 @@ contract DataParserTest is Test {
     function testParsePerpEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
+                uint16(0),///CRYPTO
                 uint16(4), //PERP
                 bytes32("BTC/USD")
             )
@@ -193,8 +190,7 @@ contract DataParserTest is Test {
     function testParseUnknownDataType() public {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
+                uint16(0), ///CRYPTO
                 uint16(10), //Unkown data type
                 bytes32("BTC/USD")
             )
@@ -209,7 +205,7 @@ contract DataParserTest is Test {
             uint256(1000 ether), // openInterest
             uint256(500 ether) // volume
         );
-        vm.expectRevert();
+        vm.expectRevert(abi.encodeWithSignature("InvalidDataFeedType()"));
         DataParser.parse(data);
     }
 }

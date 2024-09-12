@@ -3,6 +3,7 @@ pragma solidity ^0.8.0;
 
 import "./BytesLib.sol";
 import "../interfaces/PragmaStructs.sol";
+import "./ErrorsLib.sol";
 
 library DataParser {
     using BytesLib for bytes;
@@ -10,7 +11,7 @@ library DataParser {
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
         uint8 offset = 2; // type feed stored after asset class
         uint16 rawDataType = data.toUint16(offset);
-        FeedType dataType = FeedType(rawDataType);
+        FeedType dataType = safeCastToFeedType(rawDataType);
 
         ParsedData memory parsedData;
         parsedData.dataType = dataType;
@@ -25,10 +26,18 @@ library DataParser {
         } else if (dataType == FeedType.Perpetuals) {
             parsedData.perp = parsePerpData(data);
         } else {
-            revert("Unknown data type");
+            revert ErrorsLib.InvalidDataFeedType();
         }
 
         return parsedData;
+    }
+
+     function safeCastToFeedType(uint16 rawDataType) internal pure returns (FeedType) {
+        if (rawDataType <= uint16(type(FeedType).max)) {
+            return FeedType(rawDataType);
+        } else {
+            revert ErrorsLib.InvalidDataFeedType();
+        }
     }
 
     function parseMetadata(bytes memory data, uint256 startIndex) internal pure returns (Metadata memory, uint256) {
