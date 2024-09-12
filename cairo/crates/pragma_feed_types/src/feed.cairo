@@ -20,13 +20,13 @@ pub struct Feed {
 
 #[derive(Drop, Copy, PartialEq)]
 pub enum FeedError {
-    Conversion: felt252,
+    IdConversion: felt252,
 }
 
 impl FeedErrorIntoFelt of Into<FeedError, felt252> {
     fn into(self: FeedError) -> felt252 {
         match self {
-            FeedError::Conversion(msg) => msg,
+            FeedError::IdConversion(msg) => msg,
         }
     }
 }
@@ -39,14 +39,14 @@ pub impl FeedTraitImpl of FeedTrait {
         let asset_class_felt = id / ASSET_CLASS_SHIFT;
         let asset_class_option: Option<AssetClass> = asset_class_felt.try_into();
         if asset_class_option.is_none() {
-            return Result::Err(FeedError::Conversion('Invalid asset class encoding'));
+            return Result::Err(FeedError::IdConversion('Invalid asset class encoding'));
         }
 
         // Extract feed_type (next 2 bytes)
         let feed_type_felt = (id / FEED_TYPE_SHIFT) & FEED_TYPE_MASK;
         let feed_type_option: Option<FeedType> = feed_type_felt.try_into();
         if feed_type_option.is_none() {
-            return Result::Err(FeedError::Conversion('Invalid feed type encoding'));
+            return Result::Err(FeedError::IdConversion('Invalid feed type encoding'));
         }
 
         // Extract pair_id (remaining bytes, maximum 28)
@@ -56,7 +56,7 @@ pub impl FeedTraitImpl of FeedTrait {
 
         // Check if pair_id exceeds 28 bytes
         if pair_id > MAX_PAIR_ID {
-            return Result::Err(FeedError::Conversion('Pair id greater than 28 bytes'));
+            return Result::Err(FeedError::IdConversion('Pair id greater than 28 bytes'));
         }
 
         Result::Ok(
