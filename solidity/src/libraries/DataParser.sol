@@ -35,13 +35,13 @@ library DataParser {
         Metadata memory metadata;
         uint256 index = startIndex;
 
-        metadata.feed_id = bytes32(data.toUint256(index));
+        metadata.feedId = bytes32(data.toUint256(index));
         index += 32;
 
         metadata.timestamp = data.toUint64(index);
         index += 8;
 
-        metadata.number_of_sources = uint16(data.toUint16(index));
+        metadata.numberOfSources = uint16(data.toUint16(index));
         index += 2;
 
         metadata.decimals = uint8(data.toUint8(index));
@@ -70,22 +70,22 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.twap_price = data.toUint256(index);
+        entry.twapPrice = data.toUint256(index);
         index += 32;
 
-        entry.time_period = data.toUint256(index);
+        entry.timePeriod = data.toUint256(index);
         index += 32;
 
-        entry.start_price = data.toUint256(index);
+        entry.startPrice = data.toUint256(index);
         index += 32;
 
-        entry.end_price = data.toUint256(index);
+        entry.endPrice = data.toUint256(index);
         index += 32;
 
-        entry.total_volume = data.toUint256(index);
+        entry.totalVolume = data.toUint256(index);
         index += 32;
 
-        entry.number_of_data_points = data.toUint256(index);
+        entry.numberOfDataPoints = data.toUint256(index);
 
         return entry;
     }
@@ -99,13 +99,13 @@ library DataParser {
         entry.volatility = data.toUint256(index);
         index += 32;
 
-        entry.time_period = data.toUint256(index);
+        entry.timePeriod = data.toUint256(index);
         index += 32;
 
-        entry.start_price = data.toUint256(index);
+        entry.startPrice = data.toUint256(index);
         index += 32;
 
-        entry.end_price = data.toUint256(index);
+        entry.endPrice = data.toUint256(index);
         index += 32;
 
         entry.high_price = data.toUint256(index);
@@ -114,7 +114,7 @@ library DataParser {
         entry.low_price = data.toUint256(index);
         index += 32;
 
-        entry.number_of_data_points = data.toUint256(index);
+        entry.numberOfDataPoints = data.toUint256(index);
 
         return entry;
     }
@@ -125,22 +125,22 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.strike_price = data.toUint256(index);
+        entry.strikePrice = data.toUint256(index);
         index += 32;
 
-        entry.implied_volatility = data.toUint256(index);
+        entry.impliedVolatility = data.toUint256(index);
         index += 32;
 
-        entry.time_to_expiry = data.toUint256(index);
+        entry.timeToExpiry = data.toUint256(index);
         index += 32;
 
-        entry.is_call = data.toUint8(index) == 1;
+        entry.isCall = data.toUint8(index) == 1;
         index += 1;
 
-        entry.underlying_price = data.toUint256(index);
+        entry.underlyingPrice = data.toUint256(index);
         index += 32;
 
-        entry.option_price = data.toUint256(index);
+        entry.optionPrice = data.toUint256(index);
         index += 32;
 
         entry.delta = data.toInt256(index);
@@ -166,13 +166,13 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.mark_price = data.toUint256(index);
+        entry.markPrice = data.toUint256(index);
         index += 32;
 
-        entry.funding_rate = data.toUint256(index);
+        entry.fundingRate = data.toUint256(index);
         index += 32;
 
-        entry.open_interest = data.toUint256(index);
+        entry.openInterest = data.toUint256(index);
         index += 32;
 
         entry.volume = data.toUint256(index);

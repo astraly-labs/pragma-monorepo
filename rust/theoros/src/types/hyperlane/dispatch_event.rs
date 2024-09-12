@@ -170,7 +170,7 @@ impl DispatchUpdate {
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub struct SpotUpdate {
-    pub feed_id: U256,
+    pub feedId: U256,
     pub price: BigDecimal,
     pub decimals: u32,
     pub timestamp: u64,
@@ -179,7 +179,7 @@ pub struct SpotUpdate {
 
 impl SpotUpdate {
     pub fn from_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let feed_id = U256::from_words(
+        let feedId = U256::from_words(
             u128::from_field_bytes(data.next().context("Missing feed ID part 1")?.to_bytes()),
             u128::from_field_bytes(data.next().context("Missing feed ID part 2")?.to_bytes()),
         );
@@ -193,14 +193,14 @@ impl SpotUpdate {
         let num_sources_aggregated =
             u32::from_field_bytes(data.next().context("Missing sources aggregated")?.to_bytes());
 
-        Ok(Self { feed_id, price, decimals, timestamp, num_sources_aggregated })
+        Ok(Self { feedId, price, decimals, timestamp, num_sources_aggregated })
     }
 }
 
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub struct FutureUpdate {
-    pub feed_id: U256,
+    pub feedId: U256,
     pub price: BigDecimal,
     pub decimals: u32,
     pub timestamp: u64,
@@ -210,7 +210,7 @@ pub struct FutureUpdate {
 
 impl FutureUpdate {
     pub fn from_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let feed_id = U256::from_words(
+        let feedId = U256::from_words(
             u128::from_field_bytes(data.next().context("Missing feed ID part 1")?.to_bytes()),
             u128::from_field_bytes(data.next().context("Missing feed ID part 2")?.to_bytes()),
         );
@@ -226,7 +226,7 @@ impl FutureUpdate {
         let expiration_timestamp =
             u64::from_field_bytes(data.next().context("Missing expiration timestamp")?.to_bytes());
 
-        Ok(Self { feed_id, price, decimals, timestamp, expiration_timestamp, num_sources_aggregated })
+        Ok(Self { feedId, price, decimals, timestamp, expiration_timestamp, num_sources_aggregated })
     }
 }
 
@@ -257,8 +257,8 @@ mod tests {
             create_field_element(0),          // recipient part 2
             create_field_element(1),          // nb_updated
             create_field_element(0),          // update type (Spot)
-            create_field_element(9),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
+            create_field_element(9),          // feedId part 1
+            create_field_element(0),          // feedId part 2
             create_field_element(1000),       // price
             create_field_element(2),          // decimals
             create_field_element(1234567890), // timestamp
@@ -285,7 +285,7 @@ mod tests {
 
         match &body.updates[0] {
             DispatchUpdate::Spot(update) => {
-                assert_eq!(update.feed_id, U256::from(9_u32));
+                assert_eq!(update.feedId, U256::from(9_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
                 assert_eq!(update.decimals, 2);
                 assert_eq!(update.timestamp, 1234567890);
@@ -323,15 +323,15 @@ mod tests {
         let body_data = vec![
             create_field_element(2),          // nb_updated
             create_field_element(0),          // update type (Spot)
-            create_field_element(1),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
+            create_field_element(1),          // feedId part 1
+            create_field_element(0),          // feedId part 2
             create_field_element(1000),       // price
             create_field_element(2),          // decimals
             create_field_element(1234567890), // timestamp
             create_field_element(5),          // num_sources_aggregated
             create_field_element(1),          // update type (Future)
-            create_field_element(2),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
+            create_field_element(2),          // feedId part 1
+            create_field_element(0),          // feedId part 2
             create_field_element(2000),       // price
             create_field_element(3),          // decimals
             create_field_element(1234567891), // timestamp
@@ -346,7 +346,7 @@ mod tests {
 
         match &body.updates[0] {
             DispatchUpdate::Spot(update) => {
-                assert_eq!(update.feed_id, U256::from(1_u32));
+                assert_eq!(update.feedId, U256::from(1_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
                 assert_eq!(update.decimals, 2);
                 assert_eq!(update.timestamp, 1234567890);
@@ -357,7 +357,7 @@ mod tests {
 
         match &body.updates[1] {
             DispatchUpdate::Future(update) => {
-                assert_eq!(update.feed_id, U256::from(2_u32));
+                assert_eq!(update.feedId, U256::from(2_u32));
                 assert_eq!(update.price, BigDecimal::from(2)); // 2000 / 10^3
                 assert_eq!(update.decimals, 3);
                 assert_eq!(update.timestamp, 1234567891);
@@ -372,8 +372,8 @@ mod tests {
     fn test_update_from_event_data() {
         let spot_data = vec![
             create_field_element(0),          // update type (Spot)
-            create_field_element(1),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
+            create_field_element(1),          // feedId part 1
+            create_field_element(0),          // feedId part 2
             create_field_element(1000),       // price
             create_field_element(2),          // decimals
             create_field_element(1234567890), // timestamp
@@ -382,8 +382,8 @@ mod tests {
 
         let future_data = vec![
             create_field_element(1),          // update type (Future)
-            create_field_element(2),          // feed_id part 1
-            create_field_element(0),          // feed_id part 2
+            create_field_element(2),          // feedId part 1
+            create_field_element(0),          // feedId part 2
             create_field_element(2000),       // price
             create_field_element(3),          // decimals
             create_field_element(1234567891), // timestamp
@@ -396,7 +396,7 @@ mod tests {
 
         match spot_update {
             DispatchUpdate::Spot(update) => {
-                assert_eq!(update.feed_id, U256::from(1_u32));
+                assert_eq!(update.feedId, U256::from(1_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
                 assert_eq!(update.decimals, 2);
                 assert_eq!(update.timestamp, 1234567890);
@@ -407,7 +407,7 @@ mod tests {
 
         match future_update {
             DispatchUpdate::Future(update) => {
-                assert_eq!(update.feed_id, U256::from(2_u32));
+                assert_eq!(update.feedId, U256::from(2_u32));
                 assert_eq!(update.price, BigDecimal::from(2)); // 2000 / 10^3
                 assert_eq!(update.decimals, 3);
                 assert_eq!(update.timestamp, 1234567891);

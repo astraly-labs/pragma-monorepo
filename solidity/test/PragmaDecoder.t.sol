@@ -183,9 +183,9 @@ contract PragmaDecoderTest is Test {
         SpotMedian memory spotMedian = pragmaDecoder.exposed_spotMedianFeeds(feedId);
 
         assertEq(spotMedian.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(spotMedian.metadata.number_of_sources, 5, "Number of sources should be 5");
+        assertEq(spotMedian.metadata.numberOfSources, 5, "Number of sources should be 5");
         assertEq(spotMedian.metadata.decimals, 8, "Decimals should be 8");
-        assertEq(spotMedian.metadata.feed_id, feedId, "Feed ID should match");
+        assertEq(spotMedian.metadata.feedId, feedId, "Feed ID should match");
         assertEq(spotMedian.price, 2000 * 1e8, "Price should match");
         assertEq(spotMedian.volume, 1000 * 1e18, "Volume should match");
 
@@ -216,15 +216,15 @@ contract PragmaDecoderTest is Test {
         TWAP memory twap = pragmaDecoder.exposed_twapFeeds(feedId);
 
         assertEq(twap.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(twap.metadata.number_of_sources, 5, "Number of sources should be 5");
+        assertEq(twap.metadata.numberOfSources, 5, "Number of sources should be 5");
         assertEq(twap.metadata.decimals, 8, "Decimals should be 8");
-        assertEq(twap.metadata.feed_id, feedId, "Feed ID should match");
-        assertEq(twap.twap_price, 30000 * 1e8, "TWAP price should match");
-        assertEq(twap.time_period, 3600, "Time period should match");
-        assertEq(twap.start_price, 29000 * 1e8, "Start price should match");
-        assertEq(twap.end_price, 31000 * 1e8, "End price should match");
-        assertEq(twap.total_volume, 1000 * 1e18, "Total volume should match");
-        assertEq(twap.number_of_data_points, 60, "Number of data points should match");
+        assertEq(twap.metadata.feedId, feedId, "Feed ID should match");
+        assertEq(twap.twapPrice, 30000 * 1e8, "TWAP price should match");
+        assertEq(twap.timePeriod, 3600, "Time period should match");
+        assertEq(twap.startPrice, 29000 * 1e8, "Start price should match");
+        assertEq(twap.endPrice, 31000 * 1e8, "End price should match");
+        assertEq(twap.totalVolume, 1000 * 1e18, "Total volume should match");
+        assertEq(twap.numberOfDataPoints, 60, "Number of data points should match");
 
         DataFeed memory dataFeed = pragmaDecoder.exposed_latestPriceInfo(feedId);
         assertEq(dataFeed.value, 30000 * 1e8, "TWAP Price should match");
@@ -251,16 +251,16 @@ contract PragmaDecoderTest is Test {
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
         assertEq(rv.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(rv.metadata.number_of_sources, 5, "Number of sources should be 5");
+        assertEq(rv.metadata.numberOfSources, 5, "Number of sources should be 5");
         assertEq(rv.metadata.decimals, 8, "Decimals should be 8");
-        assertEq(rv.metadata.feed_id, feedId, "Feed id ID should match");
+        assertEq(rv.metadata.feedId, feedId, "Feed id ID should match");
         assertEq(rv.volatility, 50 * 1e6, "Volatility should match"); // 50% volatility
-        assertEq(rv.time_period, 86400, "Time period should match");
-        assertEq(rv.start_price, 1900 * 1e8, "Start price should match");
-        assertEq(rv.end_price, 2100 * 1e8, "End price should match");
+        assertEq(rv.timePeriod, 86400, "Time period should match");
+        assertEq(rv.startPrice, 1900 * 1e8, "Start price should match");
+        assertEq(rv.endPrice, 2100 * 1e8, "End price should match");
         assertEq(rv.high_price, 2200 * 1e8, "High price should match");
         assertEq(rv.low_price, 1800 * 1e8, "Low price should match");
-        assertEq(rv.number_of_data_points, 1440, "Number of data points should match");
+        assertEq(rv.numberOfDataPoints, 1440, "Number of data points should match");
 
         DataFeed memory dataFeed = pragmaDecoder.exposed_latestPriceInfo(feedId);
         assertEq(dataFeed.value, 2100 * 1e8, "RV Price should match");
@@ -289,15 +289,15 @@ contract PragmaDecoderTest is Test {
         Options memory options = pragmaDecoder.exposed_optionsFeeds(feedId);
 
         assertEq(options.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(options.metadata.number_of_sources, 5, "Number of sources should be 5");
+        assertEq(options.metadata.numberOfSources, 5, "Number of sources should be 5");
         assertEq(options.metadata.decimals, 8, "Decimals should be 8");
-        assertEq(options.metadata.feed_id, feedId, "Feed ID should match");
-        assertEq(options.strike_price, 2000 * 1e8, "Strike price should match");
-        assertEq(options.implied_volatility, 50 * 1e6, "Implied volatility should match");
-        assertEq(options.time_to_expiry, 604800, "Time to expiry should match");
-        assertEq(options.is_call, true, "Option type should be call");
-        assertEq(options.underlying_price, 1950 * 1e8, "Underlying price should match");
-        assertEq(options.option_price, 100 * 1e8, "Option price should match");
+        assertEq(options.metadata.feedId, feedId, "Feed ID should match");
+        assertEq(options.strikePrice, 2000 * 1e8, "Strike price should match");
+        assertEq(options.impliedVolatility, 50 * 1e6, "Implied volatility should match");
+        assertEq(options.timeToExpiry, 604800, "Time to expiry should match");
+        assertEq(options.isCall, true, "Option type should be call");
+        assertEq(options.underlyingPrice, 1950 * 1e8, "Underlying price should match");
+        assertEq(options.optionPrice, 100 * 1e8, "Option price should match");
         assertEq(options.delta, 60 * 1e6, "Delta should match");
         assertEq(options.gamma, 2 * 1e6, "Gamma should match");
         assertEq(options.vega, 10 * 1e6, "Vega should match");
@@ -330,12 +330,12 @@ contract PragmaDecoderTest is Test {
         Perp memory perp = pragmaDecoder.exposed_perpFeeds(feedId);
 
         assertEq(perp.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(perp.metadata.number_of_sources, 5, "Number of sources should be 5");
+        assertEq(perp.metadata.numberOfSources, 5, "Number of sources should be 5");
         assertEq(perp.metadata.decimals, 8, "Decimals should be 8");
-        assertEq(perp.metadata.feed_id, feedId, "Feed ID should match");
-        assertEq(perp.mark_price, 2000 * 1e8, "Mark price should match");
-        assertEq(perp.funding_rate, 1 * 1e6, "Funding rate should match"); // 0.1% funding rate
-        assertEq(perp.open_interest, 10000 * 1e18, "Open interest should match");
+        assertEq(perp.metadata.feedId, feedId, "Feed ID should match");
+        assertEq(perp.markPrice, 2000 * 1e8, "Mark price should match");
+        assertEq(perp.fundingRate, 1 * 1e6, "Funding rate should match"); // 0.1% funding rate
+        assertEq(perp.openInterest, 10000 * 1e18, "Open interest should match");
         assertEq(perp.volume, 50000 * 1e18, "Volume should match");
 
         DataFeed memory dataFeed = pragmaDecoder.exposed_latestPriceInfo(feedId);

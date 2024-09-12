@@ -14,7 +14,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
     bytes32 constant SOURCE_EMITTER_ADDRESS = 0x03dA250675D8c2BB7cef7E1b7FDFe17aA4D5752Ed82A9333e4F9a12b22E521aa;
 
     uint256 constant SINGLE_UPDATE_FEE_IN_WEI = 1;
-    uint256 constant VALID_TIME_PERIOD_IN_SECONDS = 60;
+    uint256 constant VALID_timePeriod_IN_SECONDS = 60;
 
     function setUpPragma(address hyperlane) public returns (address) {
         uint16[] memory emitterChainIds = new uint16[](1);
@@ -24,7 +24,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         emitterAddresses[0] = SOURCE_EMITTER_ADDRESS;
 
         Pragma pragma_ = new Pragma(
-            hyperlane, emitterChainIds, emitterAddresses, VALID_TIME_PERIOD_IN_SECONDS, SINGLE_UPDATE_FEE_IN_WEI
+            hyperlane, emitterChainIds, emitterAddresses, VALID_timePeriod_IN_SECONDS, SINGLE_UPDATE_FEE_IN_WEI
         );
 
         return address(pragma_);

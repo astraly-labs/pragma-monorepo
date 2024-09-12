@@ -33,9 +33,9 @@ struct HyMsg {
 }
 
 struct Metadata {
-    bytes32 feed_id;
+    bytes32 feedId;
     uint64 timestamp;
-    uint16 number_of_sources;
+    uint16 numberOfSources;
     uint8 decimals;
 }
 
@@ -47,33 +47,33 @@ struct SpotMedian {
 
 struct TWAP {
     Metadata metadata;
-    uint256 twap_price;
-    uint256 time_period;
-    uint256 start_price;
-    uint256 end_price;
-    uint256 total_volume;
-    uint256 number_of_data_points;
+    uint256 twapPrice;
+    uint256 timePeriod;
+    uint256 startPrice;
+    uint256 endPrice;
+    uint256 totalVolume;
+    uint256 numberOfDataPoints;
 }
 
 struct RealizedVolatility {
     Metadata metadata;
     uint256 volatility;
-    uint256 time_period;
-    uint256 start_price;
-    uint256 end_price;
+    uint256 timePeriod;
+    uint256 startPrice;
+    uint256 endPrice;
     uint256 high_price;
     uint256 low_price;
-    uint256 number_of_data_points;
+    uint256 numberOfDataPoints;
 }
 
 struct Options {
     Metadata metadata;
-    uint256 strike_price;
-    uint256 implied_volatility;
-    uint256 time_to_expiry;
-    bool is_call;
-    uint256 underlying_price;
-    uint256 option_price;
+    uint256 strikePrice;
+    uint256 impliedVolatility;
+    uint256 timeToExpiry;
+    bool isCall;
+    uint256 underlyingPrice;
+    uint256 optionPrice;
     int256 delta;
     int256 gamma;
     int256 vega;
@@ -83,9 +83,9 @@ struct Options {
 
 struct Perp {
     Metadata metadata;
-    uint256 mark_price;
-    uint256 funding_rate;
-    uint256 open_interest;
+    uint256 markPrice;
+    uint256 fundingRate;
+    uint256 openInterest;
     uint256 volume;
 }
 
