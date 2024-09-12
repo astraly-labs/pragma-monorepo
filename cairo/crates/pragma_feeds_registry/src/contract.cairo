@@ -106,15 +106,15 @@ pub mod PragmaFeedRegistry {
             // [Check] Only owner
             self.ownable.assert_only_owner();
             // [Check] Feed id registered
-            let feed_id_index: Option<u32> = self._get_feed_id_index(feed_id);
+            let feed_id_index: Option<u32> = self.get_feed_id_index(feed_id);
             assert(feed_id_index.is_some(), errors::FEED_NOT_REGISTERED);
 
             // [Effect] Remove feed id from the registry
             let len_feed_ids: u32 = self.len_feed_ids.read();
             if len_feed_ids == 1 {
-                self._remove_unique_feed_id();
+                self.remove_unique_feed_id();
             } else {
-                self._remove_feed_id(len_feed_ids, feed_id_index.unwrap());
+                self.remove_feed_id(len_feed_ids, feed_id_index.unwrap());
             }
 
             // [Interaction] Event emitted
@@ -140,7 +140,7 @@ pub mod PragmaFeedRegistry {
         /// Returns [true] if the [feed_id] provided is stored in the registry,
         /// else [false].
         fn feed_exists(self: @ContractState, feed_id: FeedId) -> bool {
-            self._get_feed_id_index(feed_id).is_some()
+            self.get_feed_id_index(feed_id).is_some()
         }
     }
     // ================== COMPONENTS IMPLEMENTATIONS ==================
@@ -161,7 +161,7 @@ pub mod PragmaFeedRegistry {
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
         /// Returns the index of the provided feed id if it exists, else None.
-        fn _get_feed_id_index(self: @ContractState, feed_id: FeedId) -> Option<u32> {
+        fn get_feed_id_index(self: @ContractState, feed_id: FeedId) -> Option<u32> {
             let mut feed_id_index: Option<u32> = Option::None(());
 
             let len_feed_ids: u32 = self.len_feed_ids.read();
@@ -183,14 +183,14 @@ pub mod PragmaFeedRegistry {
         /// Remove the only feed id stored in the registry.
         /// Little optimization to avoid non-necessary lookups when the storage length
         /// is 1.
-        fn _remove_unique_feed_id(ref self: ContractState) {
+        fn remove_unique_feed_id(ref self: ContractState) {
             // [Effect] Remove feed id from registry
             self.feed_ids.write(0, 0);
             self.len_feed_ids.write(0);
         }
 
         /// Removes a feed id stored in the registry.
-        fn _remove_feed_id(ref self: ContractState, len_feed_ids: u32, feed_id_index: u32) {
+        fn remove_feed_id(ref self: ContractState, len_feed_ids: u32, feed_id_index: u32) {
             // [Check] Valid feed id index
             assert(feed_id_index < len_feed_ids, errors::INVALID_FEED_INDEX);
 
