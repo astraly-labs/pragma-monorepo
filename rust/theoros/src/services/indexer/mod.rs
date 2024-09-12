@@ -1,25 +1,30 @@
 use std::str::FromStr;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, bail, Context, Result};
 use apibara_core::{
     node::v1alpha2::DataFinality,
-    starknet::v1alpha2::{Block, Event, Filter, HeaderFilter},
+    starknet::v1alpha2::{Block, Event, FieldElement, Filter, HeaderFilter},
 };
 use apibara_sdk::{configuration, ClientBuilder, Configuration, DataMessage, Uri};
 use futures_util::TryStreamExt;
-use starknet::core::types::Felt;
+use starknet::core::utils::get_selector_from_name;
 use tokio::task::JoinSet;
 
 use pragma_utils::{conversions::apibara::felt_as_apibara_field, services::Service};
 
-use crate::{types::hyperlane::DispatchEvent, AppState};
+use crate::{
+    types::hyperlane::{DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
+    AppState, HYPERLANE_CORE_CONTRACT_ADDRESS,
+};
 
-// TODO: depends on the host machine - should be configurable
+// TODO: Everything below here should be configurable, either via CLI or config file.
+// See: https://github.com/astraly-labs/pragma-monorepo/issues/17
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
-
-// TODO: Config those
-const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt = Felt::ZERO;
-const DISPATCH_EVENT_SELECTOR: Felt = Felt::ZERO;
+lazy_static::lazy_static! {
+    pub static ref F_HYPERLANE_CORE_CONTRACT_ADDRESS: FieldElement = felt_as_apibara_field(&HYPERLANE_CORE_CONTRACT_ADDRESS);
+    pub static ref DISPATCH_EVENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("Dispatch").unwrap());
+    pub static ref VALIDATOR_ANNOUNCEMENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("ValidatorAnnouncement").unwrap());
+}
 
 #[derive(Clone)]
 pub struct IndexerService {
@@ -42,20 +47,9 @@ impl Service for IndexerService {
     }
 }
 
-// TODO: We will probably need to also index the [ValidatorAnnouncement] events
-//       from the Hyperlane core contract.
-//
-// Goal is to track if validators send checkpoints to a new location that isn't tracked
-// yet.
-// For now, we just do the first call to [get_announced_storage_locations].
-
 impl IndexerService {
     pub fn new(state: AppState, apibara_uri: &str, apibara_api_key: String) -> Result<Self> {
         let uri = Uri::from_str(apibara_uri)?;
-        // TODO: should be a config
-        let pragma_oracle_contract = felt_as_apibara_field(&HYPERLANE_CORE_CONTRACT_ADDRESS);
-        // TODO: should be a config
-        let dispatch_event_selector = felt_as_apibara_field(&DISPATCH_EVENT_SELECTOR);
 
         let stream_config = Configuration::<Filter>::default()
             .with_finality(DataFinality::DataStatusPending)
@@ -64,8 +58,13 @@ impl IndexerService {
                     .with_header(HeaderFilter::weak())
                     .add_event(|event| {
                         event
-                            .with_from_address(pragma_oracle_contract.clone())
-                            .with_keys(vec![dispatch_event_selector.clone()])
+                            .with_from_address(F_HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
+                            .with_keys(vec![DISPATCH_EVENT_SELECTOR.clone()])
+                    })
+                    .add_event(|event| {
+                        event
+                            .with_from_address(F_HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
+                            .with_keys(vec![VALIDATOR_ANNOUNCEMENT_SELECTOR.clone()])
                     })
                     .build()
             });
@@ -92,7 +91,7 @@ impl IndexerService {
             match stream.try_next().await {
                 Ok(Some(response)) => self.process_batch(response).await?,
                 Ok(None) => continue,
-                Err(e) => return Err(anyhow!("Error while streaming indexed batch: {}", e)),
+                Err(e) => bail!("Error while streaming indexed batch: {}", e),
             }
         }
     }
@@ -103,30 +102,44 @@ impl IndexerService {
             DataMessage::Data { cursor: _, end_cursor: _, finality: _, batch } => {
                 for block in batch {
                     for event in block.events.into_iter().filter_map(|e| e.event) {
+                        if event.from_address.is_none() {
+                            continue;
+                        }
                         self.decode_and_store_event(event).await?;
                     }
                 }
             }
             DataMessage::Invalidate { cursor } => match cursor {
-                Some(c) => {
-                    return Err(anyhow!("Received an invalidate request data at {}", &c.order_key));
-                }
-                None => {
-                    return Err(anyhow!("Invalidate request without cursor provided"));
-                }
+                Some(c) => bail!("Received an invalidate request data at {}", &c.order_key),
+                None => bail!("Invalidate request without cursor provided"),
             },
             DataMessage::Heartbeat => {}
         }
         Ok(())
     }
 
-    /// Converts the [Event] into a [DispatchEvent] and stores it into the event_storage.
+    /// Decodes a starknet [Event] into either a:
+    ///     * [DispatchEvent] and stores it into the events storage,
+    ///     * [ValidatorAnnouncementEvent] and stores it into the validators storage.
     async fn decode_and_store_event(&self, event: Event) -> Result<()> {
-        if event.from_address.is_none() {
-            return Ok(());
+        let event_selector = event.keys.first().context("No event selector")?;
+
+        match event_selector {
+            selector if selector == &*DISPATCH_EVENT_SELECTOR => {
+                tracing::info!("Received a DispatchEvent");
+                let dispatch_event = DispatchEvent::from_starknet_event_data(event.data.into_iter())
+                    .context("Failed to parse DispatchEvent")?;
+                self.state.storage.dispatch_events().add(dispatch_event).await;
+            }
+            selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {
+                tracing::info!("Received a ValidatorAnnouncementEvent");
+                let validator_announcement_event =
+                    ValidatorAnnouncementEvent::from_starknet_event_data(event.data.into_iter())
+                        .context("Failed to parse ValidatorAnnouncementEvent")?;
+                self.state.storage.validators().add_from_announcement_event(validator_announcement_event).await?;
+            }
+            _ => panic!("Unexpected event selector - should never happen."),
         }
-        let dispatch_event = DispatchEvent::from_event_data(event.data)?;
-        self.state.event_storage.add(dispatch_event).await;
         Ok(())
     }
 }

@@ -1,1 +1,151 @@
-{"openapi":"3.0.3","info":{"title":"theoros","description":"","license":{"name":""},"version":"0.1.0"},"paths":{"/v1/calldata":{"get":{"tags":["crate::handlers::get_calldata"],"operationId":"get_calldata","parameters":[],"responses":{"200":{"description":"Get the calldata","content":{"application/json":{"schema":{"type":"array","items":{"$ref":"#/components/schemas/GetCalldataResponse"}}}}}}}}},"components":{"schemas":{"GetCalldataError":{"type":"string","enum":["InternalServerError","DatabaseConnection"]},"GetCalldataQuery":{"type":"object"},"GetCalldataResponse":{"type":"object","required":["hash"],"properties":{"hash":{"type":"string"}}}},"responses":{"GetCalldataResponse":{"description":"","content":{"application/json":{"schema":{"type":"object","required":["hash"],"properties":{"hash":{"type":"string"}}}}}}}},"tags":[{"name":"theoros","description":"Theoros - the Pragma Consultant"}]}
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "theoros",
+    "description": "",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/v1/calldata/{feed_id}": {
+      "get": {
+        "tags": [
+          "crate::handlers::get_calldata"
+        ],
+        "operationId": "get_calldata",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Constructs the calldata used to update the feed id specified",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GetCalldataResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/data_feeds": {
+      "get": {
+        "tags": [
+          "crate::handlers::get_data_feeds"
+        ],
+        "operationId": "get_data_feeds",
+        "responses": {
+          "200": {
+            "description": "Get all the available feed ids",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GetDataFeedsResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "GetCalldataError": {
+        "type": "string",
+        "enum": [
+          "InternalServerError",
+          "DatabaseConnection"
+        ]
+      },
+      "GetCalldataQuery": {
+        "type": "object"
+      },
+      "GetCalldataResponse": {
+        "type": "object",
+        "required": [
+          "hash"
+        ],
+        "properties": {
+          "hash": {
+            "type": "string"
+          }
+        }
+      },
+      "GetDataFeedsError": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "ParsingFeedId"
+            ],
+            "properties": {
+              "ParsingFeedId": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "string",
+            "enum": [
+              "InternalServerError"
+            ]
+          }
+        ]
+      },
+      "GetDataFeedsResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/Feed"
+        }
+      }
+    },
+    "responses": {
+      "GetCalldataResponse": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "hash"
+              ],
+              "properties": {
+                "hash": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "GetDataFeedsResponse": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/Feed"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "theoros",
+      "description": "Theoros - The Pragma Consultant"
+    }
+  ]
+}
