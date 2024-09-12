@@ -1,4 +1,5 @@
 use alexandria_bytes::Bytes;
+use pragma_dispatcher::types::hyperlane::HyperlaneMessageId;
 use pragma_dispatcher::types::pragma_oracle::{
     SummaryStatsComputation, PragmaPricesResponse, DataType, AggregationMode
 };
@@ -18,20 +19,20 @@ pub trait IPragmaDispatcher<TContractState> {
     fn supported_feeds(self: @TContractState) -> Span<FeedId>;
 
     /// Dispatch updates through the Hyperlane mailbox for the specifieds
-    /// [Span<FeedId>].
-    fn dispatch(self: @TContractState, feed_ids: Span<FeedId>);
+    /// [Span<FeedId>] and return the ID of the message dispatched.
+    fn dispatch(self: @TContractState, feed_ids: Span<FeedId>) -> HyperlaneMessageId;
 }
 
 #[starknet::interface]
 pub trait IHyperlaneMailboxWrapper<TContractState> {
     /// Calls dispatch from the Hyperlane Mailbox contract.
-    fn _call_dispatch(self: @TContractState, message_body: Bytes);
+    fn call_dispatch(self: @TContractState, message_body: Bytes) -> HyperlaneMessageId;
 }
 
 #[starknet::interface]
 pub trait IPragmaOracleWrapper<TContractState> {
     /// Calls get_data from the Pragma Oracle contract.
-    fn _call_get_data(
+    fn call_get_data(
         self: @TContractState, data_type: DataType, aggregation_mode: AggregationMode,
     ) -> PragmaPricesResponse;
 }
@@ -39,7 +40,7 @@ pub trait IPragmaOracleWrapper<TContractState> {
 #[starknet::interface]
 pub trait ISummaryStatsWrapper<TContractState> {
     /// Calls calculate_mean from the Summary Stats contract.
-    fn _call_calculate_mean(
+    fn call_calculate_mean(
         self: @TContractState,
         data_type: DataType,
         aggregation_mode: AggregationMode,
@@ -48,7 +49,7 @@ pub trait ISummaryStatsWrapper<TContractState> {
     ) -> SummaryStatsComputation;
 
     /// Calls calculate_volatility from the Summary Stats contract.
-    fn _call_calculate_volatility(
+    fn call_calculate_volatility(
         self: @TContractState,
         data_type: DataType,
         aggregation_mode: AggregationMode,
@@ -58,7 +59,7 @@ pub trait ISummaryStatsWrapper<TContractState> {
     ) -> SummaryStatsComputation;
 
     /// Calls calculate_twap from the Summary Stats contract.
-    fn _call_calculate_twap(
+    fn call_calculate_twap(
         self: @TContractState,
         data_type: DataType,
         aggregation_mode: AggregationMode,

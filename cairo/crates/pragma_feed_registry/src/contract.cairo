@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod PragmaFeedRegistry {
+pub mod PragmaFeedRegistry {
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{UpgradeableComponent, interface::IUpgradeable};
     use pragma_feed_types::{FeedId, FeedTrait};

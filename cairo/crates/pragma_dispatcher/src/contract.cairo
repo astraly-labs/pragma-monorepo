@@ -1,5 +1,5 @@
 #[starknet::contract]
-mod PragmaDispatcher {
+pub mod PragmaDispatcher {
     use alexandria_bytes::Bytes;
     use core::num::traits::Zero;
     use openzeppelin::access::ownable::OwnableComponent;
@@ -7,12 +7,12 @@ mod PragmaDispatcher {
     use pragma_dispatcher::interface::{
         IPragmaDispatcher, IHyperlaneMailboxWrapper, IPragmaOracleWrapper, ISummaryStatsWrapper,
     };
+    use pragma_dispatcher::types::hyperlane::HyperlaneMessageId;
     use pragma_dispatcher::types::pragma_oracle::{
         PragmaPricesResponse, DataType, AggregationMode, SummaryStatsComputation
     };
     use pragma_feed_types::{FeedId};
-    use starknet::ClassHash;
-    use starknet::ContractAddress;
+    use starknet::{ContractAddress, ClassHash, syscalls, SyscallResultTrait};
 
     // ================== COMPONENTS ==================
 
@@ -101,7 +101,9 @@ mod PragmaDispatcher {
 
         /// Dispatch updates through the Hyperlane mailbox for the specified list
         /// of [Span<FeedId>].
-        fn dispatch(self: @ContractState, feed_ids: Span<FeedId>) {}
+        fn dispatch(self: @ContractState, feed_ids: Span<FeedId>) -> HyperlaneMessageId {
+            Default::default()
+        }
     }
 
     // ================== COMPONENTS IMPLEMENTATIONS ==================
@@ -138,40 +140,58 @@ mod PragmaDispatcher {
         }
     }
 
+    // ================== PRIAVTE CALLERS OF SUB CONTRACTS ==================
+
     impl HyperlaneMailboxWrapper of IHyperlaneMailboxWrapper<ContractState> {
-        /// Calls dispatch from the Hyperlane Mailbox.
-        fn _call_dispatch(self: @ContractState, message_body: Bytes) {}
+        /// Calls dispatch from the Hyperlane Mailbox contract.
+        fn call_dispatch(self: @ContractState, message_body: Bytes) -> HyperlaneMessageId {
+            Default::default()
+        }
     }
 
     impl PragmaOracleWrapper of IPragmaOracleWrapper<ContractState> {
-        /// Calls get_data from the Pragma Oracle.
-        fn _call_get_data(
+        /// Calls get_data from the Pragma Oracle contract.
+        fn call_get_data(
             self: @ContractState, data_type: DataType, aggregation_mode: AggregationMode,
         ) -> PragmaPricesResponse {
-            PragmaPricesResponse {
-                price: 0,
-                decimals: 0,
-                last_updated_timestamp: 0,
-                num_sources_aggregated: 0,
-                expiration_timestamp: Option::None(())
-            }
+            let mut call_data: Array<felt252> = array![];
+            Serde::serialize(@data_type, ref call_data);
+            Serde::serialize(@aggregation_mode, ref call_data);
+
+            let mut res = syscalls::call_contract_syscall(
+                self.pragma_oracle_address.read(), selector!("get_data"), call_data.span(),
+            )
+                .unwrap_syscall();
+
+            Serde::<PragmaPricesResponse>::deserialize(ref res).unwrap()
         }
     }
 
     impl SummaryStatsWrapper of ISummaryStatsWrapper<ContractState> {
         /// Calls calculate_mean from the Summary Stats contract.
-        fn _call_calculate_mean(
+        fn call_calculate_mean(
             self: @ContractState,
             data_type: DataType,
             aggregation_mode: AggregationMode,
             start_timestamp: u64,
             end_timestamp: u64,
         ) -> SummaryStatsComputation {
-            (0, 0)
+            let mut call_data: Array<felt252> = array![];
+            Serde::serialize(@data_type, ref call_data);
+            Serde::serialize(@start_timestamp, ref call_data);
+            Serde::serialize(@end_timestamp, ref call_data);
+            Serde::serialize(@aggregation_mode, ref call_data);
+
+            let mut res = syscalls::call_contract_syscall(
+                self.summary_stats_address.read(), selector!("calculate_mean"), call_data.span(),
+            )
+                .unwrap_syscall();
+
+            Serde::<SummaryStatsComputation>::deserialize(ref res).unwrap()
         }
 
         /// Calls calculate_volatility from the Summary Stats contract.
-        fn _call_calculate_volatility(
+        fn call_calculate_volatility(
             self: @ContractState,
             data_type: DataType,
             aggregation_mode: AggregationMode,
@@ -179,18 +199,43 @@ mod PragmaDispatcher {
             end_timestamp: u64,
             num_samples: u64,
         ) -> SummaryStatsComputation {
-            (0, 0)
+            let mut call_data: Array<felt252> = array![];
+            Serde::serialize(@data_type, ref call_data);
+            Serde::serialize(@start_timestamp, ref call_data);
+            Serde::serialize(@end_timestamp, ref call_data);
+            Serde::serialize(@num_samples, ref call_data);
+            Serde::serialize(@aggregation_mode, ref call_data);
+
+            let mut res = syscalls::call_contract_syscall(
+                self.summary_stats_address.read(),
+                selector!("calculate_volatility"),
+                call_data.span(),
+            )
+                .unwrap_syscall();
+
+            Serde::<SummaryStatsComputation>::deserialize(ref res).unwrap()
         }
 
         /// Calls calculate_twap from the Summary Stats contract.
-        fn _call_calculate_twap(
+        fn call_calculate_twap(
             self: @ContractState,
             data_type: DataType,
             aggregation_mode: AggregationMode,
             start_timestamp: u64,
             duration: u64,
         ) -> SummaryStatsComputation {
-            (0, 0)
+            let mut call_data: Array<felt252> = array![];
+            Serde::serialize(@data_type, ref call_data);
+            Serde::serialize(@aggregation_mode, ref call_data);
+            Serde::serialize(@duration, ref call_data);
+            Serde::serialize(@start_timestamp, ref call_data);
+
+            let mut res = syscalls::call_contract_syscall(
+                self.summary_stats_address.read(), selector!("calculate_twap"), call_data.span(),
+            )
+                .unwrap_syscall();
+
+            Serde::<SummaryStatsComputation>::deserialize(ref res).unwrap()
         }
     }
 }
