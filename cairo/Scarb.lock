@@ -106,7 +106,7 @@ dependencies = [
 [[package]]
 name = "pragma_lib"
 version = "1.0.0"
-source = "git+https://github.com/astraly-labs/pragma-lib#8e05116b6350028bd6435f9975d2f656160b5d72"
+source = "git+https://github.com/astraly-labs/pragma-lib?rev=fe9a467#fe9a46743254182ac331da488ccfc05e0185cdd0"
 
 [[package]]
 name = "pragma_maths"
