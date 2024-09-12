@@ -148,7 +148,7 @@ mod PragmaFeedRegistry {
         }
     }
 
-    // ================== PRIVATE HELPER FUNCTIONS ==================
+    // ================== PRIVATE IMPLEMENTATIONS ==================
 
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {

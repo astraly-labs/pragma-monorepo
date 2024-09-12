@@ -19,6 +19,9 @@ openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", ta
 # Hyperlane core contracts
 hyperlane_starknet = { git = "https://github.com/akhercha/hyperlane_starknet", branch = "feat-token-extensions", rel_path = "cairo/" }
 
+# Alexandria (same version than Hyperlane)
+alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "bcdca70" }
+
 # Pragma Dispatcher crates
 pragma_feed_types = { path = "crates/pragma_feed_types" }
 pragma_feed_registry = { path = "crates/pragma_feed_registry" }

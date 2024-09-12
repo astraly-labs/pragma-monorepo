@@ -77,6 +77,7 @@ source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.14.0#f0
 name = "pragma_dispatcher"
 version = "0.1.0"
 dependencies = [
+ "alexandria_bytes",
  "hyperlane_starknet",
  "openzeppelin",
  "pragma_feed_types",

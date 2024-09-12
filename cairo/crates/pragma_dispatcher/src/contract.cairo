@@ -1,9 +1,13 @@
 #[starknet::contract]
 mod PragmaDispatcher {
+    use alexandria_bytes::Bytes;
     use core::num::traits::Zero;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{interface::IUpgradeable, upgradeable::UpgradeableComponent};
-    use pragma_dispatcher::interface::IPragmaDispatcher;
+    use pragma_dispatcher::interface::{
+        IPragmaDispatcher, IHyperlaneMailboxWrapper, IPragmaOracleWrapper
+    };
+    use pragma_dispatcher::types::pragma_oracle::PragmaPricesResponse;
     use pragma_feed_types::{FeedId};
     use starknet::ClassHash;
     use starknet::ContractAddress;
@@ -104,6 +108,8 @@ mod PragmaDispatcher {
         }
     }
 
+    // ================== PRIVATE IMPLEMENTATIONS ==================
+
     #[generate_trait]
     impl InternalImpl of InternalTrait {
         fn initializer(
@@ -121,6 +127,23 @@ mod PragmaDispatcher {
             self.pragma_oracle_address.write(pragma_oracle_address);
             self.pragma_feed_registry_address.write(pragma_feed_registry_address);
             self.hyperlane_mailbox_address.write(hyperlane_mailbox_address);
+        }
+    }
+
+    impl HyperlaneMailboxWrapper of IHyperlaneMailboxWrapper<ContractState> {
+        fn _dispatch_caller(self: @ContractState, message_body: Bytes) {}
+    }
+
+    #[abi(embed_v0)]
+    impl PragmaOracleWrapper of IPragmaOracleWrapper<ContractState> {
+        fn _get_data_caller(self: @ContractState) -> PragmaPricesResponse {
+            PragmaPricesResponse {
+                price: 0,
+                decimals: 0,
+                last_updated_timestamp: 0,
+                num_sources_aggregated: 0,
+                expiration_timestamp: Option::None(())
+            }
         }
     }
 }

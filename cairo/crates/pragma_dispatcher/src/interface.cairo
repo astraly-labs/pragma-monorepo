@@ -1,3 +1,5 @@
+use alexandria_bytes::Bytes;
+use pragma_dispatcher::types::pragma_oracle::PragmaPricesResponse;
 use pragma_feed_types::{FeedId};
 use starknet::ContractAddress;
 
@@ -16,4 +18,14 @@ pub trait IPragmaDispatcher<TContractState> {
     /// Dispatch updates through the Hyperlane mailbox for the specified list
     /// of [Span<FeedId>].
     fn dispatch(self: @TContractState, feed_ids: Span<FeedId>);
+}
+
+#[starknet::interface]
+pub trait IHyperlaneMailboxWrapper<TContractState> {
+    fn _dispatch_caller(self: @TContractState, message_body: Bytes);
+}
+
+#[starknet::interface]
+pub trait IPragmaOracleWrapper<TContractState> {
+    fn _get_data_caller(self: @TContractState) -> PragmaPricesResponse;
 }
