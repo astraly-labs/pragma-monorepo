@@ -184,12 +184,17 @@ pub mod PragmaFeedRegistry {
         /// Little optimization to avoid non-necessary lookups when the storage length
         /// is 1.
         fn _remove_unique_feed_id(ref self: ContractState) {
+            // [Effect] Remove feed id from registry
             self.feed_ids.write(0, 0);
             self.len_feed_ids.write(0);
         }
 
         /// Removes a feed id stored in the registry.
         fn _remove_feed_id(ref self: ContractState, len_feed_ids: u32, feed_id_index: u32) {
+            // [Check] Valid feed id index
+            assert(feed_id_index < len_feed_ids, errors::INVALID_FEED_INDEX);
+
+            // [Effect] Remove feed id from registry
             if (feed_id_index == len_feed_ids - 1) {
                 self.feed_ids.write(feed_id_index, 0);
                 self.len_feed_ids.write(len_feed_ids - 1);
