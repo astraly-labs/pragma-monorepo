@@ -1,12 +1,8 @@
-
-
-
-
 struct DataFeed {
     bytes32 feedId;
     uint64 publishTime;
     uint32 numSourcesAggregated;
-    int64 value;
+    uint256 value;
 }
 
 enum DataFeedType {

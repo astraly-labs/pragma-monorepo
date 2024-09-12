@@ -232,18 +232,31 @@ contract PragmaDecoder {
 
             if (parsedData.dataType == FeedType.SpotMedian) {
                 spotMedianFeeds[dataId] = parsedData.spot;
+                _latestPriceInfo[dataId] =
+                    DataFeed(dataId, publishTime, parsedData.spot.metadata.number_of_sources, parsedData.spot.price);
                 emit EventsLib.SpotMedianUpdate(dataId, publishTime, parsedData.spot);
             } else if (parsedData.dataType == FeedType.Twap) {
                 twapFeeds[dataId] = parsedData.twap;
+                _latestPriceInfo[dataId] = DataFeed(
+                    dataId, publishTime, parsedData.twap.metadata.number_of_sources, parsedData.twap.twap_price
+                );
                 emit EventsLib.TWAPUpdate(dataId, publishTime, parsedData.twap);
             } else if (parsedData.dataType == FeedType.RealizedVolatility) {
                 rvFeeds[dataId] = parsedData.rv;
+                _latestPriceInfo[dataId] =
+                    DataFeed(dataId, publishTime, parsedData.rv.metadata.number_of_sources, parsedData.rv.end_price);
                 emit EventsLib.RealizedVolatilityUpdate(dataId, publishTime, parsedData.rv);
             } else if (parsedData.dataType == FeedType.Options) {
                 optionsFeeds[dataId] = parsedData.options;
+                _latestPriceInfo[dataId] = DataFeed(
+                    dataId, publishTime, parsedData.options.metadata.number_of_sources, parsedData.options.option_price
+                );
                 emit EventsLib.OptionsUpdate(dataId, publishTime, parsedData.options);
             } else if (parsedData.dataType == FeedType.Perpetuals) {
                 perpFeeds[dataId] = parsedData.perp;
+                _latestPriceInfo[dataId] = DataFeed(
+                    dataId, publishTime, parsedData.perp.metadata.number_of_sources, parsedData.perp.mark_price
+                );
                 emit EventsLib.PerpUpdate(dataId, publishTime, parsedData.perp);
             } else {
                 revert ErrorsLib.InvalidDataFeedType();

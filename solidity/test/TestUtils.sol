@@ -5,11 +5,10 @@ import "forge-std/Test.sol";
 import "../src/libraries/BytesLib.sol";
 import "../src/interfaces/structs.sol";
 
-
 library TestUtils {
     using BytesLib for bytes;
 
-    function createHyperlaneMessage(bytes memory payload, bool is_multiple) internal view returns (bytes memory) {
+    function createHyperlaneMessage(bytes memory payload) internal view returns (bytes memory) {
         bytes memory signatures = abi.encodePacked(
             uint8(5), // number of signatures
             uint8(0),
@@ -34,16 +33,6 @@ library TestUtils {
             uint8(27)
         );
 
-        bytes memory body = abi.encodePacked(
-            uint32(0), // nonce
-            uint64(block.timestamp), // timestamp
-            uint16(1), // emitterChainId
-            bytes32(uint256(0x1234)), // emitterAddress
-            payload
-        );
-
-        bytes32 hash = keccak256(abi.encodePacked(keccak256(body)));
-
         return abi.encodePacked(
             uint8(1), // version
             signatures,
@@ -55,11 +44,7 @@ library TestUtils {
         );
     }
 
-    function createEncodedUpdate(FeedType dataType, bytes32 feedId, bool is_multiple)
-        internal
-        view
-        returns (bytes memory)
-    {
+    function createEncodedUpdate(FeedType dataType, bytes32 feedId) internal view returns (bytes memory) {
         bytes memory updateData = abi.encodePacked(
             feedId,
             uint64(block.timestamp), // timestamp
@@ -136,7 +121,7 @@ library TestUtils {
             uint64(block.timestamp) // publishTime
         );
 
-        bytes memory hyMsg = createHyperlaneMessage(hyMsgPayload, is_multiple);
+        bytes memory hyMsg = createHyperlaneMessage(hyMsgPayload);
 
         return abi.encodePacked(
             uint8(1), // majorVersion
