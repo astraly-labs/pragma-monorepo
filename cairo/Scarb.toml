@@ -1,25 +1,23 @@
 [workspace]
-name = "pragma_dispatcher"
-version = "0.1.0"
-edition = "2023_11"
 members = ["crates/*"]
 
 [workspace.package]
 description = "Pragma Crosschain Dispatcher"
 documentation = "https://www.pragma.build/"
-cairo-version = "2.6.3"
+cairo-version = "2.6.4"
 version = "0.1.0"
 readme = "README.md"
 repository = "https://github.com/astraly-labs/pragma-monorepo"
+license-file = "../LICENSE.md"
 
 [workspace.dependencies]
-starknet = "2.6.3"
+starknet = "2.6.4"
 
 # OpenZeppelin components & utilities
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.14.0" }
 
 # Hyperlane core contracts
-hyperlane_starknet = { git = "https://github.com/astraly-labs/hyperlane_starknet.git", branch = "feat-token-extensions", rel_path = "cairo" }
+hyperlane_starknet = { git = "https://github.com/akhercha/hyperlane_starknet", branch = "feat-token-extensions", rel_path = "cairo/" }
 
 # Pragma Dispatcher crates
 pragma_feed_types = { path = "crates/pragma_feed_types" }

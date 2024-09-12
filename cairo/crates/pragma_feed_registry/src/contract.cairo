@@ -144,7 +144,7 @@ mod PragmaFeedRegistry {
             // [Check] Only owner
             self.ownable.assert_only_owner();
             // [Effect] Upgrade contract
-            self.upgradeable._upgrade(new_class_hash);
+            self.upgradeable.upgrade(new_class_hash);
         }
     }
 
