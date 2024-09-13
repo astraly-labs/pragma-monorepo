@@ -1,0 +1,38 @@
+[workspace]
+members = ["crates/*"]
+
+[workspace.package]
+description = "Pragma Crosschain Dispatcher"
+documentation = "https://www.pragma.build/"
+cairo-version = "2.6.4"
+version = "0.1.0"
+readme = "README.md"
+repository = "https://github.com/astraly-labs/pragma-monorepo"
+license-file = "../LICENSE.md"
+
+[workspace.dependencies]
+starknet = "2.6.4"
+
+# OpenZeppelin components & utilities
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.14.0" }
+
+# Pragma Oracle
+pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib", rev="fe9a467" }
+
+# Hyperlane core contracts
+hyperlane_starknet = { git = "https://github.com/akhercha/hyperlane_starknet", branch = "feat-token-extensions", rel_path = "cairo/" }
+
+# Alexandria (same version than Hyperlane)
+alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "bcdca70" }
+
+# Pragma Dispatcher crates
+pragma_feed_types = { path = "crates/pragma_feed_types" }
+pragma_feeds_registry = { path = "crates/pragma_feeds_registry" }
+pragma_dispatcher = { path = "crates/pragma_dispatcher" }
+pragma_maths = { path = "crates/pragma_maths" }
+
+# Test dependencies
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.22.0" }
+
+[workspace.tool.fmt]
+sort-module-level-items = true

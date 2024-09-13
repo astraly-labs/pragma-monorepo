@@ -25,3 +25,7 @@ jobs:
   solidity_test:
     name: Run Solidity tests
     uses: ./.github/workflows/solidity-test.yml
+
+  cairo_test:
+    name: Run Cairo tests
+    uses: ./.github/workflows/cairo-test.yml

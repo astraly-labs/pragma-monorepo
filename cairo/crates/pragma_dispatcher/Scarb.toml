@@ -1,0 +1,32 @@
+[package]
+name = "pragma_dispatcher"
+edition = "2023_11"
+version = "0.1.0"
+
+[dependencies]
+starknet.workspace = true
+
+pragma_lib.workspace = true
+hyperlane_starknet.workspace = true
+alexandria_bytes.workspace = true
+openzeppelin.workspace = true
+
+pragma_feed_types.workspace = true
+pragma_feeds_registry.workspace = true
+
+[tool]
+fmt.workspace = true
+
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
+
+[lib]
+name = "pragma_dispatcher"
+
+[dev-dependencies]
+snforge_std.workspace = true
+
+[scripts]
+test = "snforge test --max-n-steps 4294967295"
+test-profiling = "snforge test --max-n-steps 4294967295 --build-profile"

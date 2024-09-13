@@ -1,0 +1,24 @@
+[package]
+name = "pragma_maths"
+edition = "2023_11"
+version = "0.1.0"
+
+[dependencies]
+starknet.workspace = true
+
+[tool]
+fmt.workspace = true
+
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
+
+[lib]
+name = "pragma_maths"
+
+[dev-dependencies]
+snforge_std.workspace = true
+
+[scripts]
+test = "snforge test --max-n-steps 4294967295"
+test-profiling = "snforge test --max-n-steps 4294967295 --build-profile"

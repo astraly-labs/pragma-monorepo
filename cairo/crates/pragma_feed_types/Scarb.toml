@@ -1,0 +1,28 @@
+[package]
+name = "pragma_feed_types"
+edition = "2023_11"
+version = "0.1.0"
+
+[dependencies]
+starknet.workspace = true
+pragma_maths.workspace = true
+
+[tool]
+fmt.workspace = true
+
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
+
+[lib]
+name = "pragma_feed_types"
+
+[dev-dependencies]
+snforge_std.workspace = true
+
+[scripts]
+test = "snforge test"
+test-profiling = "snforge test --build-profile"
+
+[tool.snforge]
+fuzzer_runs = 10000
