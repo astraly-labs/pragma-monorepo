@@ -2,23 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-struct Signature {
-    bytes32 r;
-    bytes32 s;
-    uint8 v;
-    uint8 validatorIndex;
-}
-
-struct HyMsg {
-    uint8 version;
-    uint32 timestamp;
-    uint32 nonce;
-    uint16 emitterChainId;
-    bytes32 emitterAddress;
-    bytes payload;
-    Signature[] signatures;
-    bytes32 hash;
-}
+import "./PragmaStructs.sol";
 
 /// @title IHyperlane
 /// @author Pragma Labs
@@ -33,11 +17,11 @@ interface IHyperlane {
     function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         external
         view
-        returns (HyMsg memory hyMsg, bool valid, string memory reason);
+        returns (HyMsg memory hyMsg, bool valid, string memory reason, uint256 index);
 
     /// @notice Parses an Hyperlane message.
     /// @dev message should be encoded following the specs (TODO: add docs)
     /// @param encodedHyMsg The encoded Hyperlane message.
     /// @return hyMsg The parsed Hyperlane message.
-    function parseHyMsg(bytes calldata encodedHyMsg) external pure returns (HyMsg memory hyMsg);
+    function parseHyMsg(bytes calldata encodedHyMsg) external pure returns (HyMsg memory hyMsg, uint256 index);
 }

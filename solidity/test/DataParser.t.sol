@@ -3,105 +3,131 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "../src/libraries/DataParser.sol";
+import "../src/libraries/ErrorsLib.sol";
+
 
 contract DataParserTest is Test {
     function testParseSpotMedianEntry() public pure {
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),///CRYPTO
+                uint16(0), //SPOT
+                bytes32("BTC/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
-            uint16(21325), // SM
+            feedId,
             uint64(1625097600), // timestamp
-            uint16(3), 
+            uint16(3),
             uint8(8),
-            bytes32("BTC/USD"),
             uint256(35000 ether), // price
             uint256(100 ether) // volume
         );
 
         ParsedData memory result = DataParser.parse(data);
-        
-        assertEq(result.dataType, 21325);
-        assertEq(result.spotEntry.metadata.timestamp, 1625097600);
-        assertEq(result.spotEntry.metadata.number_of_sources, 3);
-        assertEq(result.spotEntry.metadata.decimals, 8);
-        assertEq(result.spotEntry.pair_id, bytes32("BTC/USD"));
-        assertEq(result.spotEntry.price, 35000 ether);
-        assertEq(result.spotEntry.volume, 100 ether);
+
+        assert(result.dataType == FeedType.SpotMedian);
+        assertEq(result.spot.metadata.feedId, feedId);
+        assertEq(result.spot.metadata.timestamp, 1625097600);
+        assertEq(result.spot.metadata.numberOfSources, 3);
+        assertEq(result.spot.metadata.decimals, 8);
+        assertEq(result.spot.price, 35000 ether);
+        assertEq(result.spot.volume, 100 ether);
     }
 
     function testParseTWAPEntry() public pure {
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),///CRYPTO
+                uint16(1), //TWAP
+                bytes32("ETH/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
-            uint16(21591), // TW
+            feedId,
             uint64(1625097600), // timestamp
-            uint16(3), 
+            uint16(3),
             uint8(8),
-            bytes32("ETH/USD"),
-            uint256(2000 ether), // twap_price
-            uint256(3600), // time_period
-            uint256(1950 ether), // start_price
-            uint256(2050 ether), // end_price
-            uint256(1000 ether), // total_volume
-            uint256(100) // number_of_data_points
+            uint256(2000 ether), // twapPrice
+            uint256(3600), // timePeriod
+            uint256(1950 ether), // startPrice
+            uint256(2050 ether), // endPrice
+            uint256(1000 ether), // totalVolume
+            uint256(100) // numberOfDataPoints
         );
 
         ParsedData memory result = DataParser.parse(data);
-        
-        assertEq(result.dataType, 21591);
-        assertEq(result.twapEntry.metadata.timestamp, 1625097600);
-        assertEq(result.twapEntry.metadata.number_of_sources, 3);
-        assertEq(result.twapEntry.metadata.decimals, 8);
-        assertEq(result.twapEntry.pair_id, bytes32("ETH/USD"));
-        assertEq(result.twapEntry.twap_price, 2000 ether);
-        assertEq(result.twapEntry.time_period, 3600);
-        assertEq(result.twapEntry.start_price, 1950 ether);
-        assertEq(result.twapEntry.end_price, 2050 ether);
-        assertEq(result.twapEntry.total_volume, 1000 ether);
-        assertEq(result.twapEntry.number_of_data_points, 100);
+
+        assert(result.dataType == FeedType.Twap);
+        assertEq(result.twap.metadata.timestamp, 1625097600);
+        assertEq(result.twap.metadata.numberOfSources, 3);
+        assertEq(result.twap.metadata.decimals, 8);
+        assertEq(result.twap.metadata.feedId, feedId);
+        assertEq(result.twap.twapPrice, 2000 ether);
+        assertEq(result.twap.timePeriod, 3600);
+        assertEq(result.twap.startPrice, 1950 ether);
+        assertEq(result.twap.endPrice, 2050 ether);
+        assertEq(result.twap.totalVolume, 1000 ether);
+        assertEq(result.twap.numberOfDataPoints, 100);
     }
 
     function testParseRealizedVolatilityEntry() public pure {
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),///CRYPTO
+                uint16(2), //RV
+                bytes32("BTC/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
-            uint16(21078), // RV
+            feedId,
             uint64(1625097600), // timestamp
-            uint16(3), 
+            uint16(3),
             uint8(8),
-            bytes32("BTC/USD"),
             uint256(0.5 ether), // volatility
-            uint256(86400), // time_period
-            uint256(34000 ether), // start_price
-            uint256(36000 ether), // end_price
+            uint256(86400), // timePeriod
+            uint256(34000 ether), // startPrice
+            uint256(36000 ether), // endPrice
             uint256(37000 ether), // high_price
             uint256(33000 ether), // low_price
-            uint256(1440) // number_of_data_points
+            uint256(1440) // numberOfDataPoints
         );
 
         ParsedData memory result = DataParser.parse(data);
-        
-        assertEq(result.dataType, 21078);
-        assertEq(result.rvEntry.metadata.timestamp, 1625097600);
-        assertEq(result.rvEntry.metadata.number_of_sources, 3);
-        assertEq(result.rvEntry.metadata.decimals, 8);
-        assertEq(result.rvEntry.pair_id, bytes32("BTC/USD"));
-        assertEq(result.rvEntry.volatility, 0.5 ether);
-        assertEq(result.rvEntry.time_period, 86400);
-        assertEq(result.rvEntry.start_price, 34000 ether);
-        assertEq(result.rvEntry.end_price, 36000 ether);
-        assertEq(result.rvEntry.high_price, 37000 ether);
-        assertEq(result.rvEntry.low_price, 33000 ether);
-        assertEq(result.rvEntry.number_of_data_points, 1440);
+
+        assert(result.dataType == FeedType.RealizedVolatility);
+        assertEq(result.rv.metadata.timestamp, 1625097600);
+        assertEq(result.rv.metadata.numberOfSources, 3);
+        assertEq(result.rv.metadata.decimals, 8);
+        assertEq(result.rv.metadata.feedId, feedId);
+        assertEq(result.rv.volatility, 0.5 ether);
+        assertEq(result.rv.timePeriod, 86400);
+        assertEq(result.rv.startPrice, 34000 ether);
+        assertEq(result.rv.endPrice, 36000 ether);
+        assertEq(result.rv.high_price, 37000 ether);
+        assertEq(result.rv.low_price, 33000 ether);
+        assertEq(result.rv.numberOfDataPoints, 1440);
     }
 
     function testParseOptionsEntry() public pure {
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),///CRYPTO
+                uint16(3), //Option
+                bytes32("ETH/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
-            uint16(20304), // OP
+            feedId,
             uint64(1625097600), // timestamp
-            uint16(3), 
+            uint16(3),
             uint8(8),
-            bytes32("ETH/USD"),
-            uint256(2500 ether), // strike_price
-            uint256(0.5 ether), // implied_volatility
-            uint256(604800), // time_to_expiry
-            uint8(1), // is_call
-            uint256(2400 ether), // underlying_price
-            uint256(150 ether), // option_price
+            uint256(2500 ether), // strikePrice
+            uint256(0.5 ether), // impliedVolatility
+            uint256(604800), // timeToExpiry
+            uint8(1), // isCall
+            uint256(2400 ether), // underlyingPrice
+            uint256(150 ether), // optionPrice
             uint256(0.6 ether), // delta
             uint256(0.001 ether), // gamma
             uint256(1000 ether), // vega
@@ -110,57 +136,76 @@ contract DataParserTest is Test {
         );
 
         ParsedData memory result = DataParser.parse(data);
-        
-        assertEq(result.dataType, 20304);
-        assertEq(result.optionsEntry.metadata.timestamp, 1625097600);
-        assertEq(result.optionsEntry.metadata.number_of_sources, 3);
-        assertEq(result.optionsEntry.metadata.decimals, 8);
-        assertEq(result.optionsEntry.pair_id, bytes32("ETH/USD"));
-        assertEq(result.optionsEntry.strike_price, 2500 ether);
-        assertEq(result.optionsEntry.implied_volatility, 0.5 ether);
-        assertEq(result.optionsEntry.time_to_expiry, 604800);
-        assertTrue(result.optionsEntry.is_call);
-        assertEq(result.optionsEntry.underlying_price, 2400 ether);
-        assertEq(result.optionsEntry.option_price, 150 ether);
-        assertEq(result.optionsEntry.delta, 0.6 ether);
-        assertEq(result.optionsEntry.gamma, 0.001 ether);
-        assertEq(result.optionsEntry.vega, 1000 ether);
-        assertEq(result.optionsEntry.theta, 50 ether); // Note: This is now positive in the test data
-        assertEq(result.optionsEntry.rho, 10 ether);
+
+        assert(result.dataType == FeedType.Options);
+        assertEq(result.options.metadata.timestamp, 1625097600);
+        assertEq(result.options.metadata.numberOfSources, 3);
+        assertEq(result.options.metadata.decimals, 8);
+        assertEq(result.options.metadata.feedId, feedId);
+        assertEq(result.options.strikePrice, 2500 ether);
+        assertEq(result.options.impliedVolatility, 0.5 ether);
+        assertEq(result.options.timeToExpiry, 604800);
+        assertTrue(result.options.isCall);
+        assertEq(result.options.underlyingPrice, 2400 ether);
+        assertEq(result.options.optionPrice, 150 ether);
+        assertEq(result.options.delta, 0.6 ether);
+        assertEq(result.options.gamma, 0.001 ether);
+        assertEq(result.options.vega, 1000 ether);
+        assertEq(result.options.theta, 50 ether); // Note: This is now positive in the test data
+        assertEq(result.options.rho, 10 ether);
     }
 
     function testParsePerpEntry() public pure {
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0),///CRYPTO
+                uint16(4), //PERP
+                bytes32("BTC/USD")
+            )
+        );
         bytes memory data = abi.encodePacked(
-            uint16(20560), // PP
+            feedId,
             uint64(1625097600), // timestamp
-            uint16(3), 
+            uint16(3),
             uint8(8),
-            bytes32("BTC/USD"),
-            uint256(35000 ether), // mark_price
-            uint256(0.001 ether), // funding_rate
-            uint256(1000 ether), // open_interest
+            uint256(35000 ether), // markPrice
+            uint256(0.001 ether), // fundingRate
+            uint256(1000 ether), // openInterest
             uint256(500 ether) // volume
         );
 
         ParsedData memory result = DataParser.parse(data);
-        
-        assertEq(result.dataType, 20560);
-        assertEq(result.perpEntry.metadata.timestamp, 1625097600);
-        assertEq(result.perpEntry.metadata.number_of_sources, 3);
-        assertEq(result.perpEntry.metadata.decimals, 8);
-        assertEq(result.perpEntry.pair_id, bytes32("BTC/USD"));
-        assertEq(result.perpEntry.mark_price, 35000 ether);
-        assertEq(result.perpEntry.funding_rate, 0.001 ether);
-        assertEq(result.perpEntry.open_interest, 1000 ether);
-        assertEq(result.perpEntry.volume, 500 ether);
+
+        assert(result.dataType == FeedType.Perpetuals);
+        assertEq(result.perp.metadata.timestamp, 1625097600);
+        assertEq(result.perp.metadata.numberOfSources, 3);
+        assertEq(result.perp.metadata.decimals, 8);
+        assertEq(result.perp.metadata.feedId, feedId);
+        assertEq(result.perp.markPrice, 35000 ether);
+        assertEq(result.perp.fundingRate, 0.001 ether);
+        assertEq(result.perp.openInterest, 1000 ether);
+        assertEq(result.perp.volume, 500 ether);
     }
 
     function testParseUnknownDataType() public {
-        bytes memory data = abi.encodePacked(
-            uint16(9999) // Unknown data type
+        bytes32 feedId = bytes32(
+            abi.encodePacked(
+                uint16(0), ///CRYPTO
+                uint16(10), //Unkown data type
+                bytes32("BTC/USD")
+            )
         );
-
-        vm.expectRevert("Unknown data type");
+        bytes memory data = abi.encodePacked(
+            feedId,
+            uint64(1625097600), // timestamp
+            uint16(3),
+            uint8(8),
+            uint256(35000 ether), // markPrice
+            uint256(0.001 ether), // fundingRate
+            uint256(1000 ether), // openInterest
+            uint256(500 ether) // volume
+        );
+        vm.expectRevert(abi.encodeWithSignature("InvalidDataFeedType()"));
         DataParser.parse(data);
     }
 }

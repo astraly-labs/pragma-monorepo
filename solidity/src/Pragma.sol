@@ -34,7 +34,6 @@ contract Pragma is IPragma, PragmaDecoder {
         uint256 len = updateData.length;
         for (uint256 i = 0; i < len;) {
             totalNumUpdates += updateDataInfoFromUpdate(updateData[i]);
-
             unchecked {
                 i++;
             }

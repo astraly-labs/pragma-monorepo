@@ -6,6 +6,7 @@ import {DataFeed, DataFeedType} from "./interfaces/IPragma.sol";
 import {HyMsg, IHyperlane} from "./interfaces/IHyperlane.sol";
 import "./libraries/ConstantsLib.sol";
 import "./libraries/ErrorsLib.sol";
+import "./libraries/DataParser.sol";
 import "./libraries/EventsLib.sol";
 import "./libraries/BytesLib.sol";
 import "./libraries/MerkleTree.sol";
@@ -20,6 +21,13 @@ contract PragmaDecoder {
 
     mapping(bytes32 => DataFeed) public _latestPriceInfo;
     mapping(bytes32 => bool) public _isValidDataSource;
+    mapping(bytes32 => uint64) public latestPublishTimes;
+
+    mapping(bytes32 => SpotMedian) public spotMedianFeeds;
+    mapping(bytes32 => TWAP) public twapFeeds;
+    mapping(bytes32 => RealizedVolatility) public rvFeeds;
+    mapping(bytes32 => Options) public optionsFeeds;
+    mapping(bytes32 => Perp) public perpFeeds;
 
     constructor(
         address _hyperlane,
@@ -40,10 +48,14 @@ contract PragmaDecoder {
         return _isValidDataSource[keccak256(abi.encodePacked(chainId, emitterAddress))];
     }
 
-    function parseAndVerifyHyMsg(bytes calldata encodedHyMsg) internal view returns (HyMsg memory hyMsg) {
+    function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
+        internal
+        view
+        returns (HyMsg memory hyMsg, uint256 index)
+    {
         {
             bool valid;
-            (hyMsg, valid,) = hyperlane.parseAndVerifyHyMsg(encodedHyMsg);
+            (hyMsg, valid,, index) = hyperlane.parseAndVerifyHyMsg(encodedHyMsg);
             if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
         }
 
@@ -112,10 +124,10 @@ contract PragmaDecoder {
             {
                 bytes memory encodedPayload;
                 {
-                    HyMsg memory hyMsg = parseAndVerifyHyMsg(UnsafeCalldataBytesLib.slice(encoded, offset, hyMsgSize));
-                    offset += hyMsgSize;
-
+                    (HyMsg memory hyMsg, uint256 index) =
+                        parseAndVerifyHyMsg(UnsafeCalldataBytesLib.slice(encoded, offset, hyMsgSize));
                     encodedPayload = hyMsg.payload;
+                    offset += index;
                 }
 
                 uint256 payloadOffset = 0;
@@ -128,56 +140,64 @@ contract PragmaDecoder {
                     if (payloadOffset > encodedPayload.length) {
                         revert ErrorsLib.InvalidUpdateData();
                     }
+                    numUpdates = UnsafeBytesLib.toUint8(encodedPayload, payloadOffset);
+                    payloadOffset += 1;
                 }
             }
-
-            numUpdates = UnsafeCalldataBytesLib.toUint8(encoded, offset);
-            offset += 1;
         }
+    }
+
+    function _isProofValid(bytes calldata encodedProof, uint256 offset, bytes32 root, bytes calldata leafData)
+        internal
+        virtual
+        returns (bool valid, uint256 endOffset)
+    {
+        return MerkleTree.isProofValid(encodedProof, offset, root, leafData);
     }
 
     function extractDataInfoFromUpdate(bytes calldata encoded, uint256 offset, bytes32 checkpointRoot)
         internal
-        pure
-        returns (uint256 endOffset, DataFeed memory dataFeed, bytes32 dataId, uint64 publishTime)
+        returns (uint256 endOffset, ParsedData memory parsedData, bytes32 feedId, uint64 publishTime)
     {
         unchecked {
             bytes calldata encodedUpdate;
-            uint16 updateSize = UnsafeCalldataBytesLib.toUint16(encoded, offset);
-            offset += 2;
-
+            bytes calldata encodedProof;
+            bytes calldata fulldataFeed;
+            bytes calldata payload = UnsafeCalldataBytesLib.slice(encoded, offset, encoded.length - offset);
+            uint256 payloadOffset = 33; // skip checkpoint root and num Updates
+            uint16 updateSize = UnsafeCalldataBytesLib.toUint16(payload, payloadOffset);
+            payloadOffset += 2;
+            uint16 proofSize = UnsafeCalldataBytesLib.toUint16(payload, payloadOffset);
+            payloadOffset += 2;
+            offset += payloadOffset + updateSize;
             {
-                encodedUpdate = UnsafeCalldataBytesLib.slice(encoded, offset, updateSize);
-                offset += updateSize;
+                encodedProof = UnsafeCalldataBytesLib.slice(payload, payloadOffset, proofSize);
+                payloadOffset += proofSize;
+                encodedUpdate = UnsafeCalldataBytesLib.slice(payload, payloadOffset, updateSize);
+                fulldataFeed = UnsafeCalldataBytesLib.slice(payload, payloadOffset, payload.length - payloadOffset);
+                payloadOffset += updateSize;
             }
 
             bool valid;
-            (valid, endOffset) = MerkleTree.isProofValid(
-                encoded, // data
-                offset, // where to start reading the proof
-                checkpointRoot, // root
-                encodedUpdate // leaf
-            );
-
+            (valid, endOffset) = _isProofValid(encodedProof, offset, checkpointRoot, encodedUpdate);
             if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
-
-            DataFeedType dataFeedType = DataFeedType(UnsafeCalldataBytesLib.toUint8(encodedUpdate, 0));
-            if (dataFeedType == DataFeedType.SpotMedian) {
-                (dataFeed, dataId, publishTime) = parseSpotMedianDataFeed(encodedUpdate, 1);
-            } else {
-                revert ErrorsLib.InvalidDataFeedType();
-            }
+            (parsedData, feedId, publishTime) = parseDataFeed(fulldataFeed);
+            endOffset += 40;
         }
     }
 
-    function parseSpotMedianDataFeed(bytes calldata encodedDataFeed, uint256 offset)
+    function parseDataFeed(bytes calldata encodedDataFeed)
         private
         pure
-        returns (DataFeed memory dataFeedInfo, bytes32 dataId, uint64 publishTime)
+        returns (ParsedData memory parsedData, bytes32 feedId, uint64 publishTime)
     {
-        unchecked {
-            // TODO: parse the spot median data feed
-        }
+        parsedData = DataParser.parse(encodedDataFeed);
+
+        // Assuming feedId and publishTime are appended at the end of encodedDataFeed
+        uint256 offset = encodedDataFeed.length - 40; // 32 bytes for feedId, 8 bytes for publishTime
+        feedId = bytes32(UnsafeCalldataBytesLib.toUint256(encodedDataFeed, offset));
+        offset += 32;
+        publishTime = UnsafeBytesLib.toUint64(encodedDataFeed, offset);
     }
 
     function updateDataInfoFromUpdate(bytes calldata updateData) internal returns (uint8 numUpdates) {
@@ -190,26 +210,55 @@ contract PragmaDecoder {
         bytes calldata encoded;
 
         (offset, checkpointRoot, numUpdates, encoded) = extractCheckpointRootAndNumUpdates(updateData, encodedOffset);
-
         unchecked {
             for (uint256 i = 0; i < numUpdates; i++) {
-                DataFeed memory dataFeed;
-                bytes32 dataId;
-                (offset, dataFeed, dataId,) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
-                updateLatestDataInfoIfNecessary(dataId, dataFeed);
+                ParsedData memory parsedData;
+                bytes32 feedId;
+                uint64 publishTime;
+                (offset, parsedData, feedId, publishTime) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
+                updateLatestDataInfoIfNecessary(feedId, parsedData, publishTime);
             }
         }
-
         // We check that the offset is at the end of the encoded data.
         // If not it means the data is not encoded correctly.
         if (offset != encoded.length) revert ErrorsLib.InvalidUpdateData();
     }
 
-    function updateLatestDataInfoIfNecessary(bytes32 dataId, DataFeed memory info) internal {
-        uint64 latestPublishTime = _latestPriceInfo[dataId].publishTime;
-        if (info.publishTime > latestPublishTime) {
-            _latestPriceInfo[dataId] = info;
-            emit EventsLib.DataFeedUpdate(dataId, info.publishTime, info.numSourcesAggregated, info.value);
+    function updateLatestDataInfoIfNecessary(bytes32 feedId, ParsedData memory parsedData, uint64 publishTime)
+        internal
+    {
+        if (publishTime > latestPublishTimes[feedId]) {
+            latestPublishTimes[feedId] = publishTime;
+
+            if (parsedData.dataType == FeedType.SpotMedian) {
+                spotMedianFeeds[feedId] = parsedData.spot;
+                _latestPriceInfo[feedId] =
+                    DataFeed(feedId, publishTime, parsedData.spot.metadata.numberOfSources, parsedData.spot.price);
+                emit EventsLib.SpotMedianUpdate(feedId, publishTime, parsedData.spot);
+            } else if (parsedData.dataType == FeedType.Twap) {
+                twapFeeds[feedId] = parsedData.twap;
+                _latestPriceInfo[feedId] =
+                    DataFeed(feedId, publishTime, parsedData.twap.metadata.numberOfSources, parsedData.twap.twapPrice);
+                emit EventsLib.TWAPUpdate(feedId, publishTime, parsedData.twap);
+            } else if (parsedData.dataType == FeedType.RealizedVolatility) {
+                rvFeeds[feedId] = parsedData.rv;
+                _latestPriceInfo[feedId] =
+                    DataFeed(feedId, publishTime, parsedData.rv.metadata.numberOfSources, parsedData.rv.endPrice);
+                emit EventsLib.RealizedVolatilityUpdate(feedId, publishTime, parsedData.rv);
+            } else if (parsedData.dataType == FeedType.Options) {
+                optionsFeeds[feedId] = parsedData.options;
+                _latestPriceInfo[feedId] = DataFeed(
+                    feedId, publishTime, parsedData.options.metadata.numberOfSources, parsedData.options.optionPrice
+                );
+                emit EventsLib.OptionsUpdate(feedId, publishTime, parsedData.options);
+            } else if (parsedData.dataType == FeedType.Perpetuals) {
+                perpFeeds[feedId] = parsedData.perp;
+                _latestPriceInfo[feedId] =
+                    DataFeed(feedId, publishTime, parsedData.perp.metadata.numberOfSources, parsedData.perp.markPrice);
+                emit EventsLib.PerpUpdate(feedId, publishTime, parsedData.perp);
+            } else {
+                revert ErrorsLib.InvalidDataFeedType();
+            }
         }
     }
 }

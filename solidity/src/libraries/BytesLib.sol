@@ -356,6 +356,17 @@ library BytesLib {
         return tempUint;
     }
 
+    function toInt256(bytes memory _bytes, uint256 _start) internal pure returns (int256) {
+        require(_bytes.length >= _start + 32, "toInt256_outOfBounds");
+        int256 tempInt;
+
+        assembly {
+            tempInt := mload(add(add(_bytes, 0x20), _start))
+        }
+
+        return tempInt;
+    }
+
     function toBytes32(bytes memory _bytes, uint256 _start) internal pure returns (bytes32) {
         require(_bytes.length >= _start + 32, "toBytes32_outOfBounds");
         bytes32 tempBytes32;

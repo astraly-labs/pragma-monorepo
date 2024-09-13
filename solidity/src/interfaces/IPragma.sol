@@ -2,21 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-struct DataFeed {
-    bytes32 feedId;
-    uint64 publishTime;
-    uint32 numSourcesAggregated;
-    int64 value;
-}
-
-enum DataFeedType {
-    SpotMedian
-}
-
-struct DataSource {
-    uint16 chainId;
-    bytes32 emitterAddress;
-}
+import "./PragmaStructs.sol";
 
 /// @title IPragma
 /// @author Pragma Labs
