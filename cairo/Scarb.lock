@@ -4,7 +4,7 @@ version = 1
 [[package]]
 name = "alexandria_bytes"
 version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=bcdca70#bcdca70afdf59c9976148e95cebad5cf63d75a7f"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#82088715b454d8cf197b9c54c31525ca0cb57a05"
 dependencies = [
  "alexandria_data_structures",
  "alexandria_math",
@@ -13,7 +13,7 @@ dependencies = [
 [[package]]
 name = "alexandria_data_structures"
 version = "0.2.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=bcdca70#bcdca70afdf59c9976148e95cebad5cf63d75a7f"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#82088715b454d8cf197b9c54c31525ca0cb57a05"
 dependencies = [
  "alexandria_encoding",
 ]
@@ -21,7 +21,7 @@ dependencies = [
 [[package]]
 name = "alexandria_encoding"
 version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=bcdca70#bcdca70afdf59c9976148e95cebad5cf63d75a7f"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#82088715b454d8cf197b9c54c31525ca0cb57a05"
 dependencies = [
  "alexandria_bytes",
  "alexandria_math",
@@ -30,16 +30,13 @@ dependencies = [
 
 [[package]]
 name = "alexandria_math"
-version = "0.2.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=bcdca70#bcdca70afdf59c9976148e95cebad5cf63d75a7f"
-dependencies = [
- "alexandria_data_structures",
-]
+version = "0.2.1"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#82088715b454d8cf197b9c54c31525ca0cb57a05"
 
 [[package]]
 name = "alexandria_numeric"
 version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=bcdca70#bcdca70afdf59c9976148e95cebad5cf63d75a7f"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#82088715b454d8cf197b9c54c31525ca0cb57a05"
 dependencies = [
  "alexandria_math",
  "alexandria_searching",
@@ -48,15 +45,101 @@ dependencies = [
 [[package]]
 name = "alexandria_searching"
 version = "0.1.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=bcdca70#bcdca70afdf59c9976148e95cebad5cf63d75a7f"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git#82088715b454d8cf197b9c54c31525ca0cb57a05"
 dependencies = [
  "alexandria_data_structures",
 ]
 
 [[package]]
 name = "openzeppelin"
-version = "0.14.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.14.0#f091c4f51ddeb10297db984acae965328c5a4e5b"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+dependencies = [
+ "openzeppelin_access",
+ "openzeppelin_account",
+ "openzeppelin_governance",
+ "openzeppelin_introspection",
+ "openzeppelin_merkle_tree",
+ "openzeppelin_presets",
+ "openzeppelin_security",
+ "openzeppelin_token",
+ "openzeppelin_upgrades",
+ "openzeppelin_utils",
+]
+
+[[package]]
+name = "openzeppelin_access"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+dependencies = [
+ "openzeppelin_introspection",
+ "openzeppelin_utils",
+]
+
+[[package]]
+name = "openzeppelin_account"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+dependencies = [
+ "openzeppelin_introspection",
+ "openzeppelin_utils",
+]
+
+[[package]]
+name = "openzeppelin_governance"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+dependencies = [
+ "openzeppelin_access",
+ "openzeppelin_introspection",
+]
+
+[[package]]
+name = "openzeppelin_introspection"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+
+[[package]]
+name = "openzeppelin_merkle_tree"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+
+[[package]]
+name = "openzeppelin_presets"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+dependencies = [
+ "openzeppelin_access",
+ "openzeppelin_account",
+ "openzeppelin_introspection",
+ "openzeppelin_token",
+ "openzeppelin_upgrades",
+]
+
+[[package]]
+name = "openzeppelin_security"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+
+[[package]]
+name = "openzeppelin_token"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+dependencies = [
+ "openzeppelin_account",
+ "openzeppelin_governance",
+ "openzeppelin_introspection",
+]
+
+[[package]]
+name = "openzeppelin_upgrades"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+
+[[package]]
+name = "openzeppelin_utils"
+version = "0.16.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
 
 [[package]]
 name = "pragma_dispatcher"
@@ -90,7 +173,7 @@ dependencies = [
 [[package]]
 name = "pragma_lib"
 version = "1.0.0"
-source = "git+https://github.com/astraly-labs/pragma-lib?rev=fe9a467#fe9a46743254182ac331da488ccfc05e0185cdd0"
+source = "git+https://github.com/astraly-labs/pragma-lib?branch=chore%2Fbump_scarb#c36c0bad5661176a171d3988fb4235da4883343c"
 
 [[package]]
 name = "pragma_maths"

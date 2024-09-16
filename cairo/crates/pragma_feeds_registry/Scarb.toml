@@ -1,6 +1,6 @@
 [package]
 name = "pragma_feeds_registry"
-edition = "2023_11"
+edition = "2024_07"
 version = "0.1.0"
 
 [dependencies]

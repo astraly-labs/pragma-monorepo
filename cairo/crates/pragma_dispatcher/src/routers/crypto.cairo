@@ -14,6 +14,7 @@ pub mod CryptoRouter {
     };
     use pragma_lib::types::{PragmaPricesResponse, DataType, AggregationMode};
     use starknet::ContractAddress;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     // ================== STORAGE ==================
 

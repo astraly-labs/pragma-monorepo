@@ -14,13 +14,13 @@ license-file = "../LICENSE.md"
 starknet = "2.6.4"
 
 # OpenZeppelin components & utilities
-openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.14.0" }
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", branch = "upgrade-edition-2024-07" }
 
 # Pragma Oracle
-pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib", rev="fe9a467" }
+pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib", branch = "chore/bump_scarb" }
 
 # Alexandria (same version than Hyperlane)
-alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "bcdca70" }
+alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
 
 # Pragma Dispatcher crates
 pragma_feed_types = { path = "crates/pragma_feed_types" }

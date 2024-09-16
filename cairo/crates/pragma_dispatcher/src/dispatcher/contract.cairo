@@ -16,6 +16,9 @@ pub mod PragmaDispatcher {
     use pragma_feeds_registry::{
         IPragmaFeedsRegistryDispatcher, IPragmaFeedsRegistryDispatcherTrait
     };
+    use starknet::storage::{
+        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map
+    };
     use starknet::{ContractAddress, ClassHash, get_caller_address};
 
     // ================== COMPONENTS ==================
@@ -41,7 +44,7 @@ pub mod PragmaDispatcher {
         // Hyperlane mailbox contract
         hyperlane_mailbox: IMailboxDispatcher,
         // Feed routers
-        routers: LegacyMap<AssetClass, IAssetClassRouterDispatcher>,
+        routers: Map<AssetClass, IAssetClassRouterDispatcher>,
     }
 
     // ================== EVENTS ==================
@@ -110,7 +113,7 @@ pub mod PragmaDispatcher {
 
             // [Effect] Update the router for the given asset class
             let router = IAssetClassRouterDispatcher { contract_address: router_address };
-            self.routers.write(asset_class.unwrap(), router);
+            self.routers.entry(asset_class.unwrap()).write(router);
 
             // [Interaction] Storage updated event
             self
@@ -219,7 +222,7 @@ pub mod PragmaDispatcher {
                     panic_with_felt252(e.into())
                 }
             };
-            let router = self.routers.read(feed.asset_class);
+            let router = self.routers.entry(feed.asset_class).read();
             let feed_update_message = router.routing(feed);
             message.concat(@feed_update_message);
         }

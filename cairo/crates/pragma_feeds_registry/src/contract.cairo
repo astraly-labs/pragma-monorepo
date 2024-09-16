@@ -7,6 +7,9 @@ pub mod PragmaFeedsRegistry {
     use pragma_feed_types::{FeedWithId, FeedId, FeedTrait};
     use pragma_feeds_registry::errors;
     use pragma_feeds_registry::interface::IPragmaFeedsRegistry;
+    use starknet::storage::{
+        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map
+    };
     use starknet::{ClassHash, ContractAddress, get_caller_address};
 
     // ================== COMPONENTS ==================
@@ -33,7 +36,7 @@ pub mod PragmaFeedsRegistry {
         // Total feed ids registered
         len_feed_ids: u32,
         // All supported feed ids
-        feed_ids: LegacyMap::<u32, FeedId>
+        feed_ids: Map<u32, FeedId>
     }
 
     // ================== EVENTS ==================
@@ -93,7 +96,7 @@ pub mod PragmaFeedsRegistry {
 
             // [Effect] Insert new feed id
             let len_feed_ids = self.len_feed_ids.read();
-            self.feed_ids.write(len_feed_ids, feed_id);
+            self.feed_ids.entry(len_feed_ids).write(feed_id);
             self.len_feed_ids.write(len_feed_ids + 1);
 
             // [Interaction] Event emitted
@@ -147,7 +150,7 @@ pub mod PragmaFeedsRegistry {
                 if i >= len_feed_ids {
                     break;
                 }
-                let feed_id = self.feed_ids.read(i);
+                let feed_id = self.feed_ids.entry(i).read();
                 all_feeds.append(feed_id);
                 i += 1;
             };
@@ -187,7 +190,7 @@ pub mod PragmaFeedsRegistry {
                 if i >= len_feed_ids {
                     break;
                 }
-                let ith_feed_id = self.feed_ids.read(i);
+                let ith_feed_id = self.feed_ids.entry(i).read();
                 if feed_id == ith_feed_id {
                     feed_id_index = Option::Some(i);
                     break;
@@ -203,7 +206,7 @@ pub mod PragmaFeedsRegistry {
         /// is 1.
         fn remove_unique_feed_id(ref self: ContractState) {
             // [Effect] Remove feed id from registry
-            self.feed_ids.write(0, 0);
+            self.feed_ids.entry(0).write(0);
             self.len_feed_ids.write(0);
         }
 
@@ -214,11 +217,11 @@ pub mod PragmaFeedsRegistry {
 
             // [Effect] Remove feed id from registry
             if (feed_id_index == len_feed_ids - 1) {
-                self.feed_ids.write(feed_id_index, 0);
+                self.feed_ids.entry(feed_id_index).write(0);
                 self.len_feed_ids.write(len_feed_ids - 1);
             } else {
-                let last_feed_id = self.feed_ids.read(len_feed_ids - 1);
-                self.feed_ids.write(feed_id_index, last_feed_id);
+                let last_feed_id = self.feed_ids.entry(len_feed_ids - 1).read();
+                self.feed_ids.entry(feed_id_index).write(last_feed_id);
                 self.len_feed_ids.write(len_feed_ids - 1);
             }
         }
