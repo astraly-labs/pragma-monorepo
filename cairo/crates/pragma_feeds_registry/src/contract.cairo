@@ -133,6 +133,7 @@ pub mod PragmaFeedRegistry {
                 }
                 let feed_id = self.feed_ids.read(i);
                 all_feeds.append(feed_id);
+                i += 1;
             };
             all_feeds
         }
@@ -175,6 +176,7 @@ pub mod PragmaFeedRegistry {
                     feed_id_index = Option::Some(i);
                     break;
                 }
+                i += 1;
             };
 
             feed_id_index
