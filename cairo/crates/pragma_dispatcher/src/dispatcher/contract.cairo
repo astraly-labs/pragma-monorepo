@@ -205,6 +205,7 @@ pub mod PragmaDispatcher {
         /// Retrieves the latest data available for the provided [feed_id] and
         /// adds the data to the [message].
         fn add_feed_update_to_message(self: @ContractState, ref message: Bytes, feed_id: FeedId) {
+            // [Check] Feed id is valid
             let feed: Feed = match FeedTrait::from_id(feed_id) {
                 Result::Ok(f) => f,
                 Result::Err(e) => {
@@ -212,14 +213,18 @@ pub mod PragmaDispatcher {
                     panic_with_felt252(e.into())
                 }
             };
+
+            // [Check] Feed's asset class router is registered
             let router = self.routers.entry(feed.asset_class).read();
+            assert(!router.is_zero(), errors::NO_ROUTER_REGISTERED);
+
+            // [Effect] Retrieve the feed update and add it to the message
             let feed_update_message = router.routing(feed);
             message.concat(@feed_update_message);
         }
     }
 
     // ================== PRIVATE CALLERS OF SUB CONTRACTS ==================
-    // TODO: This should be a component?
 
     impl PragmaFeedsRegistryWrapper of IPragmaFeedsRegistryWrapper<ContractState> {
         /// Calls feed_exists from the Pragma Feeds Registry contract.

@@ -1,9 +1,9 @@
 use alexandria_bytes::Bytes;
-
+use core::num::traits::Zero;
 use pragma_dispatcher::types::pragma_oracle::{SummaryStatsComputation};
 use pragma_feed_types::Feed;
 use pragma_lib::types::{PragmaPricesResponse, DataType, AggregationMode};
-
+use starknet::contract_address_const;
 
 #[starknet::interface]
 pub trait IAssetClassRouter<TContractState> {
@@ -47,4 +47,20 @@ pub trait ISummaryStatsWrapper<TContractState> {
         start_timestamp: u64,
         duration: u64,
     ) -> SummaryStatsComputation;
+}
+
+impl IAssetClassRouterZero of Zero<IAssetClassRouterDispatcher> {
+    fn zero() -> IAssetClassRouterDispatcher {
+        IAssetClassRouterDispatcher { contract_address: contract_address_const::<0>() }
+    }
+
+    #[inline]
+    fn is_zero(self: @IAssetClassRouterDispatcher) -> bool {
+        *self.contract_address == contract_address_const::<0>()
+    }
+
+    #[inline]
+    fn is_non_zero(self: @IAssetClassRouterDispatcher) -> bool {
+        !self.is_zero()
+    }
 }

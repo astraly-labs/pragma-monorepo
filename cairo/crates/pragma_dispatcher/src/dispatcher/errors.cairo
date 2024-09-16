@@ -5,3 +5,4 @@ pub const HYPERLANE_MAILBOX_IS_ZERO: felt252 = 'Hyperlane Mailbox cannot be 0';
 pub const FEED_NOT_REGISTERED: felt252 = 'Feed ID not registered';
 
 pub const UNKNOWN_ASSET_CLASS: felt252 = 'Unknown asset class';
+pub const NO_ROUTER_REGISTERED: felt252 = 'No router registered';
