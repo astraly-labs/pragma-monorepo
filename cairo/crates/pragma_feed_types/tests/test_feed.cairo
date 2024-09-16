@@ -1,4 +1,4 @@
-use pragma_feed_types::feed::{ASSET_CLASS_SHIFT, FEED_TYPE_SHIFT, FeedError};
+use pragma_feed_types::feed::{ASSET_CLASS_SHIFT, FEED_TYPE_SHIFT};
 use pragma_feed_types::{AssetClass, FeedId, FeedType, Feed, FeedTrait, MAX_PAIR_ID};
 use pragma_maths::felt252::{FeltBitAnd, FeltDiv, FeltOrd};
 

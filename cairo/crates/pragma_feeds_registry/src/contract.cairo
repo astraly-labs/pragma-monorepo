@@ -144,16 +144,11 @@ pub mod PragmaFeedsRegistry {
         fn get_all_feeds(self: @ContractState) -> Array<FeedId> {
             let mut all_feeds: Array<FeedId> = array![];
 
-            let len_feed_ids: u32 = self.len_feed_ids.read();
-            let mut i: u32 = 0;
-            loop {
-                if i >= len_feed_ids {
-                    break;
-                }
-                let feed_id = self.feed_ids.entry(i).read();
-                all_feeds.append(feed_id);
-                i += 1;
-            };
+            for i in 0
+                ..self.len_feed_ids.read() {
+                    all_feeds.append(self.feed_ids.entry(i).read());
+                };
+
             all_feeds
         }
 
@@ -184,19 +179,16 @@ pub mod PragmaFeedsRegistry {
         fn get_feed_id_index(self: @ContractState, feed_id: FeedId) -> Option<u32> {
             let mut feed_id_index: Option<u32> = Option::None(());
 
-            let len_feed_ids: u32 = self.len_feed_ids.read();
-            let mut i: u32 = 0;
-            loop {
-                if i >= len_feed_ids {
-                    break;
-                }
-                let ith_feed_id = self.feed_ids.entry(i).read();
-                if feed_id == ith_feed_id {
-                    feed_id_index = Option::Some(i);
-                    break;
-                }
-                i += 1;
-            };
+            for i in 0
+                ..self
+                    .len_feed_ids
+                    .read() {
+                        let ith_feed_id = self.feed_ids.entry(i).read();
+                        if feed_id == ith_feed_id {
+                            feed_id_index = Option::Some(i);
+                            break;
+                        }
+                    };
 
             feed_id_index
         }

@@ -2,8 +2,8 @@ use pragma_feed_types::FeedId;
 use pragma_feeds_registry::contract::PragmaFeedsRegistry;
 use pragma_feeds_registry::{IPragmaFeedsRegistryDispatcher, IPragmaFeedsRegistryDispatcherTrait};
 use snforge_std::{
-    declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, spy_events, SpyOn,
-    EventAssertions
+    declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address,
+    stop_cheat_caller_address, spy_events, EventSpyAssertionsTrait
 };
 use starknet::{ContractAddress, contract_address_const};
 
@@ -16,17 +16,17 @@ fn owner() -> ContractAddress {
 ///     * the deployed contract address
 ///     * the registry dispatcher
 fn deploy_pragma_registry() -> (ContractAddress, IPragmaFeedsRegistryDispatcher) {
-    let contract = declare("PragmaFeedsRegistry").unwrap();
+    let contract = declare("PragmaFeedsRegistry").unwrap().contract_class();
     let (contract_address, _) = contract.deploy(@array![owner().into()]).unwrap();
     let dispatcher = IPragmaFeedsRegistryDispatcher { contract_address };
-    start_prank(CheatTarget::One(contract_address), owner());
+    start_cheat_caller_address(contract_address, owner());
     (contract_address, dispatcher)
 }
 
 #[test]
 fn test_add_feed() {
     let (registry_address, registry) = deploy_pragma_registry();
-    let mut spy = spy_events(SpyOn::One(registry_address));
+    let mut spy = spy_events();
 
     let feed_id: FeedId = 0x456;
 
@@ -59,7 +59,7 @@ fn test_add_duplicate_feed() {
 #[test]
 fn test_remove_feed() {
     let (registry_address, registry) = deploy_pragma_registry();
-    let mut spy = spy_events(SpyOn::One(registry_address));
+    let mut spy = spy_events();
 
     let feed_id: FeedId = 0x456;
     registry.add_feed(feed_id);
@@ -85,16 +85,12 @@ fn test_get_all_feeds() {
 
     let expected_feeds: Array<felt252> = array![0x123, 0x456, 0x789];
 
-    let mut feeds_to_add = expected_feeds.span();
-    loop {
-        match feeds_to_add.pop_front() {
-            Option::Some(v) => registry.add_feed(*v),
-            Option::None(()) => { break; },
-        }
+    for feed in expected_feeds.clone() {
+        registry.add_feed(feed);
     };
 
     let out_feeds = registry.get_all_feeds();
-    assert_eq!(out_feeds, expected_feeds, "Should return all added feeds");
+    assert!(out_feeds == expected_feeds, "Should return all added feeds");
 }
 
 #[test]
@@ -102,9 +98,9 @@ fn test_get_all_feeds() {
 fn test_add_feed_not_owner() {
     let (registry_address, registry) = deploy_pragma_registry();
 
-    stop_prank(CheatTarget::One(registry_address));
+    stop_cheat_caller_address(registry_address);
     let non_owner = 0x789.try_into().unwrap();
-    start_prank(CheatTarget::One(registry_address), non_owner);
+    start_cheat_caller_address(registry_address, non_owner);
 
     registry.add_feed(0x123);
 }

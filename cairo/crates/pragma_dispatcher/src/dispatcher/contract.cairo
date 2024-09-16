@@ -152,15 +152,11 @@ pub mod PragmaDispatcher {
             let nb_feeds_to_update: u32 = feed_ids.len();
             update_message.append_u32(nb_feeds_to_update);
 
-            let mut idx = 0;
-            loop {
-                if idx >= nb_feeds_to_update {
-                    break;
-                }
-                // [Effect] Add the feed update to the message
-                self.add_feed_update_to_message(ref update_message, *feed_ids.at(idx));
-                idx += 1;
-            };
+            for i in 0
+                ..nb_feeds_to_update {
+                    // [Effect] Add the feed update to the message
+                    self.add_feed_update_to_message(ref update_message, *feed_ids.at(i));
+                };
 
             // [Interaction] Send the complete message to Hyperlane's Mailbox
             self.call_dispatch(update_message)
@@ -200,15 +196,9 @@ pub mod PragmaDispatcher {
 
         /// Checks that all feed ids provided in the [Span] are actually registered in
         /// the Feeds Registry contract.
-        /// NOTE: The provided Span will get consumed.
-        fn assert_all_feeds_exists(self: @ContractState, mut feed_ids: Span<FeedId>) {
-            loop {
-                match feed_ids.pop_front() {
-                    Option::Some(v) => assert(
-                        self.call_feed_exists(*v), errors::FEED_NOT_REGISTERED
-                    ),
-                    Option::None(()) => { break; }
-                }
+        fn assert_all_feeds_exists(self: @ContractState, feed_ids: Span<FeedId>) {
+            for feed_id in feed_ids {
+                assert(self.call_feed_exists(*feed_id), errors::FEED_NOT_REGISTERED)
             };
         }
 
