@@ -1,4 +1,3 @@
-pub mod contract;
-pub mod errors;
-pub mod interface;
+pub mod dispatcher;
+pub mod routers;
 pub mod types;

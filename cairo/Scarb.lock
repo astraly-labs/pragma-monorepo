@@ -54,21 +54,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "alexandria_storage"
-version = "0.3.0"
-source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=bcdca70#bcdca70afdf59c9976148e95cebad5cf63d75a7f"
-
-[[package]]
-name = "hyperlane_starknet"
-version = "0.0.6"
-source = "git+https://github.com/akhercha/hyperlane_starknet?branch=feat-token-extensions#81014b53b90289941cb2370c8646e3a1ecf3b45d"
-dependencies = [
- "alexandria_bytes",
- "alexandria_storage",
- "openzeppelin",
-]
-
-[[package]]
 name = "openzeppelin"
 version = "0.14.0"
 source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.14.0#f091c4f51ddeb10297db984acae965328c5a4e5b"
@@ -78,7 +63,6 @@ name = "pragma_dispatcher"
 version = "0.1.0"
 dependencies = [
  "alexandria_bytes",
- "hyperlane_starknet",
  "openzeppelin",
  "pragma_feed_types",
  "pragma_feeds_registry",

@@ -19,9 +19,6 @@ openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", ta
 # Pragma Oracle
 pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib", rev="fe9a467" }
 
-# Hyperlane core contracts
-hyperlane_starknet = { git = "https://github.com/akhercha/hyperlane_starknet", branch = "feat-token-extensions", rel_path = "cairo/" }
-
 # Alexandria (same version than Hyperlane)
 alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "bcdca70" }
 

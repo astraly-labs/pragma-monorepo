@@ -60,6 +60,7 @@ pub mod PragmaFeedsRegistry {
         NewFeedId: NewFeedId,
         RemovedFeedId: RemovedFeedId
     }
+
     // ================== CONSTRUCTOR ================================
 
     #[constructor]
