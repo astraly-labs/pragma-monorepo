@@ -1,7 +1,7 @@
 use alexandria_bytes::Bytes;
 use pragma_dispatcher::types::hyperlane::HyperlaneMessageId;
 use pragma_dispatcher::types::pragma_oracle::{SummaryStatsComputation};
-use pragma_feed_types::{FeedId};
+use pragma_feed_types::{FeedWithId, FeedId};
 use pragma_lib::types::{PragmaPricesResponse, DataType, AggregationMode};
 use starknet::ContractAddress;
 
@@ -14,6 +14,8 @@ pub trait IPragmaDispatcher<TContractState> {
     /// Returns the registered Hyperlane Mailbox address.
     fn get_hyperlane_mailbox_address(self: @TContractState) -> ContractAddress;
 
+    /// Returns the complete information about a feed.
+    fn get_feed(self: @TContractState, feed_id: FeedId) -> FeedWithId;
     /// Returns the list of supported feeds.
     fn supported_feeds(self: @TContractState) -> Array<FeedId>;
 
@@ -26,6 +28,9 @@ pub trait IPragmaDispatcher<TContractState> {
 pub trait IPragmaFeedsRegistryWrapper<TContractState> {
     /// Calls feed_exists from the Pragma Feeds Registry contract.
     fn call_feed_exists(self: @TContractState, feed_id: FeedId) -> bool;
+
+    /// Calls get_feed from the Pragma Feeds Registry contract.
+    fn call_get_feed(self: @TContractState, feed_id: FeedId) -> FeedWithId;
 
     /// Calls get_all_feeds from the Pragma Feeds Registry contract.
     fn call_get_all_feeds(self: @TContractState) -> Array<FeedId>;

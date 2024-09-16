@@ -1,7 +1,8 @@
 #[starknet::contract]
 pub mod PragmaDispatcher {
-    use alexandria_bytes::Bytes;
+    use alexandria_bytes::{Bytes, BytesTrait};
     use core::num::traits::Zero;
+    use core::panic_with_felt252;
     use hyperlane_starknet::interfaces::{IMailboxDispatcher, IMailboxDispatcherTrait};
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{interface::IUpgradeable, upgradeable::UpgradeableComponent};
@@ -13,7 +14,7 @@ pub mod PragmaDispatcher {
     use pragma_dispatcher::types::{
         hyperlane::HyperlaneMessageId, pragma_oracle::SummaryStatsComputation,
     };
-    use pragma_feed_types::{FeedId};
+    use pragma_feed_types::{Feed, FeedTrait, FeedWithId, FeedId};
     use pragma_feeds_registry::{
         IPragmaFeedsRegistryDispatcher, IPragmaFeedsRegistryDispatcherTrait
     };
@@ -104,15 +105,53 @@ pub mod PragmaDispatcher {
             self.hyperlane_mailbox_address.read()
         }
 
+        fn get_feed(self: @ContractState, feed_id: FeedId) -> FeedWithId {
+            self.call_get_feed(feed_id)
+        }
+
         /// Returns the list of supported feeds.
         fn supported_feeds(self: @ContractState) -> Array<FeedId> {
             self.call_get_all_feeds()
         }
 
         /// Dispatch updates through the Hyperlane mailbox for the specified list
-        /// of [Span<FeedId>].
+        /// of feed ids.
+        ///
+        /// The updates are dispatched through a Message, which format is:
+        ///   - [u32] number of feeds updated,
+        ///
+        /// Steps:
+        ///   1. Check that all feeds are valids. We are doing that because we need
+        ///      to write the length of the feeds updated as the first element of
+        ///      the hyperlane message, so we need to have a valid length.
+        ///      Also, we don't want silent errors where one feed didn't get updated
+        ///      and the user can't notice it directly.
+        ///
+        ///  2. For each feed, retrieve the latest data available and update the message.
+        ///     This is done in the [add_feed_update_to_message] function.
+        ///
+        ///  3. Send the updates using the [dispatch] Hyperlane function.
         fn dispatch(self: @ContractState, feed_ids: Span<FeedId>) -> HyperlaneMessageId {
-            Default::default()
+            // [Check] Assert that all feeds id are registered in the Registry
+            self.assert_all_feeds_exists(feed_ids.clone());
+
+            // [Effect] Add the number of feeds to update to the message
+            let mut update_message = BytesTrait::new_empty();
+            let nb_feeds_to_update: u32 = feed_ids.len();
+            update_message.append_u32(nb_feeds_to_update);
+
+            let mut idx = 0;
+            loop {
+                if idx >= nb_feeds_to_update {
+                    break;
+                }
+                // [Effect] Add the feed update to the message
+                self.add_feed_update_to_message(ref update_message, *feed_ids.at(idx));
+                idx += 1;
+            };
+
+            // [Interaction] Send the complete message to Hyperlane's Mailbox
+            self.call_dispatch(update_message)
         }
     }
 
@@ -135,6 +174,14 @@ pub mod PragmaDispatcher {
                 contract_address: self.pragma_feed_registry_address.read()
             };
             registry_dispatcher.feed_exists(feed_id)
+        }
+
+        /// Calls get_feed from the Pragma Feeds Registry contract.
+        fn call_get_feed(self: @ContractState, feed_id: FeedId) -> FeedWithId {
+            let registry_dispatcher = IPragmaFeedsRegistryDispatcher {
+                contract_address: self.pragma_feed_registry_address.read()
+            };
+            registry_dispatcher.get_feed(feed_id)
         }
 
         /// Calls get_all_feeds from the Pragma Feeds Registry contract.
@@ -235,6 +282,8 @@ pub mod PragmaDispatcher {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
+        /// Initializes the contract storage.
+        /// Called only once by the constructor.
         fn initializer(
             ref self: ContractState,
             owner: ContractAddress,
@@ -243,15 +292,41 @@ pub mod PragmaDispatcher {
             pragma_feed_registry_address: ContractAddress,
             hyperlane_mailbox_address: ContractAddress,
         ) {
-            // [Check]
+            // [Check] Owner is a valid address
             assert(!owner.is_zero(), errors::OWNER_IS_ZERO);
 
-            // [Effect]
+            // [Effect] Init contract storage
             self.ownable.initializer(owner);
             self.pragma_oracle_address.write(pragma_oracle_address);
             self.summary_stats_address.write(summary_stats_address);
             self.pragma_feed_registry_address.write(pragma_feed_registry_address);
             self.hyperlane_mailbox_address.write(hyperlane_mailbox_address);
+        }
+
+        /// Checks that all feed ids provided in the [Span] are actually registered in
+        /// the Feeds Registry contract.
+        /// NOTE: The provided Span will get consumed.
+        fn assert_all_feeds_exists(self: @ContractState, mut feed_ids: Span<FeedId>) {
+            loop {
+                match feed_ids.pop_front() {
+                    Option::Some(v) => assert(
+                        self.call_feed_exists(*v), errors::FEED_NOT_REGISTERED
+                    ),
+                    Option::None(()) => { break; }
+                }
+            };
+        }
+
+        /// Retrieves the latest data available for the provided [feed_id] and
+        /// adds the data to the [message].
+        fn add_feed_update_to_message(self: @ContractState, ref message: Bytes, feed_id: FeedId) {
+            let _feed: Feed = match FeedTrait::from_id(feed_id) {
+                Result::Ok(f) => f,
+                Result::Err(e) => {
+                    // This should NEVER happen as we have a check in the Feeds Registry.
+                    panic_with_felt252(e.into())
+                }
+            };
         }
     }
 }

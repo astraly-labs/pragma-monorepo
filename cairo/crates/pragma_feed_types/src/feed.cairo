@@ -18,6 +18,14 @@ pub struct Feed {
     pub pair_id: PairId,
 }
 
+#[derive(Debug, Clone, Drop, PartialEq, Serde)]
+pub struct FeedWithId {
+    pub feed_id: FeedId,
+    pub asset_class: AssetClass,
+    pub feed_type: FeedType,
+    pub pair_id: PairId,
+}
+
 #[derive(Drop, Copy, PartialEq)]
 pub enum FeedError {
     IdConversion: felt252,
@@ -83,5 +91,16 @@ pub impl FeedTraitImpl of FeedTrait {
 
         // Combine all fields
         shifted_asset_class + shifted_feed_type + *self.pair_id
+    }
+}
+
+pub impl FeedIntoFeedWithId of Into<Feed, FeedWithId> {
+    fn into(self: Feed) -> FeedWithId {
+        FeedWithId {
+            feed_id: self.id(),
+            asset_class: self.asset_class,
+            feed_type: self.feed_type,
+            pair_id: self.pair_id,
+        }
     }
 }

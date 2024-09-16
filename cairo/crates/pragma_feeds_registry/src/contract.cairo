@@ -4,7 +4,7 @@ pub mod PragmaFeedsRegistry {
     use core::panic_with_felt252;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{UpgradeableComponent, interface::IUpgradeable};
-    use pragma_feed_types::{FeedId, FeedTrait};
+    use pragma_feed_types::{FeedWithId, FeedId, FeedTrait};
     use pragma_feeds_registry::errors;
     use pragma_feeds_registry::interface::IPragmaFeedsRegistry;
     use starknet::{ClassHash, ContractAddress, get_caller_address};
@@ -119,6 +119,21 @@ pub mod PragmaFeedsRegistry {
 
             // [Interaction] Event emitted
             self.emit(RemovedFeedId { sender: get_caller_address(), feed_id: feed_id, })
+        }
+
+        fn get_feed(self: @ContractState, feed_id: FeedId) -> FeedWithId {
+            // [Check] Feed exists
+            let feed_id_index: Option<u32> = self.get_feed_id_index(feed_id);
+            assert(feed_id_index.is_some(), errors::FEED_NOT_REGISTERED);
+
+            // [Check] Feed has correct formatting
+            let feed: FeedWithId = match FeedTrait::from_id(feed_id) {
+                Result::Ok(f) => f.into(),
+                Result::Err(e) => panic_with_felt252(e.into()),
+            };
+
+            // [Interaction] Returns the feed
+            feed
         }
 
         /// Returns all the feed ids stored in the registry.

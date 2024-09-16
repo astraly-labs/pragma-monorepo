@@ -13,6 +13,14 @@ impl AssetClassIntoAssetClassId of Into<AssetClass, AssetClassId> {
     }
 }
 
+impl AssetClassIntoAssetfelt252 of Into<AssetClass, felt252> {
+    fn into(self: AssetClass) -> felt252 {
+        match self {
+            AssetClass::Crypto => 0,
+        }
+    }
+}
+
 impl AssetClassIntoString of Into<AssetClass, ByteArray> {
     fn into(self: AssetClass) -> ByteArray {
         match self {

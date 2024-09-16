@@ -1,4 +1,6 @@
+use pragma_feed_types::feed::{ASSET_CLASS_SHIFT, FEED_TYPE_SHIFT, FeedError};
 use pragma_feed_types::{AssetClass, FeedId, FeedType, Feed, FeedTrait, MAX_PAIR_ID};
+use pragma_maths::felt252::{FeltBitAnd, FeltDiv, FeltOrd};
 
 fn create_random_feed(asset_class: AssetClass, feed_type: FeedType, pair_id: felt252) -> Feed {
     Feed { asset_class, feed_type, pair_id }
@@ -12,7 +14,9 @@ fn felt252_to_u256(nb: felt252) -> u256 {
 #[test]
 fn test_valid_feed_id_conversion() {
     let expected_feed = Feed {
-        asset_class: AssetClass::Crypto, feed_type: FeedType::SpotMedian, pair_id: 'BTC/USD',
+        asset_class: AssetClass::Crypto,
+        feed_type: FeedType::RealizedVolatility,
+        pair_id: 'BTC/USD',
     };
     let feed_id: FeedId = expected_feed.id();
 
@@ -52,3 +56,33 @@ fn test_no_collision_random_feeds(
     }
 }
 
+#[test]
+fn test_pair_id_exceeds_max() {
+    let invalid_feed = Feed {
+        asset_class: AssetClass::Crypto, feed_type: FeedType::SpotMedian, pair_id: MAX_PAIR_ID + 1
+    };
+    let feed_id = invalid_feed.id();
+
+    let result = FeedTrait::from_id(feed_id);
+    assert(result.is_err(), 'should have errored');
+}
+
+#[test]
+fn test_feed_id_components() {
+    let asset_class = AssetClass::Crypto;
+    let feed_type = FeedType::RealizedVolatility;
+    let pair_id = 'EUR/USD';
+
+    let feed = Feed { asset_class, feed_type, pair_id };
+    let feed_id = feed.id();
+
+    let asset_class_component = feed_id / ASSET_CLASS_SHIFT;
+    let feed_type_component = (feed_id / FEED_TYPE_SHIFT) & 0xFFFFFFFFFFFFFFFF;
+    let pair_id_component: felt252 = (felt252_to_u256(feed_id) % felt252_to_u256(FEED_TYPE_SHIFT))
+        .try_into()
+        .unwrap();
+
+    assert(asset_class_component == asset_class.into(), 'Wrong asset class component');
+    assert(feed_type_component == feed_type.into(), 'Wrong feed type component');
+    assert(pair_id_component == pair_id, 'Wrong pair id component');
+}
