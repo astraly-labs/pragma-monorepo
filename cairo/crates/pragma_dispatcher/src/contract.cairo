@@ -14,7 +14,9 @@ pub mod PragmaDispatcher {
         hyperlane::HyperlaneMessageId, pragma_oracle::SummaryStatsComputation,
     };
     use pragma_feed_types::{FeedId};
-    use pragma_feeds_registry::{IPragmaFeedRegistryDispatcher, IPragmaFeedRegistryDispatcherTrait};
+    use pragma_feeds_registry::{
+        IPragmaFeedsRegistryDispatcher, IPragmaFeedsRegistryDispatcherTrait
+    };
     use pragma_lib::abi::{
         IPragmaABIDispatcher, IPragmaABIDispatcherTrait, ISummaryStatsABIDispatcher,
         ISummaryStatsABIDispatcherTrait
@@ -129,7 +131,7 @@ pub mod PragmaDispatcher {
     impl PragmaFeedsRegistryWrapper of IPragmaFeedsRegistryWrapper<ContractState> {
         /// Calls feed_exists from the Pragma Feeds Registry contract.
         fn call_feed_exists(self: @ContractState, feed_id: FeedId) -> bool {
-            let registry_dispatcher = IPragmaFeedRegistryDispatcher {
+            let registry_dispatcher = IPragmaFeedsRegistryDispatcher {
                 contract_address: self.pragma_feed_registry_address.read()
             };
             registry_dispatcher.feed_exists(feed_id)
@@ -137,7 +139,7 @@ pub mod PragmaDispatcher {
 
         /// Calls get_all_feeds from the Pragma Feeds Registry contract.
         fn call_get_all_feeds(self: @ContractState) -> Array<FeedId> {
-            let registry_dispatcher = IPragmaFeedRegistryDispatcher {
+            let registry_dispatcher = IPragmaFeedsRegistryDispatcher {
                 contract_address: self.pragma_feed_registry_address.read()
             };
             registry_dispatcher.get_all_feeds()

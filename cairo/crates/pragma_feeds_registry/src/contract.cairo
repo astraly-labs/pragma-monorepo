@@ -1,12 +1,12 @@
 #[starknet::contract]
-pub mod PragmaFeedRegistry {
+pub mod PragmaFeedsRegistry {
     use core::num::traits::Zero;
     use core::panic_with_felt252;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{UpgradeableComponent, interface::IUpgradeable};
     use pragma_feed_types::{FeedId, FeedTrait};
     use pragma_feeds_registry::errors;
-    use pragma_feeds_registry::interface::IPragmaFeedRegistry;
+    use pragma_feeds_registry::interface::IPragmaFeedsRegistry;
     use starknet::{ClassHash, ContractAddress, get_caller_address};
 
     // ================== COMPONENTS ==================
@@ -52,7 +52,7 @@ pub mod PragmaFeedRegistry {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
@@ -73,7 +73,7 @@ pub mod PragmaFeedRegistry {
     // ================== PUBLIC ABI ==================
 
     #[abi(embed_v0)]
-    impl PragmaFeedRegistry of IPragmaFeedRegistry<ContractState> {
+    impl PragmaFeedsRegistry of IPragmaFeedsRegistry<ContractState> {
         /// Adds the [feed_id] into the Registry.
         ///
         /// Panics if:

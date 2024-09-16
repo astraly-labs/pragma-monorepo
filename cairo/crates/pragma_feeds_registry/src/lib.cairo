@@ -4,5 +4,5 @@ pub mod interface;
 
 
 pub use interface::{
-    IPragmaFeedRegistry, IPragmaFeedRegistryDispatcher, IPragmaFeedRegistryDispatcherTrait
+    IPragmaFeedsRegistry, IPragmaFeedsRegistryDispatcher, IPragmaFeedsRegistryDispatcherTrait
 };
