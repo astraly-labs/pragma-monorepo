@@ -173,7 +173,7 @@ dependencies = [
 [[package]]
 name = "pragma_lib"
 version = "1.0.0"
-source = "git+https://github.com/astraly-labs/pragma-lib?branch=chore%2Fbump_scarb#c36c0bad5661176a171d3988fb4235da4883343c"
+source = "git+https://github.com/astraly-labs/pragma-lib?rev=86d7ccd#86d7ccdc15b349b8b48d9796fc8464c947bea6e1"
 
 [[package]]
 name = "pragma_maths"

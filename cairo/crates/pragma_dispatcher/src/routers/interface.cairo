@@ -1,13 +1,13 @@
 use alexandria_bytes::Bytes;
 use core::num::traits::Zero;
-use pragma_dispatcher::types::pragma_oracle::{SummaryStatsComputation};
+use pragma_dispatcher::types::pragma_oracle::SummaryStatsComputation;
 use pragma_feed_types::Feed;
-use pragma_lib::types::{PragmaPricesResponse, DataType, AggregationMode};
+use pragma_lib::types::{PragmaPricesResponse, OptionsFeedData, DataType, AggregationMode};
 use starknet::contract_address_const;
 
 #[starknet::interface]
 pub trait IAssetClassRouter<TContractState> {
-    fn routing(self: @TContractState, feed: Feed) -> Bytes;
+    fn get_feed_update(self: @TContractState, feed: Feed) -> Bytes;
 }
 
 #[starknet::interface]
@@ -47,6 +47,9 @@ pub trait ISummaryStatsWrapper<TContractState> {
         start_timestamp: u64,
         duration: u64,
     ) -> SummaryStatsComputation;
+
+    /// Calls get_options_data from the Summary Stats contract.
+    fn call_get_options_data(self: @TContractState, instrument_name: felt252,) -> OptionsFeedData;
 }
 
 impl IAssetClassRouterZero of Zero<IAssetClassRouterDispatcher> {

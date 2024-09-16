@@ -43,7 +43,7 @@ pub mod PragmaDispatcher {
         pragma_feed_registry: IPragmaFeedsRegistryDispatcher,
         // Hyperlane mailbox contract
         hyperlane_mailbox: IMailboxDispatcher,
-        // Feed routers
+        // Feed routers for each asset class
         routers: Map<AssetClass, IAssetClassRouterDispatcher>,
     }
 
@@ -131,6 +131,9 @@ pub mod PragmaDispatcher {
         ///
         /// The updates are dispatched through a Message, which format is:
         ///   - [u32] number of feeds updated,
+        ///   - [X bytes] update per message. The number of bytes sent depends
+        ///     for each type of asset_class->feed_type.
+        ///     Check the Pragma documentation for more information.
         ///
         /// Steps:
         ///   1. Check that all feeds are valids. We are doing that because we need
@@ -152,11 +155,10 @@ pub mod PragmaDispatcher {
             let nb_feeds_to_update: u32 = feed_ids.len();
             update_message.append_u32(nb_feeds_to_update);
 
-            for i in 0
-                ..nb_feeds_to_update {
-                    // [Effect] Add the feed update to the message
-                    self.add_feed_update_to_message(ref update_message, *feed_ids.at(i));
-                };
+            // [Effect] For each feed, add the update to the message
+            for feed_id in feed_ids {
+                self.add_feed_update_to_message(ref update_message, *feed_id);
+            };
 
             // [Interaction] Send the complete message to Hyperlane's Mailbox
             self.call_dispatch(update_message)
@@ -188,6 +190,7 @@ pub mod PragmaDispatcher {
                 contract_address: pragma_feed_registry_address
             };
             self.pragma_feed_registry.write(pragma_feeds_registry);
+
             let hyperlane_mailbox = IMailboxDispatcher {
                 contract_address: hyperlane_mailbox_address
             };
@@ -208,10 +211,7 @@ pub mod PragmaDispatcher {
             // [Check] Feed id is valid
             let feed: Feed = match FeedTrait::from_id(feed_id) {
                 Result::Ok(f) => f,
-                Result::Err(e) => {
-                    // This should NEVER happen as we have a check in the Feeds Registry.
-                    panic_with_felt252(e.into())
-                }
+                Result::Err(e) => { panic_with_felt252(e.into()) }
             };
 
             // [Check] Feed's asset class router is registered
@@ -219,7 +219,7 @@ pub mod PragmaDispatcher {
             assert(!router.is_zero(), errors::NO_ROUTER_REGISTERED);
 
             // [Effect] Retrieve the feed update and add it to the message
-            let feed_update_message = router.routing(feed);
+            let feed_update_message = router.get_feed_update(feed);
             message.concat(@feed_update_message);
         }
     }

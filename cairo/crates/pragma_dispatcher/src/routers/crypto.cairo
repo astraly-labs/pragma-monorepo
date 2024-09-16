@@ -6,13 +6,13 @@ pub mod CryptoRouter {
     use pragma_dispatcher::routers::{
         errors, interface::{IAssetClassRouter, IPragmaOracleWrapper, ISummaryStatsWrapper}
     };
-    use pragma_dispatcher::types::pragma_oracle::{SummaryStatsComputation};
-    use pragma_feed_types::{Feed, FeedType};
+    use pragma_dispatcher::types::pragma_oracle::SummaryStatsComputation;
+    use pragma_feed_types::{Feed, FeedTrait, FeedType};
     use pragma_lib::abi::{
         IPragmaABIDispatcher, IPragmaABIDispatcherTrait, ISummaryStatsABIDispatcher,
         ISummaryStatsABIDispatcherTrait
     };
-    use pragma_lib::types::{PragmaPricesResponse, DataType, AggregationMode};
+    use pragma_lib::types::{PragmaPricesResponse, OptionsFeedData, DataType, AggregationMode};
     use starknet::ContractAddress;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
@@ -47,7 +47,7 @@ pub mod CryptoRouter {
 
     #[abi(embed_v0)]
     pub impl CryptoRouterImpl of IAssetClassRouter<ContractState> {
-        fn routing(self: @ContractState, feed: Feed) -> Bytes {
+        fn get_feed_update(self: @ContractState, feed: Feed) -> Bytes {
             match feed.feed_type {
                 FeedType::SpotMedian => self.spot_median(feed),
                 FeedType::Twap => self.twap(feed),
@@ -64,19 +64,97 @@ pub mod CryptoRouter {
         fn initializer(ref self: ContractState,) {}
 
         fn spot_median(self: @ContractState, feed: Feed) -> Bytes {
-            BytesTrait::new_empty()
+            let data_type = DataType::SpotEntry(feed.pair_id);
+            let aggregation_mode = AggregationMode::Median;
+
+            let response = self.call_get_data(data_type, aggregation_mode);
+
+            let mut update = BytesTrait::new_empty();
+            update.append_u256(feed.id().into());
+            update.append_u64(response.last_updated_timestamp);
+            update.append_u16(response.num_sources_aggregated.try_into().unwrap());
+            update.append_u8(response.decimals.try_into().unwrap());
+            update.append_u256(response.price.into());
+            update.append_u256(0); // TODO: volume
+
+            update
         }
 
         fn twap(self: @ContractState, feed: Feed) -> Bytes {
-            BytesTrait::new_empty()
+            let data_type = DataType::SpotEntry(feed.pair_id);
+            let aggregation_mode = AggregationMode::Median;
+            let start_timestamp = 1;
+            let duration = 1;
+
+            let (twap_price, decimals) = self
+                .call_calculate_twap(data_type, aggregation_mode, start_timestamp, duration);
+
+            let mut update = BytesTrait::new_empty();
+            update.append_u256(feed.id().into());
+            update.append_u64(start_timestamp); // TODO: timestamp
+            update.append_u16(0); // TODO: number of sources
+            update.append_u8(decimals.try_into().unwrap());
+            update.append_u256(twap_price.into());
+            update.append_u256(duration.into()); // TODO: time period
+            update.append_u256(0); // TODO: start_price
+            update.append_u256(0); // TODO: end_price
+            update.append_u256(0); // TODO: total volume
+            update.append_u256(0); // TODO: number of data points
+
+            update
         }
 
         fn realized_volatility(self: @ContractState, feed: Feed) -> Bytes {
-            BytesTrait::new_empty()
+            let data_type = DataType::SpotEntry(feed.pair_id);
+            let aggregation_mode = AggregationMode::Median;
+            let start_timestamp = 1;
+            let end_timestamp = 2;
+            let num_samples = 10;
+
+            let (volatility, decimals) = self
+                .call_calculate_volatility(
+                    data_type, aggregation_mode, start_timestamp, end_timestamp, num_samples
+                );
+
+            let mut update = BytesTrait::new_empty();
+            update.append_u256(feed.id().into());
+            update.append_u64(start_timestamp); // TODO: timestamp
+            update.append_u16(0); // TODO: number of sources
+            update.append_u8(decimals.try_into().unwrap());
+            update.append_u256(volatility.into());
+            update.append_u256(0); // TODO: time period
+            update.append_u256(0); // TODO: start price
+            update.append_u256(0); // TODO: end price
+            update.append_u256(0); // TODO: high price
+            update.append_u256(0); // TODO: low price
+            update.append_u256(0); // TODO: number of data points
+
+            update
         }
 
         fn option(self: @ContractState, feed: Feed) -> Bytes {
-            BytesTrait::new_empty()
+            let instrument_name = feed.pair_id;
+
+            let response = self.call_get_options_data(instrument_name);
+
+            let mut update = BytesTrait::new_empty();
+            update.append_u256(feed.id().into());
+            update.append_u64(response.current_timestamp);
+            update.append_u16(1);
+            update.append_u8(0); // TODO: decimals
+            update.append_u256(0); // TODO: strike price
+            update.append_u256(0); // TODO: implied volatility
+            update.append_u256(0); // TODO: time to expiry <- from instrument_name
+            update.append_u8(0); // TODO: is call <- from instrument_name
+            update.append_u256(0); // TODO: underlying price
+            update.append_u256(response.mark_price.into());
+            update.append_u256(0); // TODO: delta
+            update.append_u256(0); // TODO: gamma
+            update.append_u256(0); // TODO: vega
+            update.append_u256(0); // TODO: theta
+            update.append_u256(0); // TODO: rho
+
+            update
         }
 
         fn perp(self: @ContractState, feed: Feed) -> Bytes {
@@ -137,6 +215,13 @@ pub mod CryptoRouter {
                 .summary_stats
                 .read()
                 .calculate_twap(data_type, aggregation_mode, duration, start_timestamp)
+        }
+
+        /// Calls get_options_data from the Summary Stats contract.
+        fn call_get_options_data(
+            self: @ContractState, instrument_name: felt252,
+        ) -> OptionsFeedData {
+            self.summary_stats.read().get_options_data(instrument_name)
         }
     }
 }

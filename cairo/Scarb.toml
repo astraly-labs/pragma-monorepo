@@ -17,7 +17,7 @@ starknet = "2.8.2"
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", branch = "upgrade-edition-2024-07" }
 
 # Pragma Oracle
-pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib", branch = "chore/bump_scarb" }
+pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib", rev = "86d7ccd" }
 
 # Alexandria (same version than Hyperlane)
 alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
