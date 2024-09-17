@@ -1,4 +1,3 @@
-use Result::{Ok, Err};
 use pragma_feed_types::{AssetClass, AssetClassId, FeedType, FeedTypeTrait, FeedTypeId};
 use pragma_maths::felt252::{FeltBitAnd, FeltDiv, FeltOrd};
 
@@ -40,32 +39,31 @@ pub impl FeedTraitImpl of FeedTrait {
         let asset_class_felt = id / ASSET_CLASS_SHIFT;
         let asset_class_option: Option<AssetClass> = asset_class_felt.try_into();
         if asset_class_option.is_none() {
-            return Err(FeedError::IdConversion('Invalid asset class encoding'));
+            return Result::Err(FeedError::IdConversion('Invalid asset class encoding'));
         }
 
         // Extract feed_type + variant (next 2 bytes)
         let feed_type_id_felt = (id / FEED_TYPE_SHIFT) & FEED_TYPE_MASK;
         let feed_type_id_option: Option<FeedTypeId> = feed_type_id_felt.try_into();
         if feed_type_id_option.is_none() {
-            return Err(FeedError::IdConversion('Invalid feed type encoding'));
+            return Result::Err(FeedError::IdConversion('Invalid feed type encoding'));
         }
-        // Check that the feed type is correct
-        match FeedTypeTrait::from_id(feed_type_id_option.unwrap()) {
-            Ok(_) => {},
-            Err(e) => { return Err(FeedError::IdConversion(e.into())); }
+        let feed_type = match FeedTypeTrait::from_id(feed_type_id_option.unwrap()) {
+            Result::Ok(f) => f,
+            Result::Err(e) => { return Result::Err(FeedError::IdConversion(e.into())); }
         };
 
-        // Extract pair_id (remaining bytes, maximum 28)
+        // Check if pair_id exceeds 28 bytes
         let pair_id = id
             - (asset_class_felt * ASSET_CLASS_SHIFT)
-            - ((feed_type_id_option.unwrap().into() * FEED_TYPE_SHIFT) & FEED_TYPE_MASK);
+            - (feed_type_id_felt * FEED_TYPE_SHIFT);
 
         // Check if pair_id exceeds 28 bytes
         if pair_id > MAX_PAIR_ID {
-            return Err(FeedError::IdConversion('Pair id greater than 28 bytes'));
+            return Result::Err(FeedError::IdConversion('Pair id greater than 28 bytes'));
         }
 
-        Ok(Feed { asset_class, feed_type, pair_id })
+        Result::Ok(Feed { asset_class: asset_class_option.unwrap(), feed_type, pair_id })
     }
 
     /// Returns the id of the Feed.
@@ -73,7 +71,7 @@ pub impl FeedTraitImpl of FeedTrait {
         let asset_class_id: AssetClassId = (*self.asset_class).into();
         let asset_class_felt: felt252 = asset_class_id.into();
 
-        let feed_type_id: FeedTypeId = (*self.feed_type).into();
+        let feed_type_id: FeedTypeId = self.feed_type.id();
         let feed_type_felt: felt252 = feed_type_id.into();
 
         // Shift left by 128 bits

@@ -1,6 +1,5 @@
 use pragma_feed_types::feed_type::{
-    FeedType, FeedTypeId, FeedTypeTrait, FeedTypeError, UniqueVariant, TwapVariant,
-    RealizedVolatilityVariant
+    FeedType, FeedTypeId, FeedTypeTrait, FeedTypeError, UniqueVariant
 };
 
 #[test]

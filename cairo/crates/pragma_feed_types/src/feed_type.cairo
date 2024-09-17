@@ -1,5 +1,3 @@
-use Result::{Ok, Err};
-
 #[derive(Debug, Drop, Copy, Serde, PartialEq)]
 pub enum FeedType {
     Unique: UniqueVariant,
@@ -57,20 +55,20 @@ pub impl FeedTypeTraitImpl of FeedTypeTrait {
 
         match main_type {
             0 => match variant {
-                0 => Ok(FeedType::Unique(UniqueVariant::SpotMedian)),
-                1 => Ok(FeedType::Unique(UniqueVariant::PerpMedian)),
-                2 => Ok(FeedType::Unique(UniqueVariant::SpotMean)),
-                _ => Err(FeedTypeError::IdConversion('Unknown feed type variant')),
+                0 => Result::Ok(FeedType::Unique(UniqueVariant::SpotMedian)),
+                1 => Result::Ok(FeedType::Unique(UniqueVariant::PerpMedian)),
+                2 => Result::Ok(FeedType::Unique(UniqueVariant::SpotMean)),
+                _ => Result::Err(FeedTypeError::IdConversion('Unknown feed type variant')),
             },
             1 => match variant {
-                0 => Ok(FeedType::Twap(TwapVariant::OneDay)),
-                _ => Err(FeedTypeError::IdConversion('Unknown feed type variant')),
+                0 => Result::Ok(FeedType::Twap(TwapVariant::OneDay)),
+                _ => Result::Err(FeedTypeError::IdConversion('Unknown feed type variant')),
             },
             2 => match variant {
-                0 => Ok(FeedType::RealizedVolatility(RealizedVolatilityVariant::OneWeek)),
-                _ => Err(FeedTypeError::IdConversion('Unknown feed type variant')),
+                0 => Result::Ok(FeedType::RealizedVolatility(RealizedVolatilityVariant::OneWeek)),
+                _ => Result::Err(FeedTypeError::IdConversion('Unknown feed type variant')),
             },
-            _ => Err(FeedTypeError::IdConversion('Unknown feed type')),
+            _ => Result::Err(FeedTypeError::IdConversion('Unknown feed type')),
         }
     }
 
