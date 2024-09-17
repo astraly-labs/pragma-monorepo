@@ -126,7 +126,7 @@ pub mod AssetClassRouter {
             assert(!router.is_zero(), errors::FEED_TYPE_ROUTER_NOT_FOUND);
 
             // [Effect] Retrieve the feed update and return the data as Bytes
-            router.get_data()
+            router.get_data(feed)
         }
     }
 

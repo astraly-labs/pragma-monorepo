@@ -1,31 +1,35 @@
 #[starknet::contract]
-pub mod FeedTypeUniqueRouter {
+pub mod FeedTypeTwapRouter {
     use alexandria_bytes::{Bytes, BytesTrait};
     use core::num::traits::Zero;
     use core::panic_with_felt252;
     use pragma_dispatcher::routers::feed_types::{
-        errors, interface::{IFeedTypeRouter, IPragmaOracleWrapper}
+        errors, interface::{IFeedTypeRouter, ISummaryStatsWrapper}
     };
-    use pragma_dispatcher::types::pragma_oracle::{SimpleDataType, AggregationMode};
-    use pragma_feed_types::feed_type::{UniqueVariant};
+    use pragma_dispatcher::types::pragma_oracle::{
+        SimpleDataType, AggregationMode, SummaryStatsComputation, Duration, DurationTrait,
+    };
+    use pragma_feed_types::feed_type::{TwapVariant};
     use pragma_feed_types::{Feed, FeedTrait, FeedType, FeedTypeId, FeedTypeTrait};
-    use pragma_lib::abi::{IPragmaABIDispatcher, IPragmaABIDispatcherTrait,};
-    use pragma_lib::types::{PragmaPricesResponse, DataType};
+    use pragma_lib::abi::{ISummaryStatsABIDispatcher, ISummaryStatsABIDispatcherTrait};
+    use pragma_lib::types::{OptionsFeedData, DataType};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
-    use starknet::{ContractAddress, get_caller_address, get_contract_address};
+    use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
 
     // ================== STORAGE ==================
 
     #[storage]
     struct Storage {
-        // Pragma Oracle contract
-        pragma_oracle: IPragmaABIDispatcher,
+        // Pragma Summary stats contract
+        summary_stats: ISummaryStatsABIDispatcher,
         // Feed type of the current router
         feed_type: FeedType,
         // Data Type of the current feed type contract
         simple_data_type: SimpleDataType,
         // Aggregation of the current feed type contract
         aggregation_mode: AggregationMode,
+        // Duration of the current feed type contract
+        duration: Duration,
     }
 
     // ================== EVENTS ==================
@@ -47,14 +51,14 @@ pub mod FeedTypeUniqueRouter {
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, pragma_oracle_address: ContractAddress, feed_type_id: FeedTypeId,
+        ref self: ContractState, summary_stats_address: ContractAddress, feed_type_id: FeedTypeId,
     ) {
-        self.initializer(pragma_oracle_address, feed_type_id);
+        self.initializer(summary_stats_address, feed_type_id);
     }
     // ================== PUBLIC ABI ==================
 
     #[abi(embed_v0)]
-    pub impl UniqueRouterImpl of IFeedTypeRouter<ContractState> {
+    pub impl TwapRouterImpl of IFeedTypeRouter<ContractState> {
         /// Returns the feed type id of the current router.
         fn get_feed_type_id(self: @ContractState) -> FeedTypeId {
             self.feed_type.read().id()
@@ -68,16 +72,23 @@ pub mod FeedTypeUniqueRouter {
                 SimpleDataType::Perp => DataType::FutureEntry((pair_id, 0))
             };
             let aggregation_mode = self.aggregation_mode.read();
+            let duration = self.duration.read().as_seconds();
+            let start_timestamp = get_block_timestamp() - duration;
 
-            let response = self.call_get_data(data_type, aggregation_mode);
+            let (twap_price, decimals) = self
+                .call_calculate_twap(data_type, aggregation_mode, start_timestamp, duration);
 
             let mut update = BytesTrait::new_empty();
             update.append_u256(feed.id().into());
-            update.append_u64(response.last_updated_timestamp);
-            update.append_u16(response.num_sources_aggregated.try_into().unwrap());
-            update.append_u8(response.decimals.try_into().unwrap());
-            update.append_u256(response.price.into());
-            update.append_u256(0); // TODO: volume?
+            update.append_u64(get_block_timestamp());
+            update.append_u16(0); // TODO: num sources ?
+            update.append_u8(decimals.try_into().unwrap());
+            update.append_u256(twap_price.into());
+            update.append_u256(0); // TODO: time period ?
+            update.append_u256(0); // TODO: start price ?
+            update.append_u256(0); // TODO: end price ?
+            update.append_u256(0); // TODO: total volume ?
+            update.append_u256(0); // TODO: number of data points ?
 
             update
         }
@@ -92,11 +103,11 @@ pub mod FeedTypeUniqueRouter {
         /// Called only once by the constructor.
         fn initializer(
             ref self: ContractState,
-            pragma_oracle_address: ContractAddress,
+            summary_stats_address: ContractAddress,
             feed_type_id: FeedTypeId,
         ) {
             // [Check] Contracts are not zero
-            assert(!pragma_oracle_address.is_zero(), errors::PRAGMA_ORACLE_IS_ZERO);
+            assert(!summary_stats_address.is_zero(), errors::SUMMARY_STATS_IS_ZERO);
 
             // [Check] Feed type id is valid
             let feed_type = match FeedTypeTrait::from_id(feed_type_id) {
@@ -104,16 +115,12 @@ pub mod FeedTypeUniqueRouter {
                 Result::Err(e) => panic_with_felt252(e.into())
             };
             // [Check] Feed type variant & extract parameters
-            let (simple_data_type, aggregation_mode) = match feed_type {
-                FeedType::Unique(variant) => {
+            let (simple_data_type, aggregation_mode, duration) = match feed_type {
+                FeedType::Twap(variant) => {
                     match variant {
-                        UniqueVariant::SpotMedian => {
-                            (SimpleDataType::Spot, AggregationMode::Median)
+                        TwapVariant::SpotMeanOneDay => {
+                            (SimpleDataType::Spot, AggregationMode::Median, Duration::OneDay)
                         },
-                        UniqueVariant::PerpMedian => {
-                            (SimpleDataType::Perp, AggregationMode::Median)
-                        },
-                        UniqueVariant::SpotMean => { (SimpleDataType::Spot, AggregationMode::Mean) }
                     }
                 },
                 _ => panic_with_felt252(errors::INVALID_FEED_TYPE_FOR_CONTRACT)
@@ -124,6 +131,7 @@ pub mod FeedTypeUniqueRouter {
             // [Effect] Set parameters depending on the variant
             self.simple_data_type.write(simple_data_type);
             self.aggregation_mode.write(aggregation_mode);
+            self.duration.write(duration);
 
             // [Interaction] Emit new router deployed
             self
@@ -137,12 +145,43 @@ pub mod FeedTypeUniqueRouter {
         }
     }
 
-    impl PragmaOracleWrapper of IPragmaOracleWrapper<ContractState> {
-        /// Calls get_data from the Pragma Oracle contract.
-        fn call_get_data(
-            self: @ContractState, data_type: DataType, aggregation_mode: AggregationMode,
-        ) -> PragmaPricesResponse {
-            self.pragma_oracle.read().get_data(data_type, aggregation_mode.into())
+    impl SummaryStatsWrapper of ISummaryStatsWrapper<ContractState> {
+        /// Calls calculate_volatility from the Summary Stats contract.
+        fn call_calculate_volatility(
+            self: @ContractState,
+            data_type: DataType,
+            aggregation_mode: AggregationMode,
+            start_timestamp: u64,
+            end_timestamp: u64,
+            num_samples: u64,
+        ) -> SummaryStatsComputation {
+            self
+                .summary_stats
+                .read()
+                .calculate_volatility(
+                    data_type, start_timestamp, end_timestamp, num_samples, aggregation_mode.into()
+                )
+        }
+
+        /// Calls calculate_twap from the Summary Stats contract.
+        fn call_calculate_twap(
+            self: @ContractState,
+            data_type: DataType,
+            aggregation_mode: AggregationMode,
+            start_timestamp: u64,
+            duration: u64,
+        ) -> SummaryStatsComputation {
+            self
+                .summary_stats
+                .read()
+                .calculate_twap(data_type, aggregation_mode.into(), duration, start_timestamp)
+        }
+
+        /// Calls get_options_data from the Summary Stats contract.
+        fn call_get_options_data(
+            self: @ContractState, instrument_name: felt252,
+        ) -> OptionsFeedData {
+            self.summary_stats.read().get_options_data(instrument_name)
         }
     }
 }

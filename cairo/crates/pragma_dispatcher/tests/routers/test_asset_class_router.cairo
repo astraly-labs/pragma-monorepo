@@ -39,7 +39,7 @@ fn deploy_feed_type_unique_router(
     let fake_contract = contract_address_const::<'fake'>();
     let contract = declare("FeedTypeUniqueRouter").unwrap().contract_class();
     let (contract_address, _) = contract
-        .deploy(@array![fake_contract.into(), fake_contract.into(), feed_type_id.into()])
+        .deploy(@array![fake_contract.into(), feed_type_id.into()])
         .unwrap();
     let dispatcher = IFeedTypeRouterDispatcher { contract_address };
     (contract_address, dispatcher)

@@ -1,7 +1,7 @@
 use core::num::traits::Zero;
-use pragma_dispatcher::types::pragma_oracle::SummaryStatsComputation;
-use pragma_feed_types::{FeedTypeId};
-use pragma_lib::types::{PragmaPricesResponse, OptionsFeedData, DataType, AggregationMode};
+use pragma_dispatcher::types::pragma_oracle::{SummaryStatsComputation, AggregationMode};
+use pragma_feed_types::{Feed, FeedTypeId};
+use pragma_lib::types::{PragmaPricesResponse, OptionsFeedData, DataType};
 use starknet::contract_address_const;
 
 #[starknet::interface]
@@ -9,7 +9,7 @@ pub trait IFeedTypeRouter<TContractState> {
     /// Returns the feed type id of the current router.
     fn get_feed_type_id(self: @TContractState) -> FeedTypeId;
     /// Returns the update for the feed as bytes.
-    fn get_data(self: @TContractState) -> alexandria_bytes::Bytes;
+    fn get_data(self: @TContractState, feed: Feed) -> alexandria_bytes::Bytes;
 }
 
 #[starknet::interface]
@@ -22,15 +22,6 @@ pub trait IPragmaOracleWrapper<TContractState> {
 
 #[starknet::interface]
 pub trait ISummaryStatsWrapper<TContractState> {
-    /// Calls calculate_mean from the Summary Stats contract.
-    fn call_calculate_mean(
-        self: @TContractState,
-        data_type: DataType,
-        aggregation_mode: AggregationMode,
-        start_timestamp: u64,
-        end_timestamp: u64,
-    ) -> SummaryStatsComputation;
-
     /// Calls calculate_volatility from the Summary Stats contract.
     fn call_calculate_volatility(
         self: @TContractState,

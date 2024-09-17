@@ -14,7 +14,7 @@ pub enum UniqueVariant {
 
 #[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
 pub enum TwapVariant {
-    OneDay,
+    SpotMeanOneDay,
 }
 
 #[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
@@ -61,7 +61,7 @@ pub impl FeedTypeTraitImpl of FeedTypeTrait {
                 _ => Result::Err(FeedTypeError::IdConversion('Unknown feed type variant')),
             },
             1 => match variant {
-                0 => Result::Ok(FeedType::Twap(TwapVariant::OneDay)),
+                0 => Result::Ok(FeedType::Twap(TwapVariant::SpotMeanOneDay)),
                 _ => Result::Err(FeedTypeError::IdConversion('Unknown feed type variant')),
             },
             2 => match variant {
@@ -76,25 +76,36 @@ pub impl FeedTypeTraitImpl of FeedTypeTrait {
     fn id(self: @FeedType) -> FeedTypeId {
         match self {
             FeedType::Unique(variant) => {
+                let unique_id = 0;
                 let variant_id = match variant {
                     UniqueVariant::SpotMedian => 0,
                     UniqueVariant::PerpMedian => 1,
                     UniqueVariant::SpotMean => 2,
                 };
-                (0 * FEED_TYPE_MAIN_SHIFT) + variant_id
+                (unique_id * FEED_TYPE_MAIN_SHIFT) + variant_id
             },
             FeedType::Twap(variant) => {
+                let twap_id = 1;
                 let variant_id = match variant {
-                    TwapVariant::OneDay => 0,
+                    TwapVariant::SpotMeanOneDay => 0,
                 };
-                (1 * FEED_TYPE_MAIN_SHIFT) + variant_id
+                (twap_id * FEED_TYPE_MAIN_SHIFT) + variant_id
             },
             FeedType::RealizedVolatility(variant) => {
+                let realized_volatility_id = 2;
                 let variant_id = match variant {
                     RealizedVolatilityVariant::OneWeek => 0,
                 };
-                (2 * FEED_TYPE_MAIN_SHIFT) + variant_id
+                (realized_volatility_id * FEED_TYPE_MAIN_SHIFT) + variant_id
             },
+        }
+    }
+
+    /// Checks if the feed type is Unique.
+    fn is_unique(self: @FeedType) -> bool {
+        match self {
+            FeedType::Unique(_) => true,
+            _ => false
         }
     }
 }
