@@ -1,20 +1,31 @@
-use pragma_feed_types::{FeedType, FeedTypeId};
+use pragma_feed_types::feed_type::{
+    FeedType, FeedTypeId, FeedTypeTrait, FeedTypeError, UniqueVariant, TwapVariant,
+    RealizedVolatilityVariant
+};
 
 #[test]
-fn test_feed_type_into_feed_type_id() {
-    let feed = FeedType::RealizedVolatility;
-    let id: FeedTypeId = feed.into();
-    assert(id == 2, 'RealizedVolatility should be 2');
+fn test_feed_type_from_id_valid() {
+    let id: FeedTypeId = 0x0001; // Unique::PerpMedian
+    let result = FeedTypeTrait::from_id(id);
+    assert(result.is_ok(), 'Should be Ok');
+    assert(result.unwrap() == FeedType::Unique(UniqueVariant::PerpMedian), 'Incorrect FeedType');
 }
 
 #[test]
-fn test_feed_type_id_try_into_feed_type() {
-    let id: FeedTypeId = 1;
-    let result: Option<FeedType> = id.try_into();
-    assert(result.is_some(), 'Should convert 1 to Some');
-    assert(result.unwrap() == FeedType::Twap, 'Should be Twap');
+fn test_feed_type_from_id_invalid_main_type() {
+    let id: FeedTypeId = 0x3000; // Invalid main type
+    let result = FeedTypeTrait::from_id(id);
+    assert(result.is_err(), 'Should be Err');
 
-    let invalid_id: FeedTypeId = 10;
-    let result: Option<FeedType> = invalid_id.try_into();
-    assert(result.is_none(), 'Should not convert 10');
+    let expected_err = FeedTypeError::IdConversion('Unknown feed type');
+    assert(result.unwrap_err() == expected_err, 'Incorrect error');
+}
+
+#[test]
+fn test_feed_type_from_id_invalid_variant() {
+    let id: FeedTypeId = 0x0003; // Invalid Unique variant
+    let result = FeedTypeTrait::from_id(id);
+    assert(result.is_err(), 'Should be Err');
+    let expected_err = FeedTypeError::IdConversion('Unknown feed type variant');
+    assert(result.unwrap_err() == expected_err, 'Incorrect error');
 }
