@@ -6,6 +6,8 @@ import {IPragma, DataFeed} from "./interfaces/IPragma.sol";
 import "./PragmaDecoder.sol";
 import "./libraries/EventsLib.sol";
 import "./libraries/ErrorsLib.sol";
+import "./interfaces/PragmaStructs.sol";
+
 
 /// @title Pragma
 /// @author Pragma Labs
@@ -53,20 +55,55 @@ contract Pragma is IPragma, PragmaDecoder {
         return totalNumUpdates * singleUpdateFeeInWei;
     }
 
-    function getPriceUnsafe(bytes32 id) private view returns (DataFeed memory) {
-        DataFeed memory data = _latestPriceInfo[id];
-        if (data.publishTime == 0) {
+    function getSpotMedianNoOlderThan(bytes32 id, uint256 age) external view returns (SpotMedian memory) {
+        SpotMedian memory data = spotMedianFeeds[id];
+        if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
         }
-        return data;
-    }
-
-    function getPriceNoOlderThan(bytes32 id, uint256 age) external view returns (DataFeed memory data) {
-        data = getPriceUnsafe(id);
-
-        if (diff(block.timestamp, data.publishTime) > age) {
+         if (diff(block.timestamp, data.metadata.timestamp) > age) {
             revert ErrorsLib.DataStale();
         }
+        
+    }
+    function getTwapNoOlderThan(bytes32 id, uint256 age) external view returns (TWAP memory ) {
+        TWAP memory data = twapFeeds[id];
+        if (data.metadata.timestamp == 0) {
+            revert ErrorsLib.DataNotFound();
+        }
+         if (diff(block.timestamp, data.metadata.timestamp) > age) {
+            revert ErrorsLib.DataStale();
+        }
+        
+    }
+    function getRealizedVolatilityNoOlderThan(bytes32 id, uint256 age) external view returns (RealizedVolatility memory ) {
+        RealizedVolatility memory data = rvFeeds[id];
+        if (data.metadata.timestamp == 0) {
+            revert ErrorsLib.DataNotFound();
+        }
+         if (diff(block.timestamp, data.metadata.timestamp) > age) {
+            revert ErrorsLib.DataStale();
+        }
+        
+    }
+    function getOptionsNoOlderThan(bytes32 id, uint256 age) external view returns (Options memory ) {
+        Options memory data = optionsFeeds[id];
+        if (data.metadata.timestamp == 0) {
+            revert ErrorsLib.DataNotFound();
+        }
+         if (diff(block.timestamp, data.metadata.timestamp) > age) {
+            revert ErrorsLib.DataStale();
+        }
+        
+    }
+    function getPerpNoOlderThan(bytes32 id, uint256 age) external view returns (Perp memory) {
+        Perp memory data = perpFeeds[id];
+        if (data.metadata.timestamp == 0) {
+            revert ErrorsLib.DataNotFound();
+        }
+         if (diff(block.timestamp, data.metadata.timestamp) > age) {
+            revert ErrorsLib.DataStale();
+        }
+        
     }
 
     /// @inheritdoc IPragma

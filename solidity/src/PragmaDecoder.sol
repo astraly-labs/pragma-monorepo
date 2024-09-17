@@ -19,7 +19,6 @@ contract PragmaDecoder {
     /* STORAGE */
     IHyperlane public immutable hyperlane;
 
-    mapping(bytes32 => DataFeed) public _latestPriceInfo;
     mapping(bytes32 => bool) public _isValidDataSource;
     mapping(bytes32 => uint64) public latestPublishTimes;
 
@@ -232,29 +231,18 @@ contract PragmaDecoder {
 
             if (parsedData.dataType == FeedType.SpotMedian) {
                 spotMedianFeeds[feedId] = parsedData.spot;
-                _latestPriceInfo[feedId] =
-                    DataFeed(feedId, publishTime, parsedData.spot.metadata.numberOfSources, parsedData.spot.price);
                 emit EventsLib.SpotMedianUpdate(feedId, publishTime, parsedData.spot);
             } else if (parsedData.dataType == FeedType.Twap) {
                 twapFeeds[feedId] = parsedData.twap;
-                _latestPriceInfo[feedId] =
-                    DataFeed(feedId, publishTime, parsedData.twap.metadata.numberOfSources, parsedData.twap.twapPrice);
                 emit EventsLib.TWAPUpdate(feedId, publishTime, parsedData.twap);
             } else if (parsedData.dataType == FeedType.RealizedVolatility) {
                 rvFeeds[feedId] = parsedData.rv;
-                _latestPriceInfo[feedId] =
-                    DataFeed(feedId, publishTime, parsedData.rv.metadata.numberOfSources, parsedData.rv.endPrice);
                 emit EventsLib.RealizedVolatilityUpdate(feedId, publishTime, parsedData.rv);
             } else if (parsedData.dataType == FeedType.Options) {
                 optionsFeeds[feedId] = parsedData.options;
-                _latestPriceInfo[feedId] = DataFeed(
-                    feedId, publishTime, parsedData.options.metadata.numberOfSources, parsedData.options.optionPrice
-                );
                 emit EventsLib.OptionsUpdate(feedId, publishTime, parsedData.options);
             } else if (parsedData.dataType == FeedType.Perpetuals) {
                 perpFeeds[feedId] = parsedData.perp;
-                _latestPriceInfo[feedId] =
-                    DataFeed(feedId, publishTime, parsedData.perp.metadata.numberOfSources, parsedData.perp.markPrice);
                 emit EventsLib.PerpUpdate(feedId, publishTime, parsedData.perp);
             } else {
                 revert ErrorsLib.InvalidDataFeedType();

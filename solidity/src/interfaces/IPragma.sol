@@ -22,10 +22,18 @@ interface IPragma {
     /// @return feeAmount The required fee in Wei.
     function getUpdateFee(bytes[] calldata updateData) external view returns (uint256 feeAmount);
 
-    /// @notice Returns the data that is no older than `age` seconds of the current time.
-    /// @dev Reverts if the data wasn't updated sufficiently recently.
-    /// @return data - please read the documentation of DataFeed to understand how to use this safely.
-    function getPriceNoOlderThan(bytes32 id, uint256 age) external view returns (DataFeed memory data);
+    function getSpotMedianNoOlderThan(bytes32 id, uint256 age) external view returns (SpotMedian memory);
+
+
+    function getTwapNoOlderThan(bytes32 id, uint256 age) external view returns (TWAP memory );
+
+
+    function getRealizedVolatilityNoOlderThan(bytes32 id, uint256 age) external view returns (RealizedVolatility memory );
+
+    
+    function getOptionsNoOlderThan(bytes32 id, uint256 age) external view returns (Options memory);
+
+    function getPerpNoOlderThan(bytes32 id, uint256 age) external view returns (Perp memory);
 
     /// @notice Checks if a data feed exists.
     /// @param id The data feed ID.

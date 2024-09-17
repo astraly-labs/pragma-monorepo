@@ -38,14 +38,6 @@ contract PragmaDecoderHarness is PragmaDecoder {
         return optionsFeeds[feedId];
     }
 
-    function exposed_latestPriceInfo(bytes32 feedId) external view returns (DataFeed memory) {
-        return _latestPriceInfo[feedId];
-    }
-
-    function exposed_latestPublishTimes(bytes32 feedId) external view returns (uint64) {
-        return latestPublishTimes[feedId];
-    }
-
     function exposed_perpFeeds(bytes32 feedId) external view returns (Perp memory) {
         return perpFeeds[feedId];
     }
@@ -187,14 +179,6 @@ contract PragmaDecoderTest is Test {
         assertEq(spotMedian.metadata.feedId, feedId, "Feed ID should match");
         assertEq(spotMedian.price, 2000 * 1e8, "Price should match");
         assertEq(spotMedian.volume, 1000 * 1e18, "Volume should match");
-
-        DataFeed memory dataFeed = pragmaDecoder.exposed_latestPriceInfo(feedId);
-        assertEq(dataFeed.value, 2000 * 1e8, "Price should match");
-        assertEq(dataFeed.numSourcesAggregated, 5, "Number of sources should be 5");
-        assertEq(dataFeed.publishTime, block.timestamp, "Timestamp should match");
-        assertEq(dataFeed.feedId, feedId, "Feed id should match");
-
-        assertEq(pragmaDecoder.latestPublishTimes(feedId), block.timestamp, "Latest publish time should be updated");
     }
 
     function testUpdateDataInfoFromUpdateTWAP() public {
@@ -223,14 +207,6 @@ contract PragmaDecoderTest is Test {
         assertEq(twap.endPrice, 31000 * 1e8, "End price should match");
         assertEq(twap.totalVolume, 1000 * 1e18, "Total volume should match");
         assertEq(twap.numberOfDataPoints, 60, "Number of data points should match");
-
-        DataFeed memory dataFeed = pragmaDecoder.exposed_latestPriceInfo(feedId);
-        assertEq(dataFeed.value, 30000 * 1e8, "TWAP Price should match");
-        assertEq(dataFeed.numSourcesAggregated, 5, "Number of sources should be 5");
-        assertEq(dataFeed.publishTime, block.timestamp, "Timestamp should match");
-        assertEq(dataFeed.feedId, feedId, "Feed id should match");
-
-        assertEq(pragmaDecoder.latestPublishTimes(feedId), block.timestamp, "Latest publish time should be updated");
     }
 
     function testUpdateDataInfoFromUpdateRealizedVolatility() public {
@@ -258,14 +234,6 @@ contract PragmaDecoderTest is Test {
         assertEq(rv.high_price, 2200 * 1e8, "High price should match");
         assertEq(rv.low_price, 1800 * 1e8, "Low price should match");
         assertEq(rv.numberOfDataPoints, 1440, "Number of data points should match");
-
-        DataFeed memory dataFeed = pragmaDecoder.exposed_latestPriceInfo(feedId);
-        assertEq(dataFeed.value, 2100 * 1e8, "RV Price should match");
-        assertEq(dataFeed.numSourcesAggregated, 5, "Number of sources should be 5");
-        assertEq(dataFeed.publishTime, block.timestamp, "Timestamp should match");
-        assertEq(dataFeed.feedId, feedId, "Feed id should match");
-
-        assertEq(pragmaDecoder.latestPublishTimes(feedId), block.timestamp, "Latest publish time should be updated");
     }
 
     function testUpdateDataInfoFromUpdateOptions() public {
@@ -299,14 +267,6 @@ contract PragmaDecoderTest is Test {
         assertEq(options.vega, 10 * 1e6, "Vega should match");
         assertEq(options.theta, -5 * 1e6, "Theta should match");
         assertEq(options.rho, 3 * 1e6, "Rho should match");
-
-        DataFeed memory dataFeed = pragmaDecoder.exposed_latestPriceInfo(feedId);
-        assertEq(dataFeed.value, 100 * 1e8, "RV Price should match");
-        assertEq(dataFeed.numSourcesAggregated, 5, "Number of sources should be 5");
-        assertEq(dataFeed.publishTime, block.timestamp, "Timestamp should match");
-        assertEq(dataFeed.feedId, feedId, "Feed id should match");
-
-        assertEq(pragmaDecoder.latestPublishTimes(feedId), block.timestamp, "Latest publish time should be updated");
     }
 
     function testUpdateDataInfoFromUpdatePerp() public {
@@ -333,11 +293,5 @@ contract PragmaDecoderTest is Test {
         assertEq(perp.openInterest, 10000 * 1e18, "Open interest should match");
         assertEq(perp.volume, 50000 * 1e18, "Volume should match");
 
-        DataFeed memory dataFeed = pragmaDecoder.exposed_latestPriceInfo(feedId);
-        assertEq(dataFeed.value, 2000 * 1e8, "Mark Price should match");
-        assertEq(dataFeed.numSourcesAggregated, 5, "Number of sources should be 5");
-        assertEq(dataFeed.publishTime, block.timestamp, "Timestamp should match");
-        assertEq(dataFeed.feedId, feedId, "Feed id should match");
-        assertEq(pragmaDecoder.latestPublishTimes(feedId), block.timestamp, "Latest publish time should be updated");
     }
 }

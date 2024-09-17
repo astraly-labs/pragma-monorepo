@@ -5,9 +5,26 @@ import "./BytesLib.sol";
 import "../interfaces/PragmaStructs.sol";
 import "./ErrorsLib.sol";
 
+/**
+ * @title DataParser
+ * @dev A library for parsing data related to different feed types like SpotMedian, TWAP, RealizedVolatility, Options, and Perpetuals.
+ *      This library provides functions to extract relevant information from a raw byte array.
+ *
+ * @notice The data input is expected to be in a specific byte format depending on the feed type. 
+ *         Each function in the library parses a specific feed type from the byte array.
+ */
 library DataParser {
     using BytesLib for bytes;
 
+    /**
+     * @dev Parses a raw byte array into `ParsedData` based on the detected `FeedType`.
+     * @param data A byte array representing the raw feed data.
+     * @return parsedData A `ParsedData` struct containing the parsed data for the specific feed type.
+     *
+     * The format of `data` is:
+     * - `offset`: 2 bytes reserved for identifying the feed type.
+     * - The remaining bytes are feed-specific, and the parsing is delegated to other functions based on the feed type.
+     */
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
         uint8 offset = 2; // type feed stored after asset class
         uint16 rawDataType = data.toUint16(offset);
@@ -32,6 +49,11 @@ library DataParser {
         return parsedData;
     }
 
+    /**
+     * @dev Casts a uint16 value to the `FeedType` enum. Reverts if the value is invalid.
+     * @param rawDataType The raw uint16 value representing the feed type.
+     * @return A valid `FeedType` enum value.
+     */
      function safeCastToFeedType(uint16 rawDataType) internal pure returns (FeedType) {
         if (rawDataType <= uint16(type(FeedType).max)) {
             return FeedType(rawDataType);
@@ -40,6 +62,19 @@ library DataParser {
         }
     }
 
+    /**
+     * @dev Parses metadata common to all feeds from the byte array.
+     * @param data A byte array containing the feed data.
+     * @param startIndex The starting index for parsing metadata.
+     * @return metadata A `Metadata` struct containing parsed metadata information.
+     * @return index The next index after parsing the metadata.
+     *
+     * Metadata format:
+     * - `feedId`: 32 bytes (bytes32)
+     * - `timestamp`: 8 bytes (uint64)
+     * - `numberOfSources`: 2 bytes (uint16)
+     * - `decimals`: 1 byte (uint8)
+     */
     function parseMetadata(bytes memory data, uint256 startIndex) internal pure returns (Metadata memory, uint256) {
         Metadata memory metadata;
         uint256 index = startIndex;
@@ -59,6 +94,17 @@ library DataParser {
         return (metadata, index);
     }
 
+
+    /**
+     * @dev Parses `SpotMedian` feed data from a byte array.
+     * @param data A byte array containing the SpotMedian feed data.
+     * @return A `SpotMedian` struct containing the parsed SpotMedian data.
+     *
+     * SpotMedian data format:
+     * - Metadata (parsed separately)
+     * - `price`: 32 bytes (uint256)
+     * - `volume`: 32 bytes (uint256)
+     */
     function parseSpotData(bytes memory data) internal pure returns (SpotMedian memory) {
         SpotMedian memory entry;
         uint256 index = 0;
@@ -73,6 +119,20 @@ library DataParser {
         return entry;
     }
 
+      /**
+     * @dev Parses `TWAP` (Time-Weighted Average Price) feed data from a byte array.
+     * @param data A byte array containing the TWAP feed data.
+     * @return A `TWAP` struct containing the parsed TWAP data.
+     *
+     * TWAP data format:
+     * - Metadata (parsed separately)
+     * - `twapPrice`: 32 bytes (uint256)
+     * - `timePeriod`: 32 bytes (uint256)
+     * - `startPrice`: 32 bytes (uint256)
+     * - `endPrice`: 32 bytes (uint256)
+     * - `totalVolume`: 32 bytes (uint256)
+     * - `numberOfDataPoints`: 32 bytes (uint256)
+     */
     function parseTWAPData(bytes memory data) internal pure returns (TWAP memory) {
         TWAP memory entry;
         uint256 index = 0;
@@ -99,6 +159,21 @@ library DataParser {
         return entry;
     }
 
+       /**
+     * @dev Parses `RealizedVolatility` feed data from a byte array.
+     * @param data A byte array containing the RealizedVolatility feed data.
+     * @return A `RealizedVolatility` struct containing the parsed realized volatility data.
+     *
+     * RealizedVolatility data format:
+     * - Metadata (parsed separately)
+     * - `volatility`: 32 bytes (uint256)
+     * - `timePeriod`: 32 bytes (uint256)
+     * - `startPrice`: 32 bytes (uint256)
+     * - `endPrice`: 32 bytes (uint256)
+     * - `high_price`: 32 bytes (uint256)
+     * - `low_price`: 32 bytes (uint256)
+     * - `numberOfDataPoints`: 32 bytes (uint256)
+     */
     function parseRealizedVolatilityData(bytes memory data) internal pure returns (RealizedVolatility memory) {
         RealizedVolatility memory entry;
         uint256 index = 0;
@@ -128,6 +203,25 @@ library DataParser {
         return entry;
     }
 
+     /**
+     * @dev Parses `Options` feed data from a byte array.
+     * @param data A byte array containing the options feed data.
+     * @return An `Options` struct containing the parsed options data.
+     *
+     * Options data format:
+     * - Metadata (parsed separately)
+     * - `strikePrice`: 32 bytes (uint256)
+     * - `impliedVolatility`: 32 bytes (uint256)
+     * - `timeToExpiry`: 32 bytes (uint256)
+     * - `isCall`: 1 byte (uint8)
+     * - `underlyingPrice`: 32 bytes (uint256)
+     * - `optionPrice`: 32 bytes (uint256)
+     * - `delta`: 32 bytes (int256)
+     * - `gamma`: 32 bytes (int256)
+     * - `vega`: 32 bytes (int256)
+     * - `theta`: 32 bytes (int256)
+     * - `rho`: 32 bytes (int256)
+     */
     function parseOptionsData(bytes memory data) internal pure returns (Options memory) {
         Options memory entry;
         uint256 index = 0;
@@ -169,6 +263,18 @@ library DataParser {
         return entry;
     }
 
+    /**
+     * @dev Parses `Perp` (Perpetual) feed data from a byte array.
+     * @param data A byte array containing the perpetual feed data.
+     * @return A `Perp` struct containing the parsed perpetual data.
+     *
+     * Perpetual data format:
+     * - Metadata (parsed separately)
+     * - `markPrice`: 32 bytes (uint256)
+     * - `fundingRate`: 32 bytes (uint256)
+     * - `openInterest`: 32 bytes (uint256)
+     * - `volume`: 32 bytes (uint256)
+     */
     function parsePerpData(bytes memory data) internal pure returns (Perp memory) {
         Perp memory entry;
         uint256 index = 0;
