@@ -38,3 +38,24 @@ jobs:
         run: |
           forge test -vvv
         id: test
+
+      - name: Run Forge tests with gas report
+        working-directory: ${{ env.working-directory }}
+        run: |
+          forge test --match-contract PragmaDecoderGasTest -vvv --gas-report > gas_report.txt
+        id: test
+
+      - name: Parse and display gas report
+        working-directory: ${{ env.working-directory }}
+        run: |
+          echo "Gas Report Summary:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -A 6 "Gas used for" gas_report.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        id: gas_report
+
+      - name: Upload gas report as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: gas-report
+          path: ${{ env.working-directory }}/gas_report.txt
