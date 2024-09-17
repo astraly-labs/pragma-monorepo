@@ -6,7 +6,6 @@ on:
     paths:
       - 'solidity/**'
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'solidity/**'
 
