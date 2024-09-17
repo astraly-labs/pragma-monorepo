@@ -290,27 +290,27 @@ contract PragmaDecoder {
         internal
     {
         if (parsedData.dataType == FeedType.SpotMedian) {
-            if (publishTime > spotMedianFeeds[feedId].timestamp) {
+            if (publishTime > spotMedianFeeds[feedId].metadata.timestamp) {
                 spotMedianFeeds[feedId] = parsedData.spot;
                 emit EventsLib.SpotMedianUpdate(feedId, publishTime, parsedData.spot);
             }
         } else if (parsedData.dataType == FeedType.Twap) {
-            if (publishTime > twapFeeds[feedId].timestamp) {
+            if (publishTime > twapFeeds[feedId].metadata.timestamp) {
                 twapFeeds[feedId] = parsedData.twap;
                 emit EventsLib.TWAPUpdate(feedId, publishTime, parsedData.twap);
             }
         } else if (parsedData.dataType == FeedType.RealizedVolatility) {
-            if (publishTime > rvFeeds[feedId].timestamp) {
+            if (publishTime > rvFeeds[feedId].metadata.timestamp) {
                 rvFeeds[feedId] = parsedData.rv;
                 emit EventsLib.RealizedVolatilityUpdate(feedId, publishTime, parsedData.rv);
             }
         } else if (parsedData.dataType == FeedType.Options) {
-            if (publishTime > optionsFeeds[feedId].timestamp) {
+            if (publishTime > optionsFeeds[feedId].metadata.timestamp) {
                 optionsFeeds[feedId] = parsedData.options;
                 emit EventsLib.OptionsUpdate(feedId, publishTime, parsedData.options);
             }
         } else if (parsedData.dataType == FeedType.Perpetuals) {
-            if (publishTime > perpFeeds[feedId].timestamp) {
+            if (publishTime > perpFeeds[feedId].metadata.timestamp) {
                 perpFeeds[feedId] = parsedData.perp;
                 emit EventsLib.PerpUpdate(feedId, publishTime, parsedData.perp);
             }
