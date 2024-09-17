@@ -1,7 +1,7 @@
 name: Task - Test Solidity
 
 on:
-  workflow_dispatch:
+  workflow_call: 
   push:
     paths:
       - 'solidity/**'
