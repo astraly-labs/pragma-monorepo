@@ -289,27 +289,33 @@ contract PragmaDecoder {
     function updateLatestDataInfoIfNecessary(bytes32 feedId, ParsedData memory parsedData, uint64 publishTime)
         internal
     {
-        if (publishTime > latestPublishTimes[feedId]) {
-            latestPublishTimes[feedId] = publishTime;
-
-            if (parsedData.dataType == FeedType.SpotMedian) {
+        if (parsedData.dataType == FeedType.SpotMedian) {
+            if (publishTime > spotMedianFeeds[feedId].timestamp) {
                 spotMedianFeeds[feedId] = parsedData.spot;
                 emit EventsLib.SpotMedianUpdate(feedId, publishTime, parsedData.spot);
-            } else if (parsedData.dataType == FeedType.Twap) {
+            }
+        } else if (parsedData.dataType == FeedType.Twap) {
+            if (publishTime > twapFeeds[feedId].timestamp) {
                 twapFeeds[feedId] = parsedData.twap;
                 emit EventsLib.TWAPUpdate(feedId, publishTime, parsedData.twap);
-            } else if (parsedData.dataType == FeedType.RealizedVolatility) {
+            }
+        } else if (parsedData.dataType == FeedType.RealizedVolatility) {
+            if (publishTime > rvFeeds[feedId].timestamp) {
                 rvFeeds[feedId] = parsedData.rv;
                 emit EventsLib.RealizedVolatilityUpdate(feedId, publishTime, parsedData.rv);
-            } else if (parsedData.dataType == FeedType.Options) {
+            }
+        } else if (parsedData.dataType == FeedType.Options) {
+            if (publishTime > optionsFeeds[feedId].timestamp) {
                 optionsFeeds[feedId] = parsedData.options;
                 emit EventsLib.OptionsUpdate(feedId, publishTime, parsedData.options);
-            } else if (parsedData.dataType == FeedType.Perpetuals) {
+            }
+        } else if (parsedData.dataType == FeedType.Perpetuals) {
+            if (publishTime > perpFeeds[feedId].timestamp) {
                 perpFeeds[feedId] = parsedData.perp;
                 emit EventsLib.PerpUpdate(feedId, publishTime, parsedData.perp);
-            } else {
-                revert ErrorsLib.InvalidDataFeedType();
             }
+        } else {
+            revert ErrorsLib.InvalidDataFeedType();
         }
     }
 }
