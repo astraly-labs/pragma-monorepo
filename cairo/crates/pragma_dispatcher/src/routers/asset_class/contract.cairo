@@ -46,7 +46,7 @@ pub mod AssetClassRouter {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         AssetClassRouterDeployed: AssetClassRouterDeployed,
