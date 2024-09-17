@@ -127,15 +127,17 @@ pub mod PragmaDispatcher {
             assert(!router_address.is_zero(), errors::REGISTERING_ROUTER_ZERO);
 
             // [Check] Valid asset class
-            let asset_class: Option<AssetClass> = asset_class_id.try_into();
-            assert(asset_class.is_some(), errors::UNKNOWN_ASSET_CLASS);
+            let asset_class: AssetClass = match asset_class_id.try_into() {
+                Option::Some(a) => a,
+                Option::None(()) => panic_with_felt252(errors::UNKNOWN_ASSET_CLASS)
+            };
 
             // [Check] Asset class router is correct
             let router = IAssetClassRouterDispatcher { contract_address: router_address };
             assert(router.get_asset_class_id() == asset_class_id, errors::MISMATCH_ASSET_CLASS_ID);
 
             // [Effect] Add the asset class router to the storage
-            self.asset_class_routers.entry(asset_class.unwrap()).write(router);
+            self.asset_class_routers.entry(asset_class).write(router);
 
             // [Interaction] Storage updated event
             self

@@ -142,12 +142,14 @@ pub mod AssetClassRouter {
             // [Check] Owner is valid
             assert(!owner.is_zero(), errors::OWNER_IS_ZERO);
             // [Check] Valid asset class id
-            let asset_class: Option<AssetClass> = asset_class_id.try_into();
-            assert(asset_class.is_some(), errors::INVALID_ASSET_CLASS_ID);
+            let asset_class: AssetClass = match asset_class_id.try_into() {
+                Option::Some(a) => a,
+                Option::None(()) => panic_with_felt252(errors::INVALID_ASSET_CLASS_ID)
+            };
 
             // [Effect] Init components storages
             self.ownable.initializer(owner);
-            self.asset_class.write(asset_class.unwrap());
+            self.asset_class.write(asset_class);
 
             // [Interaction] Emit new router deployed
             self
