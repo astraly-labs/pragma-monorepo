@@ -2,7 +2,12 @@ name: Task - Test Solidity
 
 on:
   workflow_dispatch:
-  workflow_call:
+  push:
+    paths:
+      - 'solidity/**'
+  pull_request:
+    paths:
+      - 'solidity/**'
 
 env:
   FOUNDRY_PROFILE: ci
@@ -20,6 +25,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          fetch-depth: 0
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -45,14 +51,67 @@ jobs:
           forge test --match-contract PragmaDecoderGasTest -vvv --gas-report > gas_report.txt
         id: test
 
-      - name: Parse and display gas report
+      - name: Parse current gas report
+        working-directory: ${{ env.working-directory }}
+        run: |
+          echo "current_gas_results=$(grep -A 6 "Gas used for" gas_report.txt | awk '{print $NF}' | tr '\n' ',' | sed 's/,$//')" >> $GITHUB_ENV
+
+      - name: Get previous gas results
+        working-directory: ${{ env.working-directory }}
+        run: |
+          git checkout -b temp-branch
+          git reset --hard origin/${{ github.base_ref || 'main' }}
+          if [ -f previous_gas_results.txt ]; then
+            echo "previous_gas_results=$(cat previous_gas_results.txt)" >> $GITHUB_ENV
+          else
+            echo "previous_gas_results=" >> $GITHUB_ENV
+          fi
+
+      - name: Compare gas results
         working-directory: ${{ env.working-directory }}
         run: |
           echo "Gas Report Summary:" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          grep -A 6 "Gas used for" gas_report.txt >> $GITHUB_STEP_SUMMARY
+          
+          IFS=',' read -ra current_array <<< "$current_gas_results"
+          IFS=',' read -ra previous_array <<< "$previous_gas_results"
+          
+          tests=("SpotMedian" "TWAP" "RealizedVolatility" "Options" "Perpetuals")
+          
+          for i in "${!current_array[@]}"; do
+            current=${current_array[$i]}
+            previous=${previous_array[$i]}
+            test=${tests[$i]}
+            
+            echo "Gas used for $test update: $current" >> $GITHUB_STEP_SUMMARY
+            
+            if [ -n "$previous" ]; then
+              diff=$((current - previous))
+              if [ $diff -gt 0 ]; then
+                echo "Change: :red_circle: +$diff ($(echo "scale=2; $diff * 100 / $previous" | bc)% increase)" >> $GITHUB_STEP_SUMMARY
+              elif [ $diff -lt 0 ]; then
+                echo "Change: :green_circle: $diff ($(echo "scale=2; -$diff * 100 / $previous" | bc)% decrease)" >> $GITHUB_STEP_SUMMARY
+              else
+                echo "Change: :white_circle: No change" >> $GITHUB_STEP_SUMMARY
+              fi
+            else
+              echo "Change: N/A (First run)" >> $GITHUB_STEP_SUMMARY
+            fi
+            echo "" >> $GITHUB_STEP_SUMMARY
+          done
+          
           echo '```' >> $GITHUB_STEP_SUMMARY
-        id: gas_report
+
+      - name: Update gas results
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        working-directory: ${{ env.working-directory }}
+        run: |
+          echo "$current_gas_results" > previous_gas_results.txt
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add previous_gas_results.txt
+          git commit -m "Update gas results" || echo "No changes to commit"
+          git push origin main
 
       - name: Upload gas report as artifact
         uses: actions/upload-artifact@v3
