@@ -10,7 +10,7 @@ import "./ErrorsLib.sol";
  * @dev A library for parsing data related to different feed types like SpotMedian, TWAP, RealizedVolatility, Options, and Perpetuals.
  *      This library provides functions to extract relevant information from a raw byte array.
  *
- * @notice The data input is expected to be in a specific byte format depending on the feed type. 
+ * @notice The data input is expected to be in a specific byte format depending on the feed type.
  *         Each function in the library parses a specific feed type from the byte array.
  */
 library DataParser {
@@ -54,7 +54,7 @@ library DataParser {
      * @param rawDataType The raw uint16 value representing the feed type.
      * @return A valid `FeedType` enum value.
      */
-     function safeCastToFeedType(uint16 rawDataType) internal pure returns (FeedType) {
+    function safeCastToFeedType(uint16 rawDataType) internal pure returns (FeedType) {
         if (rawDataType <= uint16(type(FeedType).max)) {
             return FeedType(rawDataType);
         } else {
@@ -94,7 +94,6 @@ library DataParser {
         return (metadata, index);
     }
 
-
     /**
      * @dev Parses `SpotMedian` feed data from a byte array.
      * @param data A byte array containing the SpotMedian feed data.
@@ -119,7 +118,7 @@ library DataParser {
         return entry;
     }
 
-      /**
+    /**
      * @dev Parses `TWAP` (Time-Weighted Average Price) feed data from a byte array.
      * @param data A byte array containing the TWAP feed data.
      * @return A `TWAP` struct containing the parsed TWAP data.
@@ -159,7 +158,7 @@ library DataParser {
         return entry;
     }
 
-       /**
+    /**
      * @dev Parses `RealizedVolatility` feed data from a byte array.
      * @param data A byte array containing the RealizedVolatility feed data.
      * @return A `RealizedVolatility` struct containing the parsed realized volatility data.
@@ -203,7 +202,7 @@ library DataParser {
         return entry;
     }
 
-     /**
+    /**
      * @dev Parses `Options` feed data from a byte array.
      * @param data A byte array containing the options feed data.
      * @return An `Options` struct containing the parsed options data.

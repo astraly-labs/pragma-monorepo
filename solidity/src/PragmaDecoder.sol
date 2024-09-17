@@ -13,21 +13,44 @@ import "./libraries/MerkleTree.sol";
 import "./libraries/UnsafeCalldataBytesLib.sol";
 import "./libraries/UnsafeBytesLib.sol";
 
+/// @title PragmaDecoder
+/// @notice This contract is responsible for decoding, verifying, and processing data feed updates
+///         from the Hyperlane protocol. It ensures the integrity of the data through Merkle proofs
+///         and verifies the data source's validity. The contract can handle multiple types of data feeds
+///         such as spot medians, TWAP (Time-Weighted Average Prices), realized volatility, options, and perpetuals.
 contract PragmaDecoder {
     using BytesLib for bytes;
 
     /* STORAGE */
+    /// @notice The Hyperlane contract that provides the messaging layer for data updates.
     IHyperlane public immutable hyperlane;
 
+    /// @notice Mapping to track valid data sources, identified by their chain ID and address.
     mapping(bytes32 => bool) public _isValidDataSource;
+
+    /// @notice Tracks the latest publish times for each data feed to ensure data freshness.
     mapping(bytes32 => uint64) public latestPublishTimes;
 
+    /// @notice Stores the latest Spot Median feed data by feed ID.
     mapping(bytes32 => SpotMedian) public spotMedianFeeds;
+
+    /// @notice Stores the latest TWAP feed data by feed ID.
     mapping(bytes32 => TWAP) public twapFeeds;
+
+    /// @notice Stores the latest Realized Volatility feed data by feed ID.
     mapping(bytes32 => RealizedVolatility) public rvFeeds;
+
+    /// @notice Stores the latest Options feed data by feed ID.
     mapping(bytes32 => Options) public optionsFeeds;
+
+    /// @notice Stores the latest Perpetual feed data by feed ID.
     mapping(bytes32 => Perp) public perpFeeds;
 
+    /* CONSTRUCTOR */
+
+    /// @param _hyperlane The address of the Hyperlane contract used for receiving messages.
+    /// @param _dataSourceEmitterChainIds Array of chain IDs representing valid data sources.
+    /// @param _dataSourceEmitterAddresses Array of emitter addresses corresponding to valid data sources.
     constructor(
         address _hyperlane,
         uint16[] memory _dataSourceEmitterChainIds,
@@ -42,11 +65,19 @@ contract PragmaDecoder {
         }
     }
 
-    // TODO: set valid data sources
+    /// @notice Checks if the given chain ID and emitter address form a valid data source.
+    /// @param chainId The chain ID of the data source.
+    /// @param emitterAddress The address of the data emitter on the given chain.
+    /// @return True if the data source is valid, false otherwise.
     function isValidDataSource(uint16 chainId, bytes32 emitterAddress) public view returns (bool) {
         return _isValidDataSource[keccak256(abi.encodePacked(chainId, emitterAddress))];
+        // TODO: set valid data sources
     }
 
+    /// @notice Parses and verifies a Hyperlane message, ensuring its integrity and origin.
+    /// @param encodedHyMsg The encoded Hyperlane message.
+    /// @return hyMsg The decoded Hyperlane message.
+    /// @return index The index at which the message ends within the provided data.
     function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         internal
         view
@@ -63,6 +94,9 @@ contract PragmaDecoder {
         }
     }
 
+    /// @notice Extracts metadata from the header of the update data.
+    /// @param updateData The encoded update data.
+    /// @return encodedOffset The offset within the encoded data after processing the header.
     function extractMetadataFromheader(bytes calldata updateData) internal pure returns (uint256 encodedOffset) {
         unchecked {
             encodedOffset = 0;
@@ -108,6 +142,13 @@ contract PragmaDecoder {
         }
     }
 
+    /// @notice Extracts the Checkpoint root and the number of updates from the update data.
+    /// @param updateData The encoded update data.
+    /// @param encodedOffset The offset at which to begin extracting data.
+    /// @return offset The new offset after extraction.
+    /// @return checkpointRoot The Merkle root for the update data.
+    /// @return numUpdates The number of updates contained within the data.
+    /// @return encoded The remaining encoded update data after processing.
     function extractCheckpointRootAndNumUpdates(bytes calldata updateData, uint256 encodedOffset)
         internal
         view
@@ -146,6 +187,8 @@ contract PragmaDecoder {
         }
     }
 
+    /// @notice Internal redirection to the MerkleLib library function `isProofValid`
+    /// @dev Implemented this function to mock the output in the testing stage.
     function _isProofValid(bytes calldata encodedProof, uint256 offset, bytes32 root, bytes calldata leafData)
         internal
         virtual
@@ -154,6 +197,14 @@ contract PragmaDecoder {
         return MerkleTree.isProofValid(encodedProof, offset, root, leafData);
     }
 
+    /// @notice Extracts data and proof information from the provided update data and verifies its integrity.
+    /// @param encoded The encoded update data.
+    /// @param offset The offset at which to begin extracting.
+    /// @param checkpointRoot The Merkle root to verify against.
+    /// @return endOffset The new offset after extracting data.
+    /// @return parsedData The parsed data feed information.
+    /// @return feedId The unique identifier of the data feed.
+    /// @return publishTime The timestamp of the data feed update.
     function extractDataInfoFromUpdate(bytes calldata encoded, uint256 offset, bytes32 checkpointRoot)
         internal
         returns (uint256 endOffset, ParsedData memory parsedData, bytes32 feedId, uint64 publishTime)
@@ -185,6 +236,11 @@ contract PragmaDecoder {
         }
     }
 
+    /// @notice Parses a data feed from the provided encoded data and extracts the feed ID and publish time.
+    /// @param encodedDataFeed The encoded data feed containing the data, feed ID, and publish time.
+    /// @return parsedData The parsed data from the encoded data feed.
+    /// @return feedId The unique identifier of the data feed.
+    /// @return publishTime The timestamp of the data feed update.
     function parseDataFeed(bytes calldata encodedDataFeed)
         private
         pure
@@ -199,6 +255,9 @@ contract PragmaDecoder {
         publishTime = UnsafeBytesLib.toUint64(encodedDataFeed, offset);
     }
 
+    /// @notice Processes the provided update data and extracts the number of updates, verifying their integrity.
+    /// @param updateData The encoded update data, including the Merkle root and feed updates.
+    /// @return numUpdates The number of feed updates contained within the provided data.
     function updateDataInfoFromUpdate(bytes calldata updateData) internal returns (uint8 numUpdates) {
         // Extract header metadata
         uint256 encodedOffset = extractMetadataFromheader(updateData);
@@ -223,6 +282,10 @@ contract PragmaDecoder {
         if (offset != encoded.length) revert ErrorsLib.InvalidUpdateData();
     }
 
+    /// @notice Updates the stored data feeds with new information if the update is more recent than the current data.
+    /// @param feedId The ID of the data feed.
+    /// @param parsedData The parsed data feed information.
+    /// @param publishTime The timestamp of the data feed update.
     function updateLatestDataInfoIfNecessary(bytes32 feedId, ParsedData memory parsedData, uint64 publishTime)
         internal
     {

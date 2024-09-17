@@ -8,7 +8,6 @@ import "./libraries/EventsLib.sol";
 import "./libraries/ErrorsLib.sol";
 import "./interfaces/PragmaStructs.sol";
 
-
 /// @title Pragma
 /// @author Pragma Labs
 /// @custom:contact security@pragma.build
@@ -55,55 +54,59 @@ contract Pragma is IPragma, PragmaDecoder {
         return totalNumUpdates * singleUpdateFeeInWei;
     }
 
-    function getSpotMedianNoOlderThan(bytes32 id, uint256 age) external view returns (SpotMedian memory) {
-        SpotMedian memory data = spotMedianFeeds[id];
+    function getSpotMedianNoOlderThan(bytes32 id, uint256 age) external view returns (SpotMedian memory data) {
+        data = spotMedianFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
         }
-         if (diff(block.timestamp, data.metadata.timestamp) > age) {
+        if (diff(block.timestamp, data.metadata.timestamp) > age) {
             revert ErrorsLib.DataStale();
         }
-        
+        return data;
     }
-    function getTwapNoOlderThan(bytes32 id, uint256 age) external view returns (TWAP memory ) {
-        TWAP memory data = twapFeeds[id];
+
+    function getTwapNoOlderThan(bytes32 id, uint256 age) external view returns (TWAP memory data) {
+        data = twapFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
         }
-         if (diff(block.timestamp, data.metadata.timestamp) > age) {
+        if (diff(block.timestamp, data.metadata.timestamp) > age) {
             revert ErrorsLib.DataStale();
         }
-        
     }
-    function getRealizedVolatilityNoOlderThan(bytes32 id, uint256 age) external view returns (RealizedVolatility memory ) {
-        RealizedVolatility memory data = rvFeeds[id];
+
+    function getRealizedVolatilityNoOlderThan(bytes32 id, uint256 age)
+        external
+        view
+        returns (RealizedVolatility memory data)
+    {
+        data = rvFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
         }
-         if (diff(block.timestamp, data.metadata.timestamp) > age) {
+        if (diff(block.timestamp, data.metadata.timestamp) > age) {
             revert ErrorsLib.DataStale();
         }
-        
     }
-    function getOptionsNoOlderThan(bytes32 id, uint256 age) external view returns (Options memory ) {
-        Options memory data = optionsFeeds[id];
+
+    function getOptionsNoOlderThan(bytes32 id, uint256 age) external view returns (Options memory data) {
+        data = optionsFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
         }
-         if (diff(block.timestamp, data.metadata.timestamp) > age) {
+        if (diff(block.timestamp, data.metadata.timestamp) > age) {
             revert ErrorsLib.DataStale();
         }
-        
     }
-    function getPerpNoOlderThan(bytes32 id, uint256 age) external view returns (Perp memory) {
-        Perp memory data = perpFeeds[id];
+
+    function getPerpNoOlderThan(bytes32 id, uint256 age) external view returns (Perp memory data) {
+        data = perpFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
         }
-         if (diff(block.timestamp, data.metadata.timestamp) > age) {
+        if (diff(block.timestamp, data.metadata.timestamp) > age) {
             revert ErrorsLib.DataStale();
         }
-        
     }
 
     /// @inheritdoc IPragma

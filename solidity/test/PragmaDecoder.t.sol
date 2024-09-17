@@ -161,7 +161,8 @@ contract PragmaDecoderTest is Test {
         _setUp(FeedType.SpotMedian);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),///CRYPTO
+                uint16(0),
+                ///CRYPTO
                 uint16(0), //SPOT
                 bytes32("ETH/USD")
             )
@@ -185,7 +186,8 @@ contract PragmaDecoderTest is Test {
         _setUp(FeedType.Twap);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),///CRYPTO
+                uint16(0),
+                ///CRYPTO
                 uint16(1), //TWAP
                 bytes32("BTC/USD")
             )
@@ -213,7 +215,8 @@ contract PragmaDecoderTest is Test {
         _setUp(FeedType.RealizedVolatility);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),///CRYPTO
+                uint16(0),
+                ///CRYPTO
                 uint16(2), //RV
                 bytes32("ETH/USD")
             )
@@ -240,7 +243,8 @@ contract PragmaDecoderTest is Test {
         _setUp(FeedType.Options);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),///CRYPTO
+                uint16(0),
+                ///CRYPTO
                 uint16(3), //Options
                 bytes32("ETH/USD")
             )
@@ -273,7 +277,8 @@ contract PragmaDecoderTest is Test {
         _setUp(FeedType.Perpetuals);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),///CRYPTO
+                uint16(0),
+                ///CRYPTO
                 uint16(4), //Perp
                 bytes32("ETH/USD")
             )
@@ -292,6 +297,5 @@ contract PragmaDecoderTest is Test {
         assertEq(perp.fundingRate, 1 * 1e6, "Funding rate should match"); // 0.1% funding rate
         assertEq(perp.openInterest, 10000 * 1e18, "Open interest should match");
         assertEq(perp.volume, 50000 * 1e18, "Volume should match");
-
     }
 }

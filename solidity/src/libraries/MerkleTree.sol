@@ -8,6 +8,7 @@ import "./UnsafeCalldataBytesLib.sol";
  * @dev This library provides methods to construct and verify Merkle Tree proofs efficiently.
  *
  */
+/// @title MerkleLib
 library MerkleTree {
     uint8 constant MERKLE_LEAF_PREFIX = 0;
     uint8 constant MERKLE_NODE_PREFIX = 1;
