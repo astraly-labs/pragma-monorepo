@@ -1,10 +1,12 @@
 use core::num::traits::Zero;
 use pragma_dispatcher::types::pragma_oracle::SummaryStatsComputation;
+use pragma_feed_types::{FeedTypeId};
 use pragma_lib::types::{PragmaPricesResponse, OptionsFeedData, DataType, AggregationMode};
 use starknet::contract_address_const;
 
 #[starknet::interface]
 pub trait IFeedTypeRouter<TContractState> {
+    fn get_feed_type_id(self: @TContractState) -> FeedTypeId;
     fn get_data(self: @TContractState) -> alexandria_bytes::Bytes;
 }
 

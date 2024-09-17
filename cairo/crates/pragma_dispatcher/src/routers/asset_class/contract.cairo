@@ -77,9 +77,11 @@ pub mod AssetClassRouter {
                 Result::Ok(f) => f,
                 Result::Err(e) => panic_with_felt252(e.into())
             };
+            // [Check] Matching feed type ids with the given router
+            let router = IFeedTypeRouterDispatcher { contract_address: router_address };
+            assert(router.get_feed_type_id() == feed_type_id, errors::MISMATCH_FEED_TYPE_ID);
 
             // [Effect] Update the router for the given feed type
-            let router = IFeedTypeRouterDispatcher { contract_address: router_address };
             self.feed_type_routers.entry(feed_type).write(router);
 
             // [Interaction] Storage updated event
@@ -91,6 +93,11 @@ pub mod AssetClassRouter {
                         router_address: router_address,
                     }
                 )
+        }
+
+        /// Returns the asset class id of the current router.
+        fn get_asset_class_id(self: @ContractState) -> AssetClassId {
+            self.asset_class.read().into()
         }
 
         /// Returns the router address registered for the Feed Type.
