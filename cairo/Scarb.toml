@@ -20,7 +20,9 @@ openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", br
 pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib", rev = "86d7ccd" }
 
 # Alexandria (same version than Hyperlane)
-alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
+# TODO: Update back to main repository once PR is merged:
+# https://github.com/keep-starknet-strange/alexandria/pull/332
+alexandria_bytes = { git = "https://github.com/maxdesalle/alexandria.git" }
 
 # Pragma Dispatcher crates
 pragma_feed_types = { path = "crates/pragma_feed_types" }
