@@ -14,7 +14,7 @@ pub enum UniqueVariant {
 
 #[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
 pub enum TwapVariant {
-    SpotMeanOneDay,
+    SpotMedianOneDay,
 }
 
 #[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
@@ -61,7 +61,7 @@ pub impl FeedTypeTraitImpl of FeedTypeTrait {
                 _ => Result::Err(FeedTypeError::IdConversion('Unknown feed type variant')),
             },
             1 => match variant {
-                0 => Result::Ok(FeedType::Twap(TwapVariant::SpotMeanOneDay)),
+                0 => Result::Ok(FeedType::Twap(TwapVariant::SpotMedianOneDay)),
                 _ => Result::Err(FeedTypeError::IdConversion('Unknown feed type variant')),
             },
             2 => match variant {
@@ -87,7 +87,7 @@ pub impl FeedTypeTraitImpl of FeedTypeTrait {
             FeedType::Twap(variant) => {
                 let twap_id = 1;
                 let variant_id = match variant {
-                    TwapVariant::SpotMeanOneDay => 0,
+                    TwapVariant::SpotMedianOneDay => 0,
                 };
                 (twap_id * FEED_TYPE_MAIN_SHIFT) + variant_id
             },

@@ -118,7 +118,7 @@ pub mod FeedTypeTwapRouter {
             let (simple_data_type, aggregation_mode, duration) = match feed_type {
                 FeedType::Twap(variant) => {
                     match variant {
-                        TwapVariant::SpotMeanOneDay => {
+                        TwapVariant::SpotMedianOneDay => {
                             (SimpleDataType::Spot, AggregationMode::Median, Duration::OneDay)
                         },
                     }
