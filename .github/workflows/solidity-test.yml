@@ -43,13 +43,13 @@ jobs:
         working-directory: ${{ env.working-directory }}
         run: |
           forge test -vvv
-        id: test
+        id: run-tests
 
       - name: Run Forge tests with gas report
         working-directory: ${{ env.working-directory }}
         run: |
           forge test --match-contract PragmaDecoderGasTest -vvv --gas-report > gas_report.txt
-        id: test
+        id: gas-report
 
       - name: Parse current gas report
         working-directory: ${{ env.working-directory }}
