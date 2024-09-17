@@ -44,13 +44,13 @@ pub mod PragmaDispatcher {
         // Hyperlane mailbox contract
         hyperlane_mailbox: IMailboxDispatcher,
         // Feed routers for each asset class
-        routers: Map<AssetClass, IAssetClassRouterDispatcher>,
+        asset_class_routers: Map<AssetClass, IAssetClassRouterDispatcher>,
     }
 
     // ================== EVENTS ==================
 
     #[derive(starknet::Event, Drop)]
-    pub struct RouterUpdated {
+    pub struct AssetClassRouterAdded {
         pub sender: ContractAddress,
         pub asset_class_id: AssetClassId,
         pub router_address: ContractAddress,
@@ -63,7 +63,7 @@ pub mod PragmaDispatcher {
         OwnableEvent: OwnableComponent::Event,
         #[flat]
         UpgradeableEvent: UpgradeableComponent::Event,
-        RouterUpdated: RouterUpdated
+        AssetClassRouterAdded: AssetClassRouterAdded
     }
 
     // ================== CONSTRUCTOR ================================
@@ -101,24 +101,42 @@ pub mod PragmaDispatcher {
             self.call_get_all_feeds()
         }
 
+        /// Returns the router address registered for an Asset Class.
+        fn get_asset_class_router(
+            self: @ContractState, asset_class_id: AssetClassId
+        ) -> ContractAddress {
+            // [Check] Valid asset class
+            let asset_class: Option<AssetClass> = asset_class_id.try_into();
+            assert(asset_class.is_some(), errors::UNKNOWN_ASSET_CLASS);
+
+            // [Check] A router is registered for the asset class
+            let router = self.asset_class_routers.entry(asset_class.unwrap()).read();
+            assert(!router.is_zero(), errors::NO_ROUTER_REGISTERED);
+
+            // [Interaction] Return the router address
+            router.contract_address
+        }
+
         /// Register a new router for an Asset Class.
-        fn register_router(
+        fn register_asset_class_router(
             ref self: ContractState, asset_class_id: AssetClassId, router_address: ContractAddress,
         ) {
             // [Check] Only owner
             self.ownable.assert_only_owner();
+            // [Check] Router is not zero
+            assert(!router_address.is_zero(), errors::REGISTERING_ROUTER_ZERO);
             // [Check] Valid asset class
             let asset_class: Option<AssetClass> = asset_class_id.try_into();
             assert(asset_class.is_some(), errors::UNKNOWN_ASSET_CLASS);
 
             // [Effect] Update the router for the given asset class
             let router = IAssetClassRouterDispatcher { contract_address: router_address };
-            self.routers.entry(asset_class.unwrap()).write(router);
+            self.asset_class_routers.entry(asset_class.unwrap()).write(router);
 
             // [Interaction] Storage updated event
             self
                 .emit(
-                    RouterUpdated {
+                    AssetClassRouterAdded {
                         sender: get_caller_address(),
                         asset_class_id: asset_class_id,
                         router_address: router_address,
@@ -213,9 +231,8 @@ pub mod PragmaDispatcher {
                 Result::Ok(f) => f,
                 Result::Err(e) => { panic_with_felt252(e.into()) }
             };
-
             // [Check] Feed's asset class router is registered
-            let router = self.routers.entry(feed.asset_class).read();
+            let router = self.asset_class_routers.entry(feed.asset_class).read();
             assert(!router.is_zero(), errors::NO_ROUTER_REGISTERED);
 
             // [Effect] Retrieve the feed update and add it to the message

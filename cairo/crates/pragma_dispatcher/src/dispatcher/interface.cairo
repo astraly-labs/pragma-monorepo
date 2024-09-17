@@ -15,8 +15,12 @@ pub trait IPragmaDispatcher<TContractState> {
     /// Returns the list of supported feeds.
     fn supported_feeds(self: @TContractState) -> Array<FeedId>;
 
+    /// Returns the router address registered for an Asset Class.
+    fn get_asset_class_router(
+        self: @TContractState, asset_class_id: AssetClassId
+    ) -> ContractAddress;
     /// Register a new router for an Asset Class.
-    fn register_router(
+    fn register_asset_class_router(
         ref self: TContractState, asset_class_id: AssetClassId, router_address: ContractAddress
     );
 

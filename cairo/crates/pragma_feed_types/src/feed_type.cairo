@@ -1,23 +1,23 @@
-#[derive(Debug, Drop, Copy, Serde, PartialEq)]
+#[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
 pub enum FeedType {
     Unique: UniqueVariant,
     Twap: TwapVariant,
     RealizedVolatility: RealizedVolatilityVariant,
 }
 
-#[derive(Debug, Drop, Copy, Serde, PartialEq)]
+#[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
 pub enum UniqueVariant {
     SpotMedian,
     PerpMedian,
     SpotMean,
 }
 
-#[derive(Debug, Drop, Copy, Serde, PartialEq)]
+#[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
 pub enum TwapVariant {
     OneDay,
 }
 
-#[derive(Debug, Drop, Copy, Serde, PartialEq)]
+#[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
 pub enum RealizedVolatilityVariant {
     OneWeek,
 }

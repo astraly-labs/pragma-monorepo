@@ -1,9 +1,12 @@
-// Routers for each asset class
-pub mod crypto;
-pub mod errors;
-pub mod interface;
+// Routers
+pub mod asset_class;
+pub mod feed_types;
 
 // Re-exports
-pub use interface::{
+pub use asset_class::interface::{
     IAssetClassRouter, IAssetClassRouterDispatcher, IAssetClassRouterDispatcherTrait
+};
+
+pub use feed_types::interface::{
+    IFeedTypeRouter, IFeedTypeRouterDispatcher, IFeedTypeRouterDispatcherTrait,
 };

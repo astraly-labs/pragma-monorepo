@@ -1,134 +1,156 @@
 #[starknet::contract]
 pub mod AssetClassRouter {
-    use alexandria_bytes::{Bytes, BytesTrait};
     use core::num::traits::Zero;
     use core::panic_with_felt252;
-    use pragma_dispatcher::routers::{
-        errors, interface::{IAssetClassRouter, IPragmaOracleWrapper, ISummaryStatsWrapper}
+    use openzeppelin::access::ownable::OwnableComponent;
+    use pragma_dispatcher::routers::asset_class::{errors, interface::{IAssetClassRouter}};
+    use pragma_dispatcher::routers::{IFeedTypeRouterDispatcher, IFeedTypeRouterDispatcherTrait};
+    use pragma_feed_types::{AssetClass, AssetClassId, Feed, FeedType, FeedTypeTrait, FeedTypeId};
+    use starknet::storage::{
+        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map
     };
-    use pragma_dispatcher::types::pragma_oracle::SummaryStatsComputation;
-    use pragma_feed_types::{AssetClass, Feed, FeedTrait, FeedType};
-    use pragma_lib::abi::{
-        IPragmaABIDispatcher, IPragmaABIDispatcherTrait, ISummaryStatsABIDispatcher,
-        ISummaryStatsABIDispatcherTrait
-    };
-    use pragma_lib::types::{PragmaPricesResponse, OptionsFeedData, DataType, AggregationMode};
-    use starknet::ContractAddress;
-    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::{ContractAddress, get_caller_address, get_contract_address};
+
+    // ================== COMPONENTS ==================
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    #[abi(embed_v0)]
+    impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     // ================== STORAGE ==================
 
     #[storage]
     struct Storage {
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
         asset_class: AssetClass,
-        feed_type_routers: Map<FeedType, Dispatcher>,
+        feed_type_routers: Map<FeedType, IFeedTypeRouterDispatcher>,
+    }
+
+    // ================== EVENTS ==================
+
+    #[derive(starknet::Event, Drop)]
+    pub struct AssetClassRouterDeployed {
+        pub sender: ContractAddress,
+        pub asset_class_id: AssetClassId,
+        pub router_address: ContractAddress,
+    }
+
+    #[derive(starknet::Event, Drop)]
+    pub struct FeedTypeRouterAdded {
+        pub sender: ContractAddress,
+        pub feed_type_id: FeedTypeId,
+        pub router_address: ContractAddress,
+    }
+
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+        AssetClassRouterDeployed: AssetClassRouterDeployed,
+        FeedTypeRouterAdded: FeedTypeRouterAdded
     }
 
     // ================== CONSTRUCTOR ================================
 
     #[constructor]
-    fn constructor(ref self: ContractState, asset_class_id: AssetClassId,) {
-        // [Check] Valid asset class id
-        let asset_class: AssetClass = asset_class_id.try_into().unwrap(); // TODO: err
-
-        // [Effect] Init storage
-        self.asset_class_id.write(asset_class);
+    fn constructor(ref self: ContractState, owner: ContractAddress, asset_class_id: AssetClassId) {
+        self.initializer(owner, asset_class_id);
     }
+
+    // ================== PUBLIC ABI ==================
 
     #[abi(embed_v0)]
-    pub impl CryptoRouterImpl of IAssetClassRouter<ContractState> {
-        fn get_feed_update(self: @ContractState, feed: Feed) -> Bytes {
-            let feed_type = feed.feed_type;
-            let feed_type_router = self.feed_type_router.entry(feed_type).read();
+    impl AssetClassRouterImpl of IAssetClassRouter<ContractState> {
+        /// Registers a new router for the provided feed type id.
+        fn register_feed_type_router(
+            ref self: ContractState, feed_type_id: FeedTypeId, router_address: ContractAddress
+        ) {
+            // [Check] Only owner
+            self.ownable.assert_only_owner();
+            // [Check] Router is not zero
+            assert(!router_address.is_zero(), errors::REGISTERING_ROUTER_ZERO);
+            // [Check] Valid feed type
+            let feed_type: FeedType = match FeedTypeTrait::from_id(feed_type_id) {
+                Result::Ok(f) => f,
+                Result::Err(e) => panic_with_felt252(e.into())
+            };
 
-            // TODO: assert not zero
+            // [Effect] Update the router for the given feed type
+            let router = IFeedTypeRouterDispatcher { contract_address: router_address };
+            self.feed_type_routers.entry(feed_type).write(router);
 
-            feed_type_router.get_data()
-        }
-    }
-
-    #[generate_trait]
-    pub impl CryptoRouterInternal of ICryptoRouterInternal {
-        fn initializer(ref self: ContractState,) {}
-
-        fn spot_median(self: @ContractState, feed: Feed) -> Bytes {
-            let data_type = DataType::SpotEntry(feed.pair_id);
-            let aggregation_mode = AggregationMode::Median;
-
-            let response = self.call_get_data(data_type, aggregation_mode);
-
-            let mut update = BytesTrait::new_empty();
-            update.append_u256(feed.id().into());
-            update.append_u64(response.last_updated_timestamp);
-            update.append_u16(response.num_sources_aggregated.try_into().unwrap());
-            update.append_u8(response.decimals.try_into().unwrap());
-            update.append_u256(response.price.into());
-            update.append_u256(0); // TODO: volume
-
-            update
-        }
-    }
-
-    impl PragmaOracleWrapper of IPragmaOracleWrapper<ContractState> {
-        /// Calls get_data from the Pragma Oracle contract.
-        fn call_get_data(
-            self: @ContractState, data_type: DataType, aggregation_mode: AggregationMode,
-        ) -> PragmaPricesResponse {
-            self.pragma_oracle.read().get_data(data_type, aggregation_mode)
-        }
-    }
-
-    impl SummaryStatsWrapper of ISummaryStatsWrapper<ContractState> {
-        /// Calls calculate_mean from the Summary Stats contract.
-        fn call_calculate_mean(
-            self: @ContractState,
-            data_type: DataType,
-            aggregation_mode: AggregationMode,
-            start_timestamp: u64,
-            end_timestamp: u64,
-        ) -> SummaryStatsComputation {
+            // [Interaction] Storage updated event
             self
-                .summary_stats
-                .read()
-                .calculate_mean(data_type, start_timestamp, end_timestamp, aggregation_mode)
-        }
-
-        /// Calls calculate_volatility from the Summary Stats contract.
-        fn call_calculate_volatility(
-            self: @ContractState,
-            data_type: DataType,
-            aggregation_mode: AggregationMode,
-            start_timestamp: u64,
-            end_timestamp: u64,
-            num_samples: u64,
-        ) -> SummaryStatsComputation {
-            self
-                .summary_stats
-                .read()
-                .calculate_volatility(
-                    data_type, start_timestamp, end_timestamp, num_samples, aggregation_mode
+                .emit(
+                    FeedTypeRouterAdded {
+                        sender: get_caller_address(),
+                        feed_type_id: feed_type_id,
+                        router_address: router_address,
+                    }
                 )
         }
 
-        /// Calls calculate_twap from the Summary Stats contract.
-        fn call_calculate_twap(
-            self: @ContractState,
-            data_type: DataType,
-            aggregation_mode: AggregationMode,
-            start_timestamp: u64,
-            duration: u64,
-        ) -> SummaryStatsComputation {
-            self
-                .summary_stats
-                .read()
-                .calculate_twap(data_type, aggregation_mode, duration, start_timestamp)
+        /// Returns the router address registered for the Feed Type.
+        fn get_feed_type_router(self: @ContractState, feed_type_id: FeedTypeId) -> ContractAddress {
+            // [Check] Valid feed type
+            let feed_type = match FeedTypeTrait::from_id(feed_type_id) {
+                Result::Ok(f) => f,
+                Result::Err(e) => panic_with_felt252(e.into())
+            };
+            // [Check] A router is registered for the asset class
+            let router = self.feed_type_routers.entry(feed_type).read();
+            assert(!router.is_zero(), errors::NO_ROUTER_REGISTERED);
+
+            // [Interaction] Return the router address
+            router.contract_address
         }
 
-        /// Calls get_options_data from the Summary Stats contract.
-        fn call_get_options_data(
-            self: @ContractState, instrument_name: felt252,
-        ) -> OptionsFeedData {
-            self.summary_stats.read().get_options_data(instrument_name)
+        /// For a given feed, calls the registered router [get_data] function and returns the data
+        /// as bytes.
+        fn get_feed_update(self: @ContractState, feed: Feed) -> alexandria_bytes::Bytes {
+            // [Check] Feed id route exists
+            let router: IFeedTypeRouterDispatcher = self
+                .feed_type_routers
+                .entry(feed.feed_type)
+                .read();
+            assert(!router.is_zero(), errors::FEED_TYPE_ROUTER_NOT_FOUND);
+
+            // [Effect] Retrieve the feed update and return the data as Bytes
+            router.get_data()
+        }
+    }
+
+    // ================== PRIVATE IMPLEMENTATIONS ==================
+
+    #[generate_trait]
+    impl InternalImpl of InternalTrait {
+        /// Initializes the contract storage.
+        /// Called only once by the constructor.
+        fn initializer(
+            ref self: ContractState, owner: ContractAddress, asset_class_id: AssetClassId
+        ) {
+            // [Check] Owner is valid
+            assert(!owner.is_zero(), errors::OWNER_IS_ZERO);
+            // [Check] Valid asset class id
+            let asset_class: Option<AssetClass> = asset_class_id.try_into();
+            assert(asset_class.is_some(), errors::INVALID_ASSET_CLASS_ID);
+
+            // [Effect] Init components storages
+            self.ownable.initializer(owner);
+            self.asset_class.write(asset_class.unwrap());
+
+            // [Interaction] Emit new router deployed
+            self
+                .emit(
+                    AssetClassRouterDeployed {
+                        sender: get_caller_address(),
+                        asset_class_id: asset_class_id,
+                        router_address: get_contract_address(),
+                    }
+                )
         }
     }
 }

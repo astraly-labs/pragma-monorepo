@@ -1,4 +1,4 @@
-#[derive(Debug, Drop, Copy, Serde, PartialEq, Hash)]
+#[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
 pub enum AssetClass {
     Crypto,
 }
