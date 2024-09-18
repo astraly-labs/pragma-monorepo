@@ -58,11 +58,13 @@ contract PragmaDecoder {
     ) {
         hyperlane = IHyperlane(payable(_hyperlane));
 
-         for (uint256 i; i < _dataSourceEmitterChainIds.length;) {
+        for (uint256 i; i < _dataSourceEmitterChainIds.length;) {
             _isValidDataSource[keccak256(
                 abi.encodePacked(_dataSourceEmitterChainIds[i], _dataSourceEmitterAddresses[i])
             )] = true;
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
         }
     }
 

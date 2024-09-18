@@ -95,95 +95,27 @@ contract PragmaDecoderGasTest is Test {
         pragmaDecoder = new PragmaDecoderHarness(address(hyperlane), chainIds, emitterAddresses);
     }
 
-    function testGasUpdateDataInfoFromUpdateSpotMedian() public {
-        _setUp(FeedType.SpotMedian);
-        bytes32 feedId = bytes32(
-            abi.encodePacked(
-                uint16(0), // CRYPTO
-                uint16(0), // SPOT
-                bytes32("ETH/USD")
-            )
-        );
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.SpotMedian, feedId);
+    function testGasAllUpdates() public {
+        string[5] memory updateTypes = ["SpotMedian", "TWAP", "RealizedVolatility", "Options", "Perpetuals"];
+        string[5] memory currencies = ["ETH/USD", "BTC/USD", "ETH/USD", "ETH/USD", "ETH/USD"];
+        for (uint256 i = 0; i < updateTypes.length; i++) {
+            FeedType dataType = FeedType(i);
+            _setUp(dataType);
 
-        uint256 gasBefore = gasleft();
-        pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
-        uint256 gasUsed = gasBefore - gasleft();
+            bytes32 feedId = bytes32(
+                abi.encodePacked(
+                    uint16(0), // CRYPTO
+                    uint16(i), // Data type index
+                    currencies[i]
+                )
+            );
+            bytes memory encodedUpdate = TestUtils.createEncodedUpdate(dataType, feedId);
 
-        console.log("Gas used for SpotMedian update: ", gasUsed);
-    }
+            uint256 gasBefore = gasleft();
+            pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
+            uint256 gasUsed = gasBefore - gasleft();
 
-    function testGasUpdateDataInfoFromUpdateTWAP() public {
-        _setUp(FeedType.Twap);
-        bytes32 feedId = bytes32(
-            abi.encodePacked(
-                uint16(0), // CRYPTO
-                uint16(1), // TWAP
-                bytes32("BTC/USD")
-            )
-        );
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Twap, feedId);
-
-        uint256 gasBefore = gasleft();
-        pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
-        uint256 gasUsed = gasBefore - gasleft();
-
-        console.log("Gas used for TWAP update: ", gasUsed);
-    }
-
-    function testGasUpdateDataInfoFromUpdateRealizedVolatility() public {
-        _setUp(FeedType.RealizedVolatility);
-
-        bytes32 feedId = bytes32(
-            abi.encodePacked(
-                uint16(0), // CRYPTO
-                uint16(2), // RV
-                bytes32("ETH/USD")
-            )
-        );
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.RealizedVolatility, feedId);
-
-        uint256 gasBefore = gasleft();
-        pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
-        uint256 gasUsed = gasBefore - gasleft();
-
-        console.log("Gas used for RealizedVolatility update: ", gasUsed);
-    }
-
-    function testGasUpdateDataInfoFromUpdateOptions() public {
-        _setUp(FeedType.Options);
-
-        bytes32 feedId = bytes32(
-            abi.encodePacked(
-                uint16(0), // CRYPTO
-                uint16(3), // Options
-                bytes32("ETH/USD")
-            )
-        );
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Options, feedId);
-
-        uint256 gasBefore = gasleft();
-        pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
-        uint256 gasUsed = gasBefore - gasleft();
-
-        console.log("Gas used for Options update: ", gasUsed);
-    }
-
-    function testGasUpdateDataInfoFromUpdatePerp() public {
-        _setUp(FeedType.Perpetuals);
-        bytes32 feedId = bytes32(
-            abi.encodePacked(
-                uint16(0), // CRYPTO
-                uint16(4), // Perp
-                bytes32("ETH/USD")
-            )
-        );
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Perpetuals, feedId);
-
-        uint256 gasBefore = gasleft();
-        pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
-        uint256 gasUsed = gasBefore - gasleft();
-
-        console.log("Gas used for Perpetuals update: ", gasUsed);
+            console.log(string(abi.encodePacked(updateTypes[i], ",", vm.toString(gasUsed))));
+        }
     }
 }

@@ -76,12 +76,10 @@ jobs:
             echo "Gas Report Summary:"
             echo '```'
             
-            current_results=$(grep "Gas used for" gas_report.txt | sed 's/.*Gas used for \(.*\) update: \(.*\)/\1,\2/')
-            IFS=$'\n' read -d '' -r -a current_array <<< "$current_results"
+            IFS=',' read -ra current_array <<< "$current_gas_results"
             
             if [ -f previous_gas_results.txt ]; then
-              previous_results=$(cat previous_gas_results.txt)
-              IFS=$'\n' read -d '' -r -a previous_array <<< "$previous_results"
+              IFS=',' read -ra previous_array <<< "$(cat previous_gas_results.txt)"
             fi
             
             for i in "${!current_array[@]}"; do
@@ -113,8 +111,7 @@ jobs:
           } >> $GITHUB_OUTPUT
 
           # Update previous_gas_results.txt
-          grep "Gas used for" gas_report.txt | sed 's/.*Gas used for \(.*\) update: \(.*\)/\1,\2/' > previous_gas_results.txt
-          
+          echo "$current_gas_results" > previous_gas_results.txt
 
       - name: Comment PR
         uses: actions/github-script@v6
