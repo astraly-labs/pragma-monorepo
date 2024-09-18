@@ -76,26 +76,31 @@ jobs:
             echo "Gas Report Summary:"
             echo '```'
             
-            IFS=',' read -ra current_array <<< "$current_gas_results"
-            IFS=',' read -ra previous_array <<< "$previous_gas_results"
+            current_results=$(grep "Gas used for" gas_report.txt | sed 's/.*Gas used for \(.*\) update: \(.*\)/\1,\2/')
+            IFS=$'\n' read -d '' -r -a current_array <<< "$current_results"
             
-            tests=("SpotMedian" "TWAP" "RealizedVolatility" "Options" "Perpetuals")
+            if [ -f previous_gas_results.txt ]; then
+              previous_results=$(cat previous_gas_results.txt)
+              IFS=$'\n' read -d '' -r -a previous_array <<< "$previous_results"
+            fi
             
             for i in "${!current_array[@]}"; do
-              current=${current_array[$i]}
-              previous=${previous_array[$i]}
-              test=${tests[$i]}
-              
+              IFS=',' read -r test current <<< "${current_array[$i]}"
               echo "Gas used for $test update: $current"
               
-              if [ -n "$previous" ]; then
-                diff=$((current - previous))
-                if [ $diff -gt 0 ]; then
-                  echo "Change: :red_circle: +$diff ($(echo "scale=2; $diff * 100 / $previous" | bc)% increase)"
-                elif [ $diff -lt 0 ]; then
-                  echo "Change: :green_circle: $diff ($(echo "scale=2; -$diff * 100 / $previous" | bc)% decrease)"
+              if [ ${#previous_array[@]} -gt $i ]; then
+                IFS=',' read -r prev_test previous <<< "${previous_array[$i]}"
+                if [ "$test" = "$prev_test" ]; then
+                  diff=$((current - previous))
+                  if [ $diff -gt 0 ]; then
+                    echo "Change: :red_circle: +$diff ($(echo "scale=2; $diff * 100 / $previous" | bc)% increase)"
+                  elif [ $diff -lt 0 ]; then
+                    echo "Change: :green_circle: $diff ($(echo "scale=2; -$diff * 100 / $previous" | bc)% decrease)"
+                  else
+                    echo "Change: :white_circle: No change"
+                  fi
                 else
-                  echo "Change: :white_circle: No change"
+                  echo "Change: N/A (Test name mismatch)"
                 fi
               else
                 echo "Change: N/A (First run)"
@@ -106,6 +111,9 @@ jobs:
             echo '```'
             echo 'EOF'
           } >> $GITHUB_OUTPUT
+
+          # Update previous_gas_results.txt
+          grep "Gas used for" gas_report.txt | sed 's/.*Gas used for \(.*\) update: \(.*\)/\1,\2/' > previous_gas_results.txt
 
       - name: Comment PR
         uses: actions/github-script@v6
