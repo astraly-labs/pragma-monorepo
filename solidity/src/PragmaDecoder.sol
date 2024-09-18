@@ -26,7 +26,7 @@ contract PragmaDecoder {
     IHyperlane public immutable hyperlane;
 
     /// @notice Mapping to track valid data sources, identified by their chain ID and address.
-    mapping(bytes32 => bool) public _isValidDataSource;
+    mapping(bytes32 => bool) private _isValidDataSource;
 
     /// @notice Tracks the latest publish times for each data feed to ensure data freshness.
     mapping(bytes32 => uint64) public latestPublishTimes;
@@ -58,10 +58,11 @@ contract PragmaDecoder {
     ) {
         hyperlane = IHyperlane(payable(_hyperlane));
 
-        for (uint256 i = 0; i < _dataSourceEmitterChainIds.length; i++) {
+         for (uint256 i; i < _dataSourceEmitterChainIds.length;) {
             _isValidDataSource[keccak256(
                 abi.encodePacked(_dataSourceEmitterChainIds[i], _dataSourceEmitterAddresses[i])
             )] = true;
+            unchecked { ++i; }
         }
     }
 
@@ -100,7 +101,6 @@ contract PragmaDecoder {
     function extractMetadataFromheader(bytes calldata updateData) internal pure returns (uint256 encodedOffset) {
         unchecked {
             encodedOffset = 0;
-
             {
                 uint8 majorVersion = UnsafeCalldataBytesLib.toUint8(updateData, encodedOffset);
 
@@ -269,12 +269,13 @@ contract PragmaDecoder {
 
         (offset, checkpointRoot, numUpdates, encoded) = extractCheckpointRootAndNumUpdates(updateData, encodedOffset);
         unchecked {
-            for (uint256 i = 0; i < numUpdates; i++) {
+            for (uint256 i = 0; i < numUpdates;) {
                 ParsedData memory parsedData;
                 bytes32 feedId;
                 uint64 publishTime;
                 (offset, parsedData, feedId, publishTime) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
                 updateLatestDataInfoIfNecessary(feedId, parsedData, publishTime);
+                ++i;
             }
         }
         // We check that the offset is at the end of the encoded data.
