@@ -71,45 +71,47 @@ jobs:
         id: compare-gas
         working-directory: ${{ env.working-directory }}
         run: |
-          echo "Gas Report Summary:" > gas_summary.md
-          echo '```' >> gas_summary.md
-          
-          IFS=',' read -ra current_array <<< "$current_gas_results"
-          IFS=',' read -ra previous_array <<< "$previous_gas_results"
-          
-          tests=("SpotMedian" "TWAP" "RealizedVolatility" "Options" "Perpetuals")
-          
-          for i in "${!current_array[@]}"; do
-            current=${current_array[$i]}
-            previous=${previous_array[$i]}
-            test=${tests[$i]}
+          {
+            echo 'gas_summary<<EOF'
+            echo "Gas Report Summary:"
+            echo '```'
             
-            echo "Gas used for $test update: $current" >> gas_summary.md
+            IFS=',' read -ra current_array <<< "$current_gas_results"
+            IFS=',' read -ra previous_array <<< "$previous_gas_results"
             
-            if [ -n "$previous" ]; then
-              diff=$((current - previous))
-              if [ $diff -gt 0 ]; then
-                echo "Change: :red_circle: +$diff ($(echo "scale=2; $diff * 100 / $previous" | bc)% increase)" >> gas_summary.md
-              elif [ $diff -lt 0 ]; then
-                echo "Change: :green_circle: $diff ($(echo "scale=2; -$diff * 100 / $previous" | bc)% decrease)" >> gas_summary.md
+            tests=("SpotMedian" "TWAP" "RealizedVolatility" "Options" "Perpetuals")
+            
+            for i in "${!current_array[@]}"; do
+              current=${current_array[$i]}
+              previous=${previous_array[$i]}
+              test=${tests[$i]}
+              
+              echo "Gas used for $test update: $current"
+              
+              if [ -n "$previous" ]; then
+                diff=$((current - previous))
+                if [ $diff -gt 0 ]; then
+                  echo "Change: :red_circle: +$diff ($(echo "scale=2; $diff * 100 / $previous" | bc)% increase)"
+                elif [ $diff -lt 0 ]; then
+                  echo "Change: :green_circle: $diff ($(echo "scale=2; -$diff * 100 / $previous" | bc)% decrease)"
+                else
+                  echo "Change: :white_circle: No change"
+                fi
               else
-                echo "Change: :white_circle: No change" >> gas_summary.md
+                echo "Change: N/A (First run)"
               fi
-            else
-              echo "Change: N/A (First run)" >> gas_summary.md
-            fi
-            echo "" >> gas_summary.md
-          done
-          
-          echo '```' >> gas_summary.md
-          
-          echo "gas_summary<<EOF" >> $GITHUB_OUTPUT
-          cat gas_summary.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+              echo ""
+            done
+            
+            echo '```'
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
 
       - name: Comment PR
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
+        env:
+          SUMMARY: ${{ steps.compare-gas.outputs.gas_summary }}
         with:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
@@ -117,7 +119,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## Gas Report Summary\n\n${process.env.gas_summary}`
+              body: process.env.SUMMARY
             })
 
       - name: Update gas results
