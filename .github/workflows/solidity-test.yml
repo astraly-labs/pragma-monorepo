@@ -39,13 +39,15 @@ jobs:
       - name: Run current gas report
         working-directory: ${{ env.working-directory }}
         run: |
-          forge test --match-contract PragmaDecoderGasTest -vvv | grep -E '^[A-Za-z]+,[0-9]+$' > current_gas_report.txt
+          forge test --match-contract PragmaDecoderGasTest -vvv > full_output.txt
+          grep "Gas used for" full_output.txt | sed -E 's/.*Gas used for ([A-Za-z]+) update: ([0-9]+).*/\1,\2/' > current_gas_report.txt
 
       - name: Run previous gas report
         working-directory: ${{ env.working-directory }}
         run: |
           git checkout HEAD^
-          forge test --match-contract PragmaDecoderGasTest -vvv | grep -E '^[A-Za-z]+,[0-9]+$' > previous_gas_report.txt
+          forge test --match-contract PragmaDecoderGasTest -vvv > full_output.txt
+          grep "Gas used for" full_output.txt | sed -E 's/.*Gas used for ([A-Za-z]+) update: ([0-9]+).*/\1,\2/' > previous_gas_report.txt
           git checkout -
 
       - name: Compare gas results
