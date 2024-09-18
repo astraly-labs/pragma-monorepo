@@ -9,3 +9,4 @@ pub const REGISTERING_ROUTER_ZERO: felt252 = 'Registered router cannot be 0';
 pub const NO_ROUTER_REGISTERED: felt252 = 'No router registered';
 
 pub const MISMATCH_ASSET_CLASS_ID: felt252 = 'Bad router for asset class id';
+pub const TOO_MUCH_UPDATES: felt252 = 'nb of feeds must fit in a u16';

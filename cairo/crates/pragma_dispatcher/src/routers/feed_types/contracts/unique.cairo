@@ -3,9 +3,7 @@ pub mod FeedTypeUniqueRouter {
     use alexandria_bytes::{Bytes, BytesTrait};
     use core::num::traits::Zero;
     use core::panic_with_felt252;
-    use pragma_dispatcher::routers::feed_types::{
-        errors, interface::{IFeedTypeRouter, IPragmaOracleWrapper}
-    };
+    use pragma_dispatcher::routers::feed_types::{errors, interface::IFeedTypeRouter};
     use pragma_dispatcher::types::pragma_oracle::{SimpleDataType, AggregationMode};
     use pragma_feed_types::feed_type::{UniqueVariant};
     use pragma_feed_types::{Feed, FeedTrait, FeedType, FeedTypeId, FeedTypeTrait};
@@ -135,9 +133,7 @@ pub mod FeedTypeUniqueRouter {
                     }
                 )
         }
-    }
 
-    impl PragmaOracleWrapper of IPragmaOracleWrapper<ContractState> {
         /// Calls get_data from the Pragma Oracle contract.
         fn call_get_data(
             self: @ContractState, data_type: DataType, aggregation_mode: AggregationMode,

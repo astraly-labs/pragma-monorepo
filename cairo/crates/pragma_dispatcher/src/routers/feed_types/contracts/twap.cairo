@@ -3,16 +3,14 @@ pub mod FeedTypeTwapRouter {
     use alexandria_bytes::{Bytes, BytesTrait};
     use core::num::traits::Zero;
     use core::panic_with_felt252;
-    use pragma_dispatcher::routers::feed_types::{
-        errors, interface::{IFeedTypeRouter, ISummaryStatsWrapper}
-    };
+    use pragma_dispatcher::routers::feed_types::{errors, interface::{IFeedTypeRouter}};
     use pragma_dispatcher::types::pragma_oracle::{
         SimpleDataType, AggregationMode, SummaryStatsComputation, Duration, DurationTrait,
     };
     use pragma_feed_types::feed_type::{TwapVariant};
     use pragma_feed_types::{Feed, FeedTrait, FeedType, FeedTypeId, FeedTypeTrait};
     use pragma_lib::abi::{ISummaryStatsABIDispatcher, ISummaryStatsABIDispatcherTrait};
-    use pragma_lib::types::{OptionsFeedData, DataType};
+    use pragma_lib::types::DataType;
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address, get_contract_address};
 
@@ -143,25 +141,6 @@ pub mod FeedTypeTwapRouter {
                     }
                 )
         }
-    }
-
-    impl SummaryStatsWrapper of ISummaryStatsWrapper<ContractState> {
-        /// Calls calculate_volatility from the Summary Stats contract.
-        fn call_calculate_volatility(
-            self: @ContractState,
-            data_type: DataType,
-            aggregation_mode: AggregationMode,
-            start_timestamp: u64,
-            end_timestamp: u64,
-            num_samples: u64,
-        ) -> SummaryStatsComputation {
-            self
-                .summary_stats
-                .read()
-                .calculate_volatility(
-                    data_type, start_timestamp, end_timestamp, num_samples, aggregation_mode.into()
-                )
-        }
 
         /// Calls calculate_twap from the Summary Stats contract.
         fn call_calculate_twap(
@@ -175,13 +154,6 @@ pub mod FeedTypeTwapRouter {
                 .summary_stats
                 .read()
                 .calculate_twap(data_type, aggregation_mode.into(), duration, start_timestamp)
-        }
-
-        /// Calls get_options_data from the Summary Stats contract.
-        fn call_get_options_data(
-            self: @ContractState, instrument_name: felt252,
-        ) -> OptionsFeedData {
-            self.summary_stats.read().get_options_data(instrument_name)
         }
     }
 }
