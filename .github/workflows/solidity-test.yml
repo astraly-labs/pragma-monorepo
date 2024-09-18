@@ -68,10 +68,11 @@ jobs:
           fi
 
       - name: Compare gas results
+        id: compare-gas
         working-directory: ${{ env.working-directory }}
         run: |
-          echo "Gas Report Summary:" >> $GITHUB_STEP_SUMMARY
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "Gas Report Summary:" > gas_summary.md
+          echo '```' >> gas_summary.md
           
           IFS=',' read -ra current_array <<< "$current_gas_results"
           IFS=',' read -ra previous_array <<< "$previous_gas_results"
@@ -83,24 +84,41 @@ jobs:
             previous=${previous_array[$i]}
             test=${tests[$i]}
             
-            echo "Gas used for $test update: $current" >> $GITHUB_STEP_SUMMARY
+            echo "Gas used for $test update: $current" >> gas_summary.md
             
             if [ -n "$previous" ]; then
               diff=$((current - previous))
               if [ $diff -gt 0 ]; then
-                echo "Change: :red_circle: +$diff ($(echo "scale=2; $diff * 100 / $previous" | bc)% increase)" >> $GITHUB_STEP_SUMMARY
+                echo "Change: :red_circle: +$diff ($(echo "scale=2; $diff * 100 / $previous" | bc)% increase)" >> gas_summary.md
               elif [ $diff -lt 0 ]; then
-                echo "Change: :green_circle: $diff ($(echo "scale=2; -$diff * 100 / $previous" | bc)% decrease)" >> $GITHUB_STEP_SUMMARY
+                echo "Change: :green_circle: $diff ($(echo "scale=2; -$diff * 100 / $previous" | bc)% decrease)" >> gas_summary.md
               else
-                echo "Change: :white_circle: No change" >> $GITHUB_STEP_SUMMARY
+                echo "Change: :white_circle: No change" >> gas_summary.md
               fi
             else
-              echo "Change: N/A (First run)" >> $GITHUB_STEP_SUMMARY
+              echo "Change: N/A (First run)" >> gas_summary.md
             fi
-            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "" >> gas_summary.md
           done
           
-          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> gas_summary.md
+          
+          echo "gas_summary<<EOF" >> $GITHUB_OUTPUT
+          cat gas_summary.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment PR
+        uses: actions/github-script@v6
+        if: github.event_name == 'pull_request'
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Gas Report Summary\n\n${process.env.gas_summary}`
+            })
 
       - name: Update gas results
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
