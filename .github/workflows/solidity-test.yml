@@ -34,6 +34,18 @@ jobs:
         working-directory: ${{ env.working-directory }}
         run: forge test -vvv
 
+      - name: Initialize dummy previous gas report if not exists
+        working-directory: ${{ env.working-directory }}
+        run: |
+          if [ ! -f previous_gas_report.txt ]; then
+            echo "Initializing dummy previous_gas_report.txt with high values"
+            echo "SpotMedian,100000000000000000" > previous_gas_report.txt
+            echo "TWAP,100000000000000000" >> previous_gas_report.txt
+            echo "RealizedVolatility,100000000000000000" >> previous_gas_report.txt
+            echo "Options,100000000000000000" >> previous_gas_report.txt
+            echo "Perp,100000000000000000" >> previous_gas_report.txt
+          fi
+
       - name: Run gas report
         working-directory: ${{ env.working-directory }}
         run: |
