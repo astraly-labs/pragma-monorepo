@@ -1,12 +1,15 @@
 #[starknet::contract]
-pub mod PragmaFeedRegistry {
+pub mod PragmaFeedsRegistry {
     use core::num::traits::Zero;
     use core::panic_with_felt252;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{UpgradeableComponent, interface::IUpgradeable};
-    use pragma_feed_types::{FeedId, FeedTrait};
+    use pragma_feed_types::{FeedWithId, FeedId, FeedTrait};
     use pragma_feeds_registry::errors;
-    use pragma_feeds_registry::interface::IPragmaFeedRegistry;
+    use pragma_feeds_registry::interface::IPragmaFeedsRegistry;
+    use starknet::storage::{
+        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map
+    };
     use starknet::{ClassHash, ContractAddress, get_caller_address};
 
     // ================== COMPONENTS ==================
@@ -33,7 +36,7 @@ pub mod PragmaFeedRegistry {
         // Total feed ids registered
         len_feed_ids: u32,
         // All supported feed ids
-        feed_ids: LegacyMap::<u32, FeedId>
+        feed_ids: Map<u32, FeedId>
     }
 
     // ================== EVENTS ==================
@@ -52,7 +55,7 @@ pub mod PragmaFeedRegistry {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
@@ -60,6 +63,7 @@ pub mod PragmaFeedRegistry {
         NewFeedId: NewFeedId,
         RemovedFeedId: RemovedFeedId
     }
+
     // ================== CONSTRUCTOR ================================
 
     #[constructor]
@@ -73,7 +77,7 @@ pub mod PragmaFeedRegistry {
     // ================== PUBLIC ABI ==================
 
     #[abi(embed_v0)]
-    impl PragmaFeedRegistry of IPragmaFeedRegistry<ContractState> {
+    impl PragmaFeedsRegistry of IPragmaFeedsRegistry<ContractState> {
         /// Adds the [feed_id] into the Registry.
         ///
         /// Panics if:
@@ -92,7 +96,7 @@ pub mod PragmaFeedRegistry {
 
             // [Effect] Insert new feed id
             let len_feed_ids = self.len_feed_ids.read();
-            self.feed_ids.write(len_feed_ids, feed_id);
+            self.feed_ids.entry(len_feed_ids).write(feed_id);
             self.len_feed_ids.write(len_feed_ids + 1);
 
             // [Interaction] Event emitted
@@ -121,19 +125,30 @@ pub mod PragmaFeedRegistry {
             self.emit(RemovedFeedId { sender: get_caller_address(), feed_id: feed_id, })
         }
 
+        fn get_feed(self: @ContractState, feed_id: FeedId) -> FeedWithId {
+            // [Check] Feed exists
+            let feed_id_index: Option<u32> = self.get_feed_id_index(feed_id);
+            assert(feed_id_index.is_some(), errors::FEED_NOT_REGISTERED);
+
+            // [Check] Feed has correct formatting
+            let feed: FeedWithId = match FeedTrait::from_id(feed_id) {
+                Result::Ok(f) => f.into(),
+                Result::Err(e) => panic_with_felt252(e.into()),
+            };
+
+            // [Interaction] Returns the feed
+            feed
+        }
+
         /// Returns all the feed ids stored in the registry.
         fn get_all_feeds(self: @ContractState) -> Array<FeedId> {
             let mut all_feeds: Array<FeedId> = array![];
 
-            let len_feed_ids: u32 = self.len_feed_ids.read();
-            let mut i: u32 = 0;
-            loop {
-                if i >= len_feed_ids {
-                    break;
-                }
-                let feed_id = self.feed_ids.read(i);
-                all_feeds.append(feed_id);
-            };
+            for i in 0
+                ..self.len_feed_ids.read() {
+                    all_feeds.append(self.feed_ids.entry(i).read());
+                };
+
             all_feeds
         }
 
@@ -164,18 +179,16 @@ pub mod PragmaFeedRegistry {
         fn get_feed_id_index(self: @ContractState, feed_id: FeedId) -> Option<u32> {
             let mut feed_id_index: Option<u32> = Option::None(());
 
-            let len_feed_ids: u32 = self.len_feed_ids.read();
-            let mut i: u32 = 0;
-            loop {
-                if i >= len_feed_ids {
-                    break;
-                }
-                let ith_feed_id = self.feed_ids.read(i);
-                if feed_id == ith_feed_id {
-                    feed_id_index = Option::Some(i);
-                    break;
-                }
-            };
+            for i in 0
+                ..self
+                    .len_feed_ids
+                    .read() {
+                        let ith_feed_id = self.feed_ids.entry(i).read();
+                        if feed_id == ith_feed_id {
+                            feed_id_index = Option::Some(i);
+                            break;
+                        }
+                    };
 
             feed_id_index
         }
@@ -185,7 +198,7 @@ pub mod PragmaFeedRegistry {
         /// is 1.
         fn remove_unique_feed_id(ref self: ContractState) {
             // [Effect] Remove feed id from registry
-            self.feed_ids.write(0, 0);
+            self.feed_ids.entry(0).write(0);
             self.len_feed_ids.write(0);
         }
 
@@ -196,11 +209,11 @@ pub mod PragmaFeedRegistry {
 
             // [Effect] Remove feed id from registry
             if (feed_id_index == len_feed_ids - 1) {
-                self.feed_ids.write(feed_id_index, 0);
+                self.feed_ids.entry(feed_id_index).write(0);
                 self.len_feed_ids.write(len_feed_ids - 1);
             } else {
-                let last_feed_id = self.feed_ids.read(len_feed_ids - 1);
-                self.feed_ids.write(feed_id_index, last_feed_id);
+                let last_feed_id = self.feed_ids.entry(len_feed_ids - 1).read();
+                self.feed_ids.entry(feed_id_index).write(last_feed_id);
                 self.len_feed_ids.write(len_feed_ids - 1);
             }
         }

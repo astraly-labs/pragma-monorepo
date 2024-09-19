@@ -1,5 +1,9 @@
 use core::traits::BitAnd;
 
+pub fn felt252_to_u256(nb: felt252) -> u256 {
+    Into::<felt252, u256>::into(nb)
+}
+
 pub impl FeltBitAnd of BitAnd<felt252> {
     fn bitand(lhs: felt252, rhs: felt252) -> felt252 {
         (Into::<felt252, u256>::into(lhs) & rhs.into()).try_into().unwrap()

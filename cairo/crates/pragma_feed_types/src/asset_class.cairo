@@ -1,4 +1,4 @@
-#[derive(Debug, Drop, Copy, Serde, PartialEq, Hash)]
+#[derive(Debug, Drop, Copy, Serde, PartialEq, Hash, starknet::Store)]
 pub enum AssetClass {
     Crypto,
 }
@@ -7,6 +7,14 @@ pub type AssetClassId = u16;
 
 impl AssetClassIntoAssetClassId of Into<AssetClass, AssetClassId> {
     fn into(self: AssetClass) -> AssetClassId {
+        match self {
+            AssetClass::Crypto => 0,
+        }
+    }
+}
+
+impl AssetClassIntoAssetfelt252 of Into<AssetClass, felt252> {
+    fn into(self: AssetClass) -> felt252 {
         match self {
             AssetClass::Crypto => 0,
         }
