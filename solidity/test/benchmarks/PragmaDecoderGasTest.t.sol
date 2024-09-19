@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../../contracts/PragmaDecoder.sol";
+import "../../src/PragmaDecoder.sol";
 import "../TestUtils.sol";
 import "../PragmaDecoder.t.sol";
 
