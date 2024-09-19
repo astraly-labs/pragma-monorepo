@@ -115,7 +115,7 @@ contract PragmaDecoderGasTest is Test {
             pragmaDecoder.exposed_updateDataInfoFromUpdate(encodedUpdate);
             uint256 gasUsed = gasBefore - gasleft();
 
-            console.log(string(abi.encodePacked(updateTypes[i], ",", vm.toString(gasUsed))));
+            console.log(string(abi.encodePacked("Gas used for ", updateTypes[i], " update: ", vm.toString(gasUsed))));
         }
     }
 }

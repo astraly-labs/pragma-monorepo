@@ -49,56 +49,64 @@ jobs:
       - name: Run gas report
         working-directory: ${{ env.working-directory }}
         run: |
+          echo "Running Forge test..."
           forge test --match-contract PragmaDecoderGasTest -vvv > full_output.txt
-          grep "Gas used for" full_output.txt | sed -E 's/.*Gas used for ([A-Za-z]+) update: ([0-9]+).*/\1,\2/' > current_gas_report.txt
+          echo "Forge test completed. Contents of full_output.txt:"
+          cat full_output.txt
+          echo "Extracting gas report..."
+          grep "Gas used for" full_output.txt | sed -E 's/Gas used for ([A-Za-z]+) update: ([0-9]+)/\1,\2/' > current_gas_report.txt
+          echo "Extraction completed. Contents of current_gas_report.txt:"
+          cat current_gas_report.txt
 
       - name: Compare gas results
         id: compare-gas
         working-directory: ${{ env.working-directory }}
         run: |
-          # Accumulate output in a variable
-          gas_summary="Gas Report Summary:\n"
-          gas_summary+="\n\`\`\`\n"
-          
+          echo "Starting gas comparison"
+
+          gas_summary="Gas Report Summary:\n\`\`\`\n"
+
+
           if [ -f previous_gas_report.txt ]; then
+            echo "File exists, can process to comparison"
             while IFS=',' read -r current_test current_gas; do
               previous_gas=$(grep "^$current_test," previous_gas_report.txt | cut -d',' -f2)
+              echo "Processing test: $current_test with current gas: $current_gas and previous gas: $previous_gas"
+
               gas_summary+="Gas used for $current_test update: $current_gas\n"
-              
+
               if [ -n "$previous_gas" ]; then
                 diff=$((current_gas - previous_gas))
-                percent=$(echo "scale=2; 100 * $diff / $previous_gas" | bc)
-                
+                percent=$((diff * 100 / previous_gas))
+
                 if [ $diff -gt 0 ]; then
-                  gas_summary+="Change: :red_circle: +$diff ($percent% increase)\n"
+                  gas_summary+="Change: :red_circle: +$diff \($percent% increase\)\n"
                 elif [ $diff -lt 0 ]; then
-                  gas_summary+="Change: :green_circle: $diff ($percent% decrease)\n"
+                  gas_summary+="Change: :green_circle: $diff \($percent% decrease\)\n"
                 else
                   gas_summary+="Change: :white_circle: No change\n"
                 fi
               else
-                gas_summary+="Change: N/A (New test)\n"
+                gas_summary+="Change: N/A \(New test\)\n"
               fi
               gas_summary+="\n"
             done < current_gas_report.txt
           else
-            gas_summary+="No previous gas report found. This will be the baseline for future comparisons.\n"
+            echo "No previous gas report found. This will be the baseline for future comparisons."
             while IFS=',' read -r current_test current_gas; do
               gas_summary+="Gas used for $current_test update: $current_gas\n"
-              gas_summary+="Change: N/A (First run)\n\n"
+              gas_summary+="Change: N/A \(First run\)\n\n"
             done < current_gas_report.txt
           fi
           
-          gas_summary+="\`\`\`\n"
+          gas_summary+="\`\`\`"
 
-          # Set gas_summary output
           echo "gas_summary<<EOF" >> $GITHUB_OUTPUT
           echo "$gas_summary" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # Save the current report for future comparisons
           cp current_gas_report.txt previous_gas_report.txt
-
+      
       - name: Comment PR
         uses: actions/github-script@v6
         if: github.event_name == 'pull_request'
