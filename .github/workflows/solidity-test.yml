@@ -56,43 +56,47 @@ jobs:
         id: compare-gas
         working-directory: ${{ env.working-directory }}
         run: |
-          echo 'gas_summary<<EOF' >> $GITHUB_OUTPUT
-          echo "Gas Report Summary:" >> $GITHUB_OUTPUT
-          echo '```' >> $GITHUB_OUTPUT
+          # Accumulate output in a variable
+          gas_summary="Gas Report Summary:\n"
+          gas_summary+="\n\`\`\`\n"
           
           if [ -f previous_gas_report.txt ]; then
             while IFS=',' read -r current_test current_gas; do
               previous_gas=$(grep "^$current_test," previous_gas_report.txt | cut -d',' -f2)
-              echo "Gas used for $current_test update: $current_gas" >> $GITHUB_OUTPUT
+              gas_summary+="Gas used for $current_test update: $current_gas\n"
               
               if [ -n "$previous_gas" ]; then
                 diff=$((current_gas - previous_gas))
                 percent=$(echo "scale=2; 100 * $diff / $previous_gas" | bc)
                 
                 if [ $diff -gt 0 ]; then
-                  echo "Change: :red_circle: +$diff ($percent% increase)" >> $GITHUB_OUTPUT
+                  gas_summary+="Change: :red_circle: +$diff ($percent% increase)\n"
                 elif [ $diff -lt 0 ]; then
-                  echo "Change: :green_circle: $diff ($percent% decrease)" >> $GITHUB_OUTPUT
+                  gas_summary+="Change: :green_circle: $diff ($percent% decrease)\n"
                 else
-                  echo "Change: :white_circle: No change" >> $GITHUB_OUTPUT
+                  gas_summary+="Change: :white_circle: No change\n"
                 fi
               else
-                echo "Change: N/A (New test)" >> $GITHUB_OUTPUT
+                gas_summary+="Change: N/A (New test)\n"
               fi
-              echo "" >> $GITHUB_OUTPUT
+              gas_summary+="\n"
             done < current_gas_report.txt
           else
-            echo "No previous gas report found. This will be the baseline for future comparisons." >> $GITHUB_OUTPUT
+            gas_summary+="No previous gas report found. This will be the baseline for future comparisons.\n"
             while IFS=',' read -r current_test current_gas; do
-              echo "Gas used for $current_test update: $current_gas" >> $GITHUB_OUTPUT
-              echo "Change: N/A (First run)" >> $GITHUB_OUTPUT
-              echo "" >> $GITHUB_OUTPUT
+              gas_summary+="Gas used for $current_test update: $current_gas\n"
+              gas_summary+="Change: N/A (First run)\n\n"
             done < current_gas_report.txt
           fi
           
-          echo '```' >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
-          
+          gas_summary+="\`\`\`\n"
+
+          # Set gas_summary output
+          echo "gas_summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$gas_summary" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Save the current report for future comparisons
           cp current_gas_report.txt previous_gas_report.txt
 
       - name: Comment PR
