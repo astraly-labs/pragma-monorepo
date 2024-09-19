@@ -26,10 +26,6 @@ jobs:
         with:
           version: nightly
 
-      - name: Install Forge STD
-        working-directory: ${{ env.working-directory }}
-        run: forge install foundry-rs/forge-std --no-commit
-
       - name: Run Forge build
         working-directory: ${{ env.working-directory }}
         run: forge build --sizes
