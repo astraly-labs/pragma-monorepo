@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "../../src/Hyperlane.sol";
-import {IHyperlane, HyMsg, Signature} from "../../src/interfaces/IHyperlane.sol";
+import "../../contracts/Hyperlane.sol";
+import {IHyperlane, HyMsg, Signature} from "../../contracts/interfaces/IHyperlane.sol";
 import "forge-std/Test.sol";
 import "forge-std/console2.sol";
 

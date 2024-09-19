@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/libraries/BytesLib.sol";
-import "../src/interfaces/PragmaStructs.sol";
+import "../contracts/libraries/BytesLib.sol";
+import "../contracts/interfaces/PragmaStructs.sol";
 
 library TestUtils {
     using BytesLib for bytes;

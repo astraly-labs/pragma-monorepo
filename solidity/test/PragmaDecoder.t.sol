@@ -2,12 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/PragmaDecoder.sol";
-import "../src/libraries/DataParser.sol";
-import "../src/interfaces/IHyperlane.sol";
-import "../src/libraries/ErrorsLib.sol";
-import "./../src/Hyperlane.sol";
-import "../src/libraries/BytesLib.sol";
+import "../contracts/PragmaDecoder.sol";
+import "../contracts/libraries/DataParser.sol";
+import "../contracts/interfaces/IHyperlane.sol";
+import "../contracts/libraries/ErrorsLib.sol";
+import "./../contracts/Hyperlane.sol";
+import "../contracts/libraries/BytesLib.sol";
 import "forge-std/console2.sol";
 import {TestUtils} from "./TestUtils.sol";
 

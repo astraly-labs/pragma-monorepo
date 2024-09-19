@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/libraries/DataParser.sol";
-import "../src/libraries/ErrorsLib.sol";
+import "../contracts/libraries/DataParser.sol";
+import "../contracts/libraries/ErrorsLib.sol";
 
 contract DataParserTest is Test {
     function testParseSpotMedianEntry() public pure {

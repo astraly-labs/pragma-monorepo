@@ -1,4 +1,4 @@
-import "../../src/libraries/BytesLib.sol";
+import "../../contracts/libraries/BytesLib.sol";
 import "forge-std/Test.sol";
 
 contract BytesToInt256Test is Test {

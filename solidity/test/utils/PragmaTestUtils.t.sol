@@ -3,11 +3,11 @@
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "../../src/Pragma.sol";
-import "../../src/libraries/MerkleTree.sol";
+import "../../contracts/Pragma.sol";
+import "../../contracts/libraries/MerkleTree.sol";
 import "./RandTestUtils.t.sol";
 import "./HyperlaneTestUtils.t.sol";
-import {DataFeedType} from "../../src/interfaces/IPragma.sol";
+import {DataFeedType} from "../../contracts/interfaces/IPragma.sol";
 
 abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
     uint16 constant SOURCE_EMITTER_CHAIN_ID = 0x1;
