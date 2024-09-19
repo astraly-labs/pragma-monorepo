@@ -63,53 +63,52 @@ jobs:
           cat current_gas_report.txt
 
       - name: Compare gas results
-        id: compare-gas
-        working-directory: ${{ env.working-directory }}
-        run: |
-          echo "Starting gas comparison"
+      id: compare-gas
+      working-directory: ${{ env.working-directory }}
+      run: |
+        echo "Starting gas comparison"
 
-          gas_summary="Gas Report Summary:\n\`\`\`\n"
+        gas_summary="## Gas Report Summary\n\n"
 
+        if [ -f previous_gas_report.txt ]; then
+          echo "File exists, can process to comparison"
+          while IFS=',' read -r current_test current_gas; do
+            previous_gas=$(grep "^$current_test," previous_gas_report.txt | cut -d',' -f2)
+            echo "Processing test: $current_test with current gas: $current_gas and previous gas: $previous_gas"
 
-          if [ -f previous_gas_report.txt ]; then
-            echo "File exists, can process to comparison"
-            while IFS=',' read -r current_test current_gas; do
-              previous_gas=$(grep "^$current_test," previous_gas_report.txt | cut -d',' -f2)
-              echo "Processing test: $current_test with current gas: $current_gas and previous gas: $previous_gas"
+            gas_summary+="### $current_test\n"
+            gas_summary+="- Gas used: $current_gas\n"
 
-              gas_summary+="Gas used for $current_test update: $current_gas\n"
+            if [ -n "$previous_gas" ]; then
+              diff=$((current_gas - previous_gas))
+              percent=$((diff * 100 / previous_gas))
 
-              if [ -n "$previous_gas" ]; then
-                diff=$((current_gas - previous_gas))
-                percent=$((diff * 100 / previous_gas))
-
-                if [ $diff -gt 0 ]; then
-                  gas_summary+="Change: :red_circle: +$diff \($percent% increase\)\n"
-                elif [ $diff -lt 0 ]; then
-                  gas_summary+="Change: :green_circle: $diff \($percent% decrease\)\n"
-                else
-                  gas_summary+="Change: :white_circle: No change\n"
-                fi
+              if [ $diff -gt 0 ]; then
+                gas_summary+="- Change: :red_circle: +$diff ($percent% increase)\n"
+              elif [ $diff -lt 0 ]; then
+                gas_summary+="- Change: :green_circle: $diff ($percent% decrease)\n"
               else
-                gas_summary+="Change: N/A \(New test\)\n"
+                gas_summary+="- Change: :white_circle: No change\n"
               fi
-              gas_summary+="\n"
-            done < current_gas_report.txt
-          else
-            echo "No previous gas report found. This will be the baseline for future comparisons."
-            while IFS=',' read -r current_test current_gas; do
-              gas_summary+="Gas used for $current_test update: $current_gas\n"
-              gas_summary+="Change: N/A \(First run\)\n\n"
-            done < current_gas_report.txt
-          fi
-          
-          gas_summary+="\`\`\`"
+            else
+              gas_summary+="- Change: N/A (New test)\n"
+            fi
+            gas_summary+="\n"
+          done < current_gas_report.txt
+        else
+          echo "No previous gas report found. This will be the baseline for future comparisons."
+          while IFS=',' read -r current_test current_gas; do
+            gas_summary+="### $current_test\n"
+            gas_summary+="- Gas used: $current_gas\n"
+            gas_summary+="- Change: N/A (First run)\n\n"
+          done < current_gas_report.txt
+        fi
 
-          echo "gas_summary<<EOF" >> $GITHUB_OUTPUT
-          echo "$gas_summary" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+        echo 'gas_summary<<EOF' >> $GITHUB_OUTPUT
+        echo "$gas_summary" >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
 
-          cp current_gas_report.txt previous_gas_report.txt
+        cp current_gas_report.txt previous_gas_report.txt
       
       - name: Comment PR
         uses: actions/github-script@v6
