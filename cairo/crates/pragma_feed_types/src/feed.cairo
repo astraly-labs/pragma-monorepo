@@ -3,8 +3,8 @@ use pragma_maths::felt252::{FeltBitAnd, FeltDiv, FeltOrd};
 
 // Constants used for felt manipulations when decoding the FeedId.
 pub const ASSET_CLASS_SHIFT: felt252 = 0x100000000000000000000000000000000; // 2^128
-pub const FEED_TYPE_SHIFT: felt252 = 0x100000000000000; // 2^64
-pub const FEED_TYPE_MASK: felt252 = 0xFFFFFFFFFFFFFFFF; // 2^64 - 1
+pub const FEED_TYPE_SHIFT: felt252 = 0x10000000000000000000000000000; // 2^64
+pub const FEED_TYPE_MASK: felt252 = 0xFFFF; // 2^64 - 1
 pub const MAX_PAIR_ID: felt252 = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF; // 2^224 - 1 (28 bytes)
 
 // Type aliases for identifiers.
@@ -41,9 +41,9 @@ pub impl FeedTraitImpl of FeedTrait {
         if asset_class_option.is_none() {
             return Result::Err(FeedError::IdConversion('Invalid asset class encoding'));
         }
-
         // Extract feed_type + variant (next 2 bytes)
         let feed_type_id_felt = (id / FEED_TYPE_SHIFT) & FEED_TYPE_MASK;
+
         let feed_type_id_option: Option<FeedTypeId> = feed_type_id_felt.try_into();
         if feed_type_id_option.is_none() {
             return Result::Err(FeedError::IdConversion('Invalid feed type encoding'));
@@ -59,7 +59,7 @@ pub impl FeedTraitImpl of FeedTrait {
             - (feed_type_id_felt * FEED_TYPE_SHIFT);
 
         // Check if pair_id exceeds 28 bytes
-        if pair_id > MAX_PAIR_ID {
+        if pair_id == 0 || pair_id > MAX_PAIR_ID {
             return Result::Err(FeedError::IdConversion('Pair id greater than 28 bytes'));
         }
 

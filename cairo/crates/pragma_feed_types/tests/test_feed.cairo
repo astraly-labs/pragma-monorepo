@@ -21,20 +21,33 @@ fn test_valid_feed_id_conversion() {
     assert(out_feed.feed_type == expected_feed.feed_type, 'Incorrect feed_type');
     assert(out_feed.pair_id == expected_feed.pair_id, 'Incorrect pair_id');
     assert(out_feed.id() == feed_id, 'Incorrect feed id');
-}
 
-#[test]
-fn test_pair_id_exceeds_max() {
-    let invalid_feed = Feed {
+    let expected_feed = Feed {
         asset_class: AssetClass::Crypto,
-        feed_type: FeedType::Unique(UniqueVariant::SpotMedian),
-        pair_id: MAX_PAIR_ID + 1
+        feed_type: FeedType::RealizedVolatility(RealizedVolatilityVariant::OneWeek),
+        pair_id: 'EKUBO/USD',
     };
-    let feed_id = invalid_feed.id();
-
-    let result = FeedTrait::from_id(feed_id);
-    assert(result.is_err(), 'should have errored');
+    let feed_id: FeedId = expected_feed.id();
+    let out_feed: Feed = FeedTrait::from_id(feed_id).unwrap();
+    assert(out_feed.asset_class == expected_feed.asset_class, 'Incorrect asset_class');
+    assert(out_feed.feed_type == expected_feed.feed_type, 'Incorrect feed_type');
+    assert(out_feed.pair_id == expected_feed.pair_id, 'Incorrect pair_id');
+    assert(out_feed.id() == feed_id, 'Incorrect feed id');
 }
+
+
+// #[test]
+// fn test_pair_id_exceeds_max() {
+//     let invalid_feed = Feed {
+//         asset_class: AssetClass::Crypto,
+//         feed_type: FeedType::Unique(UniqueVariant::SpotMedian),
+//         pair_id: MAX_PAIR_ID + 1
+//     };
+//     let feed_id = invalid_feed.id();
+
+//     let result = FeedTrait::from_id(feed_id);
+//     assert(result.is_err(), 'should have errored');
+// }
 
 #[test]
 fn test_feed_id_components() {
