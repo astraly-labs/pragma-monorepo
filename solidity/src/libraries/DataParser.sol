@@ -32,7 +32,7 @@ library DataParser {
         return parsedData;
     }
 
-     function safeCastToFeedType(uint16 rawDataType) internal pure returns (FeedType) {
+    function safeCastToFeedType(uint16 rawDataType) internal pure returns (FeedType) {
         if (rawDataType <= uint16(type(FeedType).max)) {
             return FeedType(rawDataType);
         } else {
