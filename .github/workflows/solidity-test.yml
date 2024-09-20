@@ -25,6 +25,15 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
+          
+      - name: Cache gas report
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.working-directory }}/previous_gas_report.txt
+          key: ${{ runner.os }}-gas-report-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-gas-report-
+
 
       - name: Run Forge build
         working-directory: ${{ env.working-directory }}
