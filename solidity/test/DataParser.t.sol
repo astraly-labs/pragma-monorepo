@@ -10,7 +10,7 @@ contract DataParserTest is Test {
         bytes32 feedId = bytes32(
             abi.encodePacked(
                 uint16(0),
-                ///CRYPTO
+                //CRYPTO
                 uint16(0), //SPOT
                 bytes32("BTC/USD")
             )
@@ -39,7 +39,7 @@ contract DataParserTest is Test {
         bytes32 feedId = bytes32(
             abi.encodePacked(
                 uint16(0),
-                ///CRYPTO
+                //CRYPTO
                 uint16(1), //TWAP
                 bytes32("ETH/USD")
             )
@@ -76,7 +76,7 @@ contract DataParserTest is Test {
         bytes32 feedId = bytes32(
             abi.encodePacked(
                 uint16(0),
-                ///CRYPTO
+                //CRYPTO
                 uint16(2), //RV
                 bytes32("BTC/USD")
             )
@@ -90,8 +90,8 @@ contract DataParserTest is Test {
             uint256(86400), // timePeriod
             uint256(34000 ether), // startPrice
             uint256(36000 ether), // endPrice
-            uint256(37000 ether), // high_price
-            uint256(33000 ether), // low_price
+            uint256(37000 ether), // highPrice
+            uint256(33000 ether), // lowPrice
             uint256(1440) // numberOfDataPoints
         );
 
@@ -106,8 +106,8 @@ contract DataParserTest is Test {
         assertEq(result.rv.timePeriod, 86400);
         assertEq(result.rv.startPrice, 34000 ether);
         assertEq(result.rv.endPrice, 36000 ether);
-        assertEq(result.rv.high_price, 37000 ether);
-        assertEq(result.rv.low_price, 33000 ether);
+        assertEq(result.rv.highPrice, 37000 ether);
+        assertEq(result.rv.lowPrice, 33000 ether);
         assertEq(result.rv.numberOfDataPoints, 1440);
     }
 
@@ -115,7 +115,7 @@ contract DataParserTest is Test {
         bytes32 feedId = bytes32(
             abi.encodePacked(
                 uint16(0),
-                ///CRYPTO
+                //CRYPTO
                 uint16(3), //Option
                 bytes32("ETH/USD")
             )
@@ -162,7 +162,7 @@ contract DataParserTest is Test {
         bytes32 feedId = bytes32(
             abi.encodePacked(
                 uint16(0),
-                ///CRYPTO
+                //CRYPTO
                 uint16(4), //PERP
                 bytes32("BTC/USD")
             )
@@ -195,7 +195,7 @@ contract DataParserTest is Test {
         bytes32 feedId = bytes32(
             abi.encodePacked(
                 uint16(0),
-                ///CRYPTO
+                //CRYPTO
                 uint16(10), //Unkown data type
                 bytes32("BTC/USD")
             )

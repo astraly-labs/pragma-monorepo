@@ -26,46 +26,43 @@ contract PragmaDecoderGasTest is Test {
         address[][] memory validatorSets = new address[][](5);
         // SPOT MEDIAN
         validatorSets[0] = new address[](5);
-        validatorSets[0][0] = address(0x00168068bae701a75eacce4c41ddbe379289e8f8ae);
-        validatorSets[0][1] = address(0x0061beeef8bfa33c8e179950889e76b060e074ffa7);
-        validatorSets[0][2] = address(0x0069d27c84c3c027856d478ab03dd193d5716a13e3);
-        validatorSets[0][3] = address(0x0006bfa6bb0a40fabc6d56b376011ae985bd1eda41);
-        validatorSets[0][4] = address(0x007963989f4fefaecba30c8edce53dd47cedb487c2);
+           validatorSets[0][0] = address(0x003e54a28fc45e851dae5531dbfa9227fc28900f7b);
+        validatorSets[0][1] = address(0x00c5e8c364734b105269d172c698ce8b6b229bd9ec);
+        validatorSets[0][2] = address(0x007c98088d01b31e555fecd71c51ee6d9ef9805664);
+        validatorSets[0][3] = address(0x00b38bdce02e6a241b319d9ad4afb417bc06048e64);
+        validatorSets[0][4] = address(0x00f05e546f8e66d734e37b3386e51469b805708f55);
 
         // TWAP
-
         validatorSets[1] = new address[](5);
-        validatorSets[1][0] = address(0x005472c2afb8c5d5bdedd6fb15538aba4e5e954b68);
-        validatorSets[1][1] = address(0x009ee8d4936be96299e8eba08b99fc70962c56d476);
-        validatorSets[1][2] = address(0x00e04aa374e71c6b42009660ca18d64d48f1b49567);
-        validatorSets[1][3] = address(0x0093eeea4ec6424ca2f0fd2d5473a5b109b36e8aba);
-        validatorSets[1][4] = address(0x00d80848530176c5ec4d389d0a4a31c48710a51a11);
+        validatorSets[1][0] = address(0x0048a9191faf3166dad193de597a498b38db71ad69);
+        validatorSets[1][1] = address(0x00b0aedc451bda3541a13fc28ef101ca4766c03656);
+        validatorSets[1][2] = address(0x0033a77751572bc3cd9aae829d40fdc68f86f693c0);
+        validatorSets[1][3] = address(0x0040f89e3a65f1371d6e0b5bf439bce518cf0a7294);
+        validatorSets[1][4] = address(0x00856f9cc1eb544db9f16df8c9a3127357b5c6da72);
 
         // Realized volatility
-
         validatorSets[2] = new address[](5);
-        validatorSets[2][0] = address(0x0081113a12d0677bfd9055722826be0608a79e485f);
-        validatorSets[2][1] = address(0x0075c554efa4c4061f5319cce671342c3a5ee7ca4f);
-        validatorSets[2][2] = address(0x00ac532f8758c2562be11476fea2a0c5a03e49ed1c);
-        validatorSets[2][3] = address(0x00b4902be8b8e9a3b2c1a2dda4b503caa6669935ec);
-        validatorSets[2][4] = address(0x00b472cd1688acb23bbe561353ad0a7d6be287b4f8);
+        validatorSets[2][0] = address(0x004f5779ccd322560c8f6efc459a15c6568d4e0131);
+        validatorSets[2][1] = address(0x00b3b27866ce8e55c5bfde6a97f489fe21399131e3);
+        validatorSets[2][2] = address(0x00aa8397493450ba98e74d6b91eb9090c0e4470e2c);
+        validatorSets[2][3] = address(0x007d02f8c4fd9f91cd38d9bddc90aa951a2d075feb);
+        validatorSets[2][4] = address(0x00c1a0c130b377fe31bbb87fcde85e31a394469ff3);
         // Options
 
         validatorSets[3] = new address[](5);
-        validatorSets[3][0] = address(0x000d1bd3a53d455401d7e9b35f2ebefa1e86d879f5);
-        validatorSets[3][1] = address(0x00059c488fdac0d66ccb790db20ac3881f2f81a0c6);
-        validatorSets[3][2] = address(0x003e961cf87c7e0d13b848f0654b6d37faea1e5666);
-        validatorSets[3][3] = address(0x006b78b4d7b33a15edd8bbc5b3b1e679ad3e6c0d27);
-        validatorSets[3][4] = address(0x009cc8b348632e9f38e88ebd2ca564542c4b7297c5);
+        validatorSets[3][0] = address(0x0092a564bfea4aaed01154c4af87e926e94ff1553f);
+        validatorSets[3][1] = address(0x00b7b0caaa443f350a656ac07afd11baee59e7f9a4);
+        validatorSets[3][2] = address(0x00caec00ec76648d16c53ab48d30404b73e29160fe);
+        validatorSets[3][3] = address(0x003d6fc1b256633ed56449fc4c6b7c540e05c92db6);
+        validatorSets[3][4] = address(0x002171efbf40292383a75cb0c83010df944ee8a791);
 
         // Perp
-
         validatorSets[4] = new address[](5);
-        validatorSets[4][0] = address(0x0054ef2963f3e6b6a77fffc3f7bbd5fc0e479412c2);
-        validatorSets[4][1] = address(0x000b78cc20dc1b484781c56d0ea806f34693833bd5);
-        validatorSets[4][2] = address(0x003dbecdde82fd8c8823daf0841bd1e75342588a41);
-        validatorSets[4][3] = address(0x004f437c9e4c5cbbe927945838601b8277d68e69e6);
-        validatorSets[4][4] = address(0x00fa73934abc5b756599d973d2906b2db58f506284);
+        validatorSets[4][0] = address(0x001494db521160e4852e1522229f07677e98a4c924);
+        validatorSets[4][1] = address(0x009c1a235af2616036ecc8ae6d1a2fee2ae7752e65);
+        validatorSets[4][2] = address(0x005d5267f7913b5b843e0df18624a950f331fb116d);
+        validatorSets[4][3] = address(0x00404c2f0ee3c8b7f5992b006069a0e425184829ce);
+        validatorSets[4][4] = address(0x00a98acbb77469b387975be4e9f381a50df54c8434);
 
         uint8 validatorSetIndex;
         if (dataType == FeedType.SpotMedian) {

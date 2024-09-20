@@ -47,8 +47,8 @@ library DataParser {
         metadata.feedId = bytes32(data.toUint256(index));
         index += 32;
 
-        metadata.timestamp = data.toUint64(index);
-        index += 8;
+        metadata.timestamp = data.toUint32(index);
+        index += 4;
 
         metadata.numberOfSources = uint16(data.toUint16(index));
         index += 2;
@@ -65,10 +65,10 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.price = data.toUint256(index);
-        index += 32;
+        entry.price = data.toUint128(index);
+        index += 16;
 
-        entry.volume = data.toUint256(index);
+        entry.volume = data.toUint128(index);
 
         return entry;
     }
@@ -79,22 +79,22 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.twapPrice = data.toUint256(index);
-        index += 32;
+        entry.twapPrice = data.toUint128(index);
+        index += 16;
 
-        entry.timePeriod = data.toUint256(index);
-        index += 32;
+        entry.timePeriod = data.toUint128(index);
+        index += 16;
 
-        entry.startPrice = data.toUint256(index);
-        index += 32;
+        entry.startPrice = data.toUint128(index);
+        index += 16;
 
-        entry.endPrice = data.toUint256(index);
-        index += 32;
+        entry.endPrice = data.toUint128(index);
+        index += 16;
 
-        entry.totalVolume = data.toUint256(index);
-        index += 32;
+        entry.totalVolume = data.toUint128(index);
+        index += 16;
 
-        entry.numberOfDataPoints = data.toUint256(index);
+        entry.numberOfDataPoints = data.toUint128(index);
 
         return entry;
     }
@@ -105,25 +105,25 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.volatility = data.toUint256(index);
-        index += 32;
+        entry.volatility = data.toUint128(index);
+        index += 16;
 
-        entry.timePeriod = data.toUint256(index);
-        index += 32;
+        entry.timePeriod = data.toUint128(index);
+        index += 16;
 
-        entry.startPrice = data.toUint256(index);
-        index += 32;
+        entry.startPrice = data.toUint128(index);
+        index += 16;
 
-        entry.endPrice = data.toUint256(index);
-        index += 32;
+        entry.endPrice = data.toUint128(index);
+        index += 16;
 
-        entry.high_price = data.toUint256(index);
-        index += 32;
+        entry.highPrice = data.toUint128(index);
+        index += 16;
 
-        entry.low_price = data.toUint256(index);
-        index += 32;
+        entry.lowPrice = data.toUint128(index);
+        index += 16;
 
-        entry.numberOfDataPoints = data.toUint256(index);
+        entry.numberOfDataPoints = data.toUint128(index);
 
         return entry;
     }
@@ -134,23 +134,23 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.strikePrice = data.toUint256(index);
-        index += 32;
+        entry.strikePrice = data.toUint128(index);
+        index += 16;
 
-        entry.impliedVolatility = data.toUint256(index);
-        index += 32;
+        entry.impliedVolatility = data.toUint128(index);
+        index += 16;
 
-        entry.timeToExpiry = data.toUint256(index);
-        index += 32;
+        entry.timeToExpiry = data.toUint64(index);
+        index += 8;
 
         entry.isCall = data.toUint8(index) == 1;
         index += 1;
 
-        entry.underlyingPrice = data.toUint256(index);
-        index += 32;
+        entry.underlyingPrice = data.toUint128(index);
+        index += 16;
 
-        entry.optionPrice = data.toUint256(index);
-        index += 32;
+        entry.optionPrice = data.toUint128(index);
+        index += 16;
 
         entry.delta = data.toInt256(index);
         index += 32;
@@ -175,16 +175,16 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.markPrice = data.toUint256(index);
-        index += 32;
+        entry.markPrice = data.toUint128(index);
+        index += 16;
 
-        entry.fundingRate = data.toUint256(index);
-        index += 32;
+        entry.fundingRate = data.toUint128(index);
+        index += 16;
 
-        entry.openInterest = data.toUint256(index);
-        index += 32;
+        entry.openInterest = data.toUint128(index);
+        index += 16;
 
-        entry.volume = data.toUint256(index);
+        entry.volume = data.toUint128(index);
 
         return entry;
     }

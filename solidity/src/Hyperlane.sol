@@ -6,6 +6,7 @@ pragma experimental ABIEncoderV2;
 import {IHyperlane} from "./interfaces/IHyperlane.sol";
 import "./interfaces/PragmaStructs.sol";
 import "./libraries/BytesLib.sol";
+import "forge-std/console2.sol";
 
 contract Hyperlane is IHyperlane {
     using BytesLib for bytes;
@@ -89,6 +90,7 @@ contract Hyperlane is IHyperlane {
         // Hash the body
         bytes memory body = encodedHyMsg.slice(index, encodedHyMsg.length - index);
         hyMsg.hash = keccak256(abi.encodePacked(keccak256(body)));
+        console2.logBytes32(hyMsg.hash);
         // Parse the rest of the message
         hyMsg.nonce = encodedHyMsg.toUint32(index);
         index += 4;

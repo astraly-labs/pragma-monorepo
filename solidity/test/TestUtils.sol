@@ -47,59 +47,59 @@ library TestUtils {
     function createEncodedUpdate(FeedType dataType, bytes32 feedId) internal view returns (bytes memory) {
         bytes memory updateData = abi.encodePacked(
             feedId,
-            uint64(block.timestamp), // timestamp
+            uint32(block.timestamp), // timestamp
             uint16(5), // numberOfSources
             uint8(8) // decimals
         );
         if (dataType == FeedType.SpotMedian) {
             updateData = abi.encodePacked(
                 updateData,
-                uint256(2000 * 1e8), // price
-                uint256(1000 * 1e18) // volume
+                uint128(2000 * 1e8), // price
+                uint128(1000 * 1e18) // volume
             );
         } else if (dataType == FeedType.Twap) {
             updateData = abi.encodePacked(
                 updateData,
-                uint256(30000 * 1e8), // twapPrice
-                uint256(3600), // timePeriod
-                uint256(29000 * 1e8), // startPrice
-                uint256(31000 * 1e8), // endPrice
-                uint256(1000 * 1e18), // totalVolume
-                uint256(60) // numberOfDataPoints
+                uint128(30000 * 1e8), // twapPrice
+                uint128(3600), // timePeriod
+                uint128(29000 * 1e8), // startPrice
+                uint128(31000 * 1e8), // endPrice
+                uint128(1000 * 1e18), // totalVolume
+                uint128(60) // numberOfDataPoints
             );
         } else if (dataType == FeedType.RealizedVolatility) {
             updateData = abi.encodePacked(
                 updateData,
-                uint256(50 * 1e6), // volatility
-                uint256(86400), // timePeriod
-                uint256(1900 * 1e8), // startPrice
-                uint256(2100 * 1e8), // endPrice
-                uint256(2200 * 1e8), // high_price
-                uint256(1800 * 1e8), // low_price
-                uint256(1440) // numberOfDataPoints
+                uint128(50 * 1e6), // volatility
+                uint128(86400), // timePeriod
+                uint128(1900 * 1e8), // startPrice
+                uint128(2100 * 1e8), // endPrice
+                uint128(2200 * 1e8), // highPrice
+                uint128(1800 * 1e8), // lowPrice
+                uint128(1440) // numberOfDataPoints
             );
         } else if (dataType == FeedType.Options) {
             updateData = abi.encodePacked(
                 updateData,
-                uint256(2000 * 1e8), // strikePrice
-                uint256(50 * 1e6), // impliedVolatility
-                uint256(604800), // timeToExpiry
+                uint128(2000 * 1e8), // strikePrice
+                uint128(50 * 1e6), // impliedVolatility
+                uint64(604800), // timeToExpiry
                 true, // isCall
-                uint256(1950 * 1e8), // underlyingPrice
-                uint256(100 * 1e8), // optionPrice
-                uint256(60 * 1e6), // delta
-                uint256(2 * 1e6), // gamma
-                uint256(10 * 1e6), // vega
+                uint128(1950 * 1e8), // underlyingPrice
+                uint128(100 * 1e8), // optionPrice
+                int256(60 * 1e6), // delta
+                int256(2 * 1e6), // gamma
+                int256(10 * 1e6), // vega
                 int256(-5 * 1e6), // theta
-                uint256(3 * 1e6) // rho
+                int256(3 * 1e6) // rho
             );
         } else if (dataType == FeedType.Perpetuals) {
             updateData = abi.encodePacked(
                 updateData,
-                uint256(2000 * 1e8), // markPrice
-                uint256(1 * 1e6), // fundingRate
-                uint256(10000 * 1e18), // openInterest
-                uint256(50000 * 1e18) // volume
+                uint128(2000 * 1e8), // markPrice
+                uint128(1 * 1e6), // fundingRate
+                uint128(10000 * 1e18), // openInterest
+                uint128(50000 * 1e18) // volume
             );
         }
 
