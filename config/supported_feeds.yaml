@@ -1,0 +1,12 @@
+supported_feeds:
+  - name: "BTC/USD"
+    type: "Spot Median"
+    id: "18669995996566340"
+
+  - name: "ETH/USD"
+    type: "Spot Median"
+    id: "19514442401534788"
+
+  - name: "ETH/USD"
+    type: "Spot Median"
+    id: "19514442401534788"

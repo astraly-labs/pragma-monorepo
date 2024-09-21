@@ -1,7 +1,7 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomiclabs/hardhat-ethers";
-import * as dotenv from "dotenv";
+import type { HardhatUserConfig } from "hardhat/config";
+import "@nomicfoundation/hardhat-ethers";
 
+import * as dotenv from "dotenv";
 dotenv.config();
 
 // Load environment variables
@@ -39,8 +39,7 @@ const config: HardhatUserConfig = {
     }
   },
   paths: {
-    sources: "./src",
-    tests: "./test",
+    sources: "./src/SOLIDITY",
     cache: "./cache",
     artifacts: "./artifacts"
   },
