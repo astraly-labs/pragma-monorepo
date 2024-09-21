@@ -70,7 +70,7 @@ pub mod FeedTypeUniqueRouter {
             let response = self.call_get_data(data_type, aggregation_mode);
 
             let mut update = BytesTrait::new_empty();
-            update.append_u256(feed.id().into());
+            update.append_u256(feed.id().unwrap().into());
             update.append_u64(response.last_updated_timestamp);
             update.append_u16(response.num_sources_aggregated.try_into().unwrap());
             update.append_u8(response.decimals.try_into().unwrap());
