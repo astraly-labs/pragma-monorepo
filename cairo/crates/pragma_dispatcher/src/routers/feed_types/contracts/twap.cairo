@@ -77,7 +77,7 @@ pub mod FeedTypeTwapRouter {
                 .call_calculate_twap(data_type, aggregation_mode, start_timestamp, duration);
 
             let mut update = BytesTrait::new_empty();
-            update.append_u256(feed.id().into());
+            update.append_u256(feed.id().unwrap().into());
             update.append_u64(get_block_timestamp());
             update.append_u16(0); // TODO: num sources ?
             update.append_u8(decimals.try_into().unwrap());
