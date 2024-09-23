@@ -111,8 +111,8 @@ enum FeedType {
 }
 
 library StructsInitializers {
-    function initializeParsedData() public pure returns (ParsedData memory) {
-        ParsedData memory parsed = ParsedData({
+    function initializeParsedData() internal pure returns (ParsedData memory) {
+        return ParsedData({
             dataType: FeedType.SpotMedian,
             spot: initializeSpotMedian(),
             twap: initializeTwap(),
@@ -120,25 +120,19 @@ library StructsInitializers {
             options: initializeOptions(),
             perp: initializePerpetuals()
         });
-
-        return parsed;
     }
 
-    function initializeMetadata() public pure returns (Metadata memory) {
-        Metadata memory metadata = Metadata({feedId: 0, timestamp: 0, numberOfSources: 0, decimals: 0});
-        return metadata;
+    function initializeMetadata() internal pure returns (Metadata memory) {
+        return Metadata({feedId: 0, timestamp: 0, numberOfSources: 0, decimals: 0});
     }
 
-    function initializeSpotMedian() public pure returns (SpotMedian memory) {
-        Metadata memory metadata = initializeMetadata();
-        SpotMedian memory spotMedian = SpotMedian({metadata: metadata, price: 0, volume: 0});
-        return spotMedian;
+    function initializeSpotMedian() internal pure returns (SpotMedian memory) {
+        return SpotMedian({metadata: initializeMetadata(), price: 0, volume: 0});
     }
 
-    function initializeTwap() public pure returns (TWAP memory) {
-        Metadata memory metadata = initializeMetadata();
-        TWAP memory twap = TWAP({
-            metadata: metadata,
+    function initializeTwap() internal pure returns (TWAP memory) {
+        return TWAP({
+            metadata: initializeMetadata(),
             twapPrice: 0,
             timePeriod: 0,
             startPrice: 0,
@@ -146,13 +140,11 @@ library StructsInitializers {
             totalVolume: 0,
             numberOfDataPoints: 0
         });
-        return twap;
     }
 
-    function initializeRV() public pure returns (RealizedVolatility memory) {
-        Metadata memory metadata = initializeMetadata();
-        RealizedVolatility memory rv = RealizedVolatility({
-            metadata: metadata,
+    function initializeRV() internal pure returns (RealizedVolatility memory) {
+        return RealizedVolatility({
+            metadata: initializeMetadata(),
             volatility: 0,
             timePeriod: 0,
             startPrice: 0,
@@ -161,13 +153,11 @@ library StructsInitializers {
             lowPrice: 0,
             numberOfDataPoints: 0
         });
-        return rv;
     }
 
-    function initializeOptions() public pure returns (Options memory) {
-        Metadata memory metadata = initializeMetadata();
-        Options memory options = Options({
-            metadata: metadata,
+    function initializeOptions() internal pure returns (Options memory) {
+        return Options({
+            metadata: initializeMetadata(),
             strikePrice: 0,
             impliedVolatility: 0,
             timeToExpiry: 0,
@@ -180,12 +170,9 @@ library StructsInitializers {
             theta: 0,
             rho: 0
         });
-        return options;
     }
 
-    function initializePerpetuals() public pure returns (Perp memory) {
-        Metadata memory metadata = Metadata({feedId: 0, timestamp: 0, numberOfSources: 0, decimals: 0});
-        Perp memory perpetuals = Perp({metadata: metadata, markPrice: 0, fundingRate: 0, openInterest: 0, volume: 0});
-        return perpetuals;
+    function initializePerpetuals() internal pure returns (Perp memory) {
+        return Perp({metadata: initializeMetadata(), markPrice: 0, fundingRate: 0, openInterest: 0, volume: 0});
     }
 }
