@@ -48,14 +48,6 @@ fn test_valid_feed_id_conversion() {
 }
 
 #[test]
-fn test_xd() {
-    let x = FeedType::Unique(UniqueVariant::SpotMedian);
-    println!("{}", x.id());
-    let x = FeedTrait::from_id(18669995996566340).unwrap();
-    println!("{:?}", x);
-}
-
-#[test]
 fn test_pair_id_exceeds_max() {
     let invalid_feed = Feed {
         asset_class: AssetClass::Crypto,
