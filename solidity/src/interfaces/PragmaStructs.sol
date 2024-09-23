@@ -65,8 +65,8 @@ struct RealizedVolatility {
     uint256 timePeriod;
     uint256 startPrice;
     uint256 endPrice;
-    uint256 high_price;
-    uint256 low_price;
+    uint256 highPrice;
+    uint256 lowPrice;
     uint256 numberOfDataPoints;
 }
 
@@ -108,4 +108,71 @@ enum FeedType {
     RealizedVolatility,
     Options,
     Perpetuals
+}
+
+library StructsInitializers {
+    function initializeParsedData() internal pure returns (ParsedData memory) {
+        return ParsedData({
+            dataType: FeedType.SpotMedian,
+            spot: initializeSpotMedian(),
+            twap: initializeTwap(),
+            rv: initializeRV(),
+            options: initializeOptions(),
+            perp: initializePerpetuals()
+        });
+    }
+
+    function initializeMetadata() internal pure returns (Metadata memory) {
+        return Metadata({feedId: 0, timestamp: 0, numberOfSources: 0, decimals: 0});
+    }
+
+    function initializeSpotMedian() internal pure returns (SpotMedian memory) {
+        return SpotMedian({metadata: initializeMetadata(), price: 0, volume: 0});
+    }
+
+    function initializeTwap() internal pure returns (TWAP memory) {
+        return TWAP({
+            metadata: initializeMetadata(),
+            twapPrice: 0,
+            timePeriod: 0,
+            startPrice: 0,
+            endPrice: 0,
+            totalVolume: 0,
+            numberOfDataPoints: 0
+        });
+    }
+
+    function initializeRV() internal pure returns (RealizedVolatility memory) {
+        return RealizedVolatility({
+            metadata: initializeMetadata(),
+            volatility: 0,
+            timePeriod: 0,
+            startPrice: 0,
+            endPrice: 0,
+            highPrice: 0,
+            lowPrice: 0,
+            numberOfDataPoints: 0
+        });
+    }
+
+    function initializeOptions() internal pure returns (Options memory) {
+        return Options({
+            metadata: initializeMetadata(),
+            strikePrice: 0,
+            impliedVolatility: 0,
+            timeToExpiry: 0,
+            isCall: false,
+            underlyingPrice: 0,
+            optionPrice: 0,
+            delta: 0,
+            gamma: 0,
+            vega: 0,
+            theta: 0,
+            rho: 0
+        });
+    }
+
+    function initializePerpetuals() internal pure returns (Perp memory) {
+        return Perp({metadata: initializeMetadata(), markPrice: 0, fundingRate: 0, openInterest: 0, volume: 0});
+    }
 }

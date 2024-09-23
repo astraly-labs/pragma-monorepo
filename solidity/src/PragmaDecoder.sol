@@ -148,7 +148,7 @@ contract PragmaDecoder {
         virtual
         returns (bool valid, uint256 endOffset)
     {
-        return MerkleTree.isProofValid(encodedProof, offset, root, leafData);
+        (valid, endOffset) = MerkleTree.isProofValid(encodedProof, offset, root, leafData);
     }
 
     function extractDataInfoFromUpdate(bytes calldata encoded, uint256 offset, bytes32 checkpointRoot)

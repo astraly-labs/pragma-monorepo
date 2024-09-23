@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import "../../src/Hyperlane.sol";
 import {IHyperlane, HyMsg, Signature} from "../../src/interfaces/IHyperlane.sol";
 import "forge-std/Test.sol";
-import "forge-std/console2.sol";
 
 abstract contract HyperlaneTestUtils is Test {
     uint256[] currentSigners;
