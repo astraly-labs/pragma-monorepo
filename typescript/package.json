@@ -35,7 +35,6 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "deploy_dispatcher": "bun run src/SOLIDITY/deploy.ts",
-    "deploy:eth": "bun run src/SOLIDITY/deploy.ts"
+    "deployer": "bun run src/index.ts"
   }
 }

@@ -1,8 +1,9 @@
-import type { Deployer } from './deployers/interface';
-
-import { OracleDeployer } from './deployers/oracle';
-import { DispatcherDeployer } from './deployers/dispatcher';
-import { PragmaDeployer } from './deployers/pragma';
+import type { Deployer } from "./deployers";
+import {
+  OracleDeployer,
+  DispatcherDeployer,
+  PragmaDeployer,
+} from "./deployers";
 
 class DeploymentManager {
   private deployers: Map<string, Deployer> = new Map();
@@ -26,8 +27,8 @@ class DeploymentManager {
 }
 
 const deploymentManager = new DeploymentManager();
-deploymentManager.registerDeployer('oracle', new OracleDeployer());
-deploymentManager.registerDeployer('dispatcher', new DispatcherDeployer());
-deploymentManager.registerDeployer('pragma', new PragmaDeployer());
+deploymentManager.registerDeployer("oracle", new OracleDeployer());
+deploymentManager.registerDeployer("dispatcher", new DispatcherDeployer());
+deploymentManager.registerDeployer("pragma", new PragmaDeployer());
 
 export default deploymentManager;

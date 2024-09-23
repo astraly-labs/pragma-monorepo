@@ -6,7 +6,3 @@ supported_feeds:
   - name: "ETH/USD"
     type: "Spot Median"
     id: "19514442401534788"
-
-  - name: "ETH/USD"
-    type: "Spot Median"
-    id: "19514442401534788"
