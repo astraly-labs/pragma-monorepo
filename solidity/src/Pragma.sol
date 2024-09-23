@@ -111,17 +111,17 @@ contract Pragma is IPragma, PragmaDecoder {
 
     /// @inheritdoc IPragma
     function dataFeedExists(bytes32 id) external view returns (bool) {
-       FeedType feedType = DataParser.safeCastToFeedType(uint8(id[0]));
-       if (feedType == FeedType.SpotMedian) {
-            return(spotMedianFeeds[id].metadata.timestamp !=0);
+        FeedType feedType = DataParser.safeCastToFeedType(uint8(id[0]));
+        if (feedType == FeedType.SpotMedian) {
+            return (spotMedianFeeds[id].metadata.timestamp != 0);
         } else if (feedType == FeedType.Twap) {
-            return(twapFeeds[id].metadata.timestamp !=0);
+            return (twapFeeds[id].metadata.timestamp != 0);
         } else if (feedType == FeedType.RealizedVolatility) {
-           return(rvFeeds[id].metadata.timestamp !=0);
+            return (rvFeeds[id].metadata.timestamp != 0);
         } else if (feedType == FeedType.Options) {
-           return(optionsFeeds[id].metadata.timestamp !=0);
+            return (optionsFeeds[id].metadata.timestamp != 0);
         } else if (feedType == FeedType.Perpetuals) {
-            return(perpFeeds[id].metadata.timestamp !=0);
+            return (perpFeeds[id].metadata.timestamp != 0);
         } else {
             revert ErrorsLib.InvalidDataFeedType();
         }

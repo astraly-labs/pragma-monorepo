@@ -237,8 +237,8 @@ contract PragmaDecoderTest is Test {
         assertEq(rv.timePeriod, 86400, "Time period should match");
         assertEq(rv.startPrice, 1900 * 1e8, "Start price should match");
         assertEq(rv.endPrice, 2100 * 1e8, "End price should match");
-        assertEq(rv.high_price, 2200 * 1e8, "High price should match");
-        assertEq(rv.low_price, 1800 * 1e8, "Low price should match");
+        assertEq(rv.highPrice, 2200 * 1e8, "High price should match");
+        assertEq(rv.lowPrice, 1800 * 1e8, "Low price should match");
         assertEq(rv.numberOfDataPoints, 1440, "Number of data points should match");
     }
 
