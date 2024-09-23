@@ -1,13 +1,13 @@
 name: Task - Test Solidity
 
 on:
-  workflow_call: 
+  workflow_call:
   push:
     paths:
-      - 'solidity/**'
+      - "solidity/**"
   pull_request:
     paths:
-      - 'solidity/**'
+      - "solidity/**"
 
 env:
   FOUNDRY_PROFILE: ci
@@ -25,7 +25,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
-          
+
       - name: Cache gas report
         uses: actions/cache@v3
         with:
@@ -33,7 +33,6 @@ jobs:
           key: ${{ runner.os }}-gas-report-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-gas-report-
-
 
       - name: Run Forge build
         working-directory: ${{ env.working-directory }}

@@ -20,4 +20,4 @@ jobs:
       - name: Checkout toml files
         uses: actions/checkout@v3
       - name: Run toml check
-        run: npx @taplo/cli fmt --config ./taplo.toml --check ./rust ./cairo ./solidity
+        run: npx @taplo/cli fmt --config ./taplo.toml --check ./rust ./cairo ./solidity ./typescript
