@@ -136,3 +136,8 @@ jobs:
         with:
           name: gas-report
           path: ${{ env.working-directory }}/previous_gas_report.txt
+      
+      - name: Slither Static Analysis
+        uses: crytic/slither-action@v0.4.0
+        with:
+          args: . --exclude incorrect-exponentiation
