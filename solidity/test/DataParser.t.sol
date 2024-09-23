@@ -11,7 +11,8 @@ contract DataParserTest is Test {
             abi.encodePacked(
                 uint16(0),
                 ///CRYPTO
-                uint16(0), //SPOT
+                uint8(0), //SPOT
+                uint8(0), //VARIANT
                 bytes32("BTC/USD")
             )
         );
@@ -40,7 +41,8 @@ contract DataParserTest is Test {
             abi.encodePacked(
                 uint16(0),
                 ///CRYPTO
-                uint16(1), //TWAP
+                uint8(1), //TWAP
+                uint8(0), //VARIANT
                 bytes32("ETH/USD")
             )
         );
@@ -77,7 +79,8 @@ contract DataParserTest is Test {
             abi.encodePacked(
                 uint16(0),
                 ///CRYPTO
-                uint16(2), //RV
+                uint8(2), //RV
+                uint8(0), //VARIANT
                 bytes32("BTC/USD")
             )
         );
@@ -116,7 +119,8 @@ contract DataParserTest is Test {
             abi.encodePacked(
                 uint16(0),
                 ///CRYPTO
-                uint16(3), //Option
+                uint8(3), //Option
+                uint8(0), //VARIANT
                 bytes32("ETH/USD")
             )
         );
@@ -163,7 +167,8 @@ contract DataParserTest is Test {
             abi.encodePacked(
                 uint16(0),
                 ///CRYPTO
-                uint16(4), //PERP
+                uint8(4), //PERP
+                uint8(0), //VARIANT
                 bytes32("BTC/USD")
             )
         );
@@ -196,7 +201,8 @@ contract DataParserTest is Test {
             abi.encodePacked(
                 uint16(0),
                 ///CRYPTO
-                uint16(10), //Unkown data type
+                uint8(20), //Unkown data type
+                uint8(0),
                 bytes32("BTC/USD")
             )
         );

@@ -10,7 +10,7 @@ library DataParser {
 
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
         uint8 offset = 2; // type feed stored after asset class
-        uint16 rawDataType = data.toUint16(offset);
+        uint8 rawDataType = data.toUint8(offset);
         FeedType dataType = safeCastToFeedType(rawDataType);
 
         ParsedData memory parsedData;
@@ -32,8 +32,8 @@ library DataParser {
         return parsedData;
     }
 
-    function safeCastToFeedType(uint16 rawDataType) internal pure returns (FeedType) {
-        if (rawDataType <= uint16(type(FeedType).max)) {
+    function safeCastToFeedType(uint8 rawDataType) internal pure returns (FeedType) {
+        if (rawDataType <= uint8(type(FeedType).max)) {
             return FeedType(rawDataType);
         } else {
             revert ErrorsLib.InvalidDataFeedType();

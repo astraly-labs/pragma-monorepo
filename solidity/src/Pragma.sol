@@ -7,6 +7,7 @@ import "./PragmaDecoder.sol";
 import "./libraries/EventsLib.sol";
 import "./libraries/ErrorsLib.sol";
 import "./interfaces/PragmaStructs.sol";
+import "./libraries/DataParser.sol";
 
 /// @title Pragma
 /// @author Pragma Labs
@@ -16,7 +17,6 @@ contract Pragma is IPragma, PragmaDecoder {
     /* STORAGE */
     uint256 public validTimePeriodSeconds;
     uint256 public singleUpdateFeeInWei;
-    mapping(bytes32 => uint64) public latestDataInfoPublishTime;
 
     constructor(
         address _hyperlane,
@@ -111,7 +111,20 @@ contract Pragma is IPragma, PragmaDecoder {
 
     /// @inheritdoc IPragma
     function dataFeedExists(bytes32 id) external view returns (bool) {
-        return (latestDataInfoPublishTime[id] != 0);
+       FeedType feedType = DataParser.safeCastToFeedType(uint8(id[0]));
+       if (feedType == FeedType.SpotMedian) {
+            return(spotMedianFeeds[id].metadata.timestamp !=0);
+        } else if (feedType == FeedType.Twap) {
+            return(twapFeeds[id].metadata.timestamp !=0);
+        } else if (feedType == FeedType.RealizedVolatility) {
+           return(rvFeeds[id].metadata.timestamp !=0);
+        } else if (feedType == FeedType.Options) {
+           return(optionsFeeds[id].metadata.timestamp !=0);
+        } else if (feedType == FeedType.Perpetuals) {
+            return(perpFeeds[id].metadata.timestamp !=0);
+        } else {
+            revert ErrorsLib.InvalidDataFeedType();
+        }
     }
 
     function getValidTimePeriod() public view returns (uint256) {
