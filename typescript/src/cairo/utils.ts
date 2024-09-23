@@ -1,15 +1,15 @@
+import fs from "fs";
 import {
     Account,
     json,
     RpcProvider,
 } from "starknet";
-import fs from "fs";
 
 import {
     ACCOUNT_ADDRESS,
     PRIVATE_KEY,
     NETWORK,
-    BUILD_FOLDER
+    CAIRO_BUILD_FOLDER
 } from "./constants";
 
 export async function buildAccount(): Promise<Account> {
@@ -26,12 +26,12 @@ export async function buildAccount(): Promise<Account> {
 }
 
 export function getCompiledContract(name: string): any {
-    const contractPath = `${BUILD_FOLDER}_${name}.contract_class.json`;
+    const contractPath = `${CAIRO_BUILD_FOLDER}_${name}.contract_class.json`;
     return json.parse(fs.readFileSync(contractPath).toString("ascii"));
 }
 
 export function getCompiledContractCasm(name: string): any {
-    const contractPath = `${BUILD_FOLDER}_${name}.compiled_contract_class.json`;
+    const contractPath = `${CAIRO_BUILD_FOLDER}_${name}.compiled_contract_class.json`;
     return json.parse(fs.readFileSync(contractPath).toString("ascii"));
 }
 

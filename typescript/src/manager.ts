@@ -4,7 +4,6 @@ import { OracleDeployer } from './deployers/oracle';
 import { DispatcherDeployer } from './deployers/dispatcher';
 import { PragmaDeployer } from './deployers/pragma';
 
-/// Manager handling all the possible contracts to deploy.
 class DeploymentManager {
   private deployers: Map<string, Deployer> = new Map();
 
@@ -12,16 +11,17 @@ class DeploymentManager {
     this.deployers.set(name, deployer);
   }
 
-  async deploy(contract: string, chain?: string): Promise<void> {
-    const [contractName, specifiedChain] = contract.split(':');
-    const actualChain = chain || specifiedChain;
+  supportedDeployments(): string[] {
+    return Array.from(this.deployers.keys());
+  }
 
-    const deployer = this.deployers.get(contractName);
+  async deploy(contract: string, chain?: string): Promise<void> {
+    const deployer = this.deployers.get(contract);
     if (!deployer) {
-      throw new Error(`Unknown contract: ${contractName}`);
+      throw new Error(`Unknown contract: ${contract}`);
     }
 
-    await deployer.deploy(actualChain);
+    await deployer.deploy(chain);
   }
 }
 

@@ -3,22 +3,23 @@ import {
     CallData,
     ContractFactory,
 } from "starknet";
-import type { ContractFactoryParams } from "starknet";
+import type { ContractFactoryParams, RawArgs } from "starknet";
 
-import { getCompiledContract, getCompiledContractCasm } from "./utils";
+import { getCompiledContract, getCompiledContractCasm } from ".";
 
 export async function deployContract(
-    account: Account,
+    deployer: Account,
     contractName: string,
+    calldata: RawArgs,
 ): Promise<string> {
     console.log(`Deploying contract ${contractName}...`);
 
     const compiledContract = getCompiledContract(contractName);
     const casm = getCompiledContractCasm(contractName);
-    const constructorCalldata = CallData.compile([]);
+    const constructorCalldata = CallData.compile(calldata);
     const params: ContractFactoryParams = {
         compiledContract,
-        account,
+        account: deployer,
         casm
     };
 
