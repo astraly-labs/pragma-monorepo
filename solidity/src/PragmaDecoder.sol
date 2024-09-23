@@ -18,11 +18,7 @@ contract PragmaDecoder {
 
     /* STORAGE */
     IHyperlane public immutable hyperlane;
-
-    mapping(bytes32 => DataFeed) public _latestPriceInfo;
     mapping(bytes32 => bool) public _isValidDataSource;
-    mapping(bytes32 => uint64) public latestPublishTimes;
-
     mapping(bytes32 => SpotMedian) public spotMedianFeeds;
     mapping(bytes32 => TWAP) public twapFeeds;
     mapping(bytes32 => RealizedVolatility) public rvFeeds;
@@ -227,38 +223,33 @@ contract PragmaDecoder {
     function updateLatestDataInfoIfNecessary(bytes32 feedId, ParsedData memory parsedData, uint64 publishTime)
         internal
     {
-        if (publishTime > latestPublishTimes[feedId]) {
-            latestPublishTimes[feedId] = publishTime;
-
-            if (parsedData.dataType == FeedType.SpotMedian) {
+        if (parsedData.dataType == FeedType.SpotMedian) {
+            if (publishTime > spotMedianFeeds[feedId].metadata.timestamp) {
                 spotMedianFeeds[feedId] = parsedData.spot;
-                _latestPriceInfo[feedId] =
-                    DataFeed(feedId, publishTime, parsedData.spot.metadata.numberOfSources, parsedData.spot.price);
                 emit EventsLib.SpotMedianUpdate(feedId, publishTime, parsedData.spot);
-            } else if (parsedData.dataType == FeedType.Twap) {
-                twapFeeds[feedId] = parsedData.twap;
-                _latestPriceInfo[feedId] =
-                    DataFeed(feedId, publishTime, parsedData.twap.metadata.numberOfSources, parsedData.twap.twapPrice);
-                emit EventsLib.TWAPUpdate(feedId, publishTime, parsedData.twap);
-            } else if (parsedData.dataType == FeedType.RealizedVolatility) {
-                rvFeeds[feedId] = parsedData.rv;
-                _latestPriceInfo[feedId] =
-                    DataFeed(feedId, publishTime, parsedData.rv.metadata.numberOfSources, parsedData.rv.endPrice);
-                emit EventsLib.RealizedVolatilityUpdate(feedId, publishTime, parsedData.rv);
-            } else if (parsedData.dataType == FeedType.Options) {
-                optionsFeeds[feedId] = parsedData.options;
-                _latestPriceInfo[feedId] = DataFeed(
-                    feedId, publishTime, parsedData.options.metadata.numberOfSources, parsedData.options.optionPrice
-                );
-                emit EventsLib.OptionsUpdate(feedId, publishTime, parsedData.options);
-            } else if (parsedData.dataType == FeedType.Perpetuals) {
-                perpFeeds[feedId] = parsedData.perp;
-                _latestPriceInfo[feedId] =
-                    DataFeed(feedId, publishTime, parsedData.perp.metadata.numberOfSources, parsedData.perp.markPrice);
-                emit EventsLib.PerpUpdate(feedId, publishTime, parsedData.perp);
-            } else {
-                revert ErrorsLib.InvalidDataFeedType();
             }
+        } else if (parsedData.dataType == FeedType.Twap) {
+            if (publishTime > twapFeeds[feedId].metadata.timestamp) {
+                twapFeeds[feedId] = parsedData.twap;
+                emit EventsLib.TWAPUpdate(feedId, publishTime, parsedData.twap);
+            }
+        } else if (parsedData.dataType == FeedType.RealizedVolatility) {
+            if (publishTime > rvFeeds[feedId].metadata.timestamp) {
+                rvFeeds[feedId] = parsedData.rv;
+                emit EventsLib.RealizedVolatilityUpdate(feedId, publishTime, parsedData.rv);
+            }
+        } else if (parsedData.dataType == FeedType.Options) {
+            if (publishTime > optionsFeeds[feedId].metadata.timestamp) {
+                optionsFeeds[feedId] = parsedData.options;
+                emit EventsLib.OptionsUpdate(feedId, publishTime, parsedData.options);
+            }
+        } else if (parsedData.dataType == FeedType.Perpetuals) {
+            if (publishTime > perpFeeds[feedId].metadata.timestamp) {
+                perpFeeds[feedId] = parsedData.perp;
+                emit EventsLib.PerpUpdate(feedId, publishTime, parsedData.perp);
+            }
+        } else {
+            revert ErrorsLib.InvalidDataFeedType();
         }
     }
 }

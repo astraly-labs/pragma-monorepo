@@ -1,0 +1,22 @@
+Compiling 7 files with Solc 0.8.26
+Solc 0.8.26 finished in 11.17s
+Compiler run successful with warnings:
+Warning (5667): Unused function parameter. Remove or comment out the variable name to silence this warning.
+  --> test/PragmaDecoder.t.sol:53:73:
+   |
+53 |     function _isProofValid(bytes calldata encodedProof, uint256 offset, bytes32 root, bytes calldata leafData)
+   |                                                                         ^^^^^^^^^^^^
+
+
+Ran 1 test for test/benchmarks/PragmaDecoderGasTest.t.sol:PragmaDecoderGasTest
+[PASS] testGasAllUpdates() (gas: 16616416)
+Logs:
+  Gas used for SpotMedian update: 259132
+  Gas used for TWAP update: 352791
+  Gas used for RealizedVolatility update: 376395
+  Gas used for Options update: 469526
+  Gas used for Perpetuals update: 306613
+
+Suite result: ok. 1 passed; 0 failed; 0 skipped; finished in 6.15ms (2.90ms CPU time)
+
+Ran 1 test suite in 158.48ms (6.15ms CPU time): 1 tests passed, 0 failed, 0 skipped (1 total tests)
