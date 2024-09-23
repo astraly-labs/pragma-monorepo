@@ -1,0 +1,10 @@
+{
+  "PragmaFeedsRegistry": "0x54f269a0559eb5be59c5b432bc90e4aedfaea6f80d91fef4ccf64f8e998e209",
+  "PragmaDispatcher": "0x6dccd13206c7228f40a1ebafe07c67815897e3382dc42779b3a00a913988436",
+  "CryptoRouter": {
+    "address": "0x4a3d0c70add01b220af0d11e889341714be74e658d2ea59d2e43c018a23cfed",
+    "feeds": {
+      "SpotMedian": "0x298b8a0007130ac01f18e018db0c3d7ef630cadef6201ba0de5570722635539"
+    }
+  }
+}

@@ -8,8 +8,23 @@ const ASSET_CLASS_CRYPTO_ID = 0;
 
 // TODO: This should probably be its own configuration *somewhere*. TBD
 const PRAGMA_FEEDS = [
-  18669995996566340, // BTC/USD: SpotMedian
-  19514442401534788, // ETH/USD: SpotMedian
+  {
+    id: "18669995996566340",
+    name: "BTC/USD: SpotMedian",
+  },
+  {
+    id: "19514442401534788",
+    name: "ETH/USD: SpotMedian",
+  },
+];
+
+// TODO: This should probably be its own configuration *somewhere*. TBD
+const FEED_TYPES = [
+  {
+    id: "0",
+    name: "SpotMedian",
+    type: "FeedTypeUniqueRouter",
+  },
 ];
 
 // TODO: Shall this be configured at a config file level? Or CLI? Both? TBD
@@ -31,9 +46,10 @@ export class DispatcherDeployer implements Deployer {
       deployer.address,
     ]);
     deploymentInfo.PragmaFeedsRegistry = feedsRegistry.address;
-    for (const feed_id of PRAGMA_FEEDS) {
-      let tx = await feedsRegistry.invoke("add_feed", [feed_id]);
+    for (const feed of PRAGMA_FEEDS) {
+      let tx = await feedsRegistry.invoke("add_feed", [feed.id]);
       await deployer.waitForTransaction(tx.transaction_hash);
+      console.log("Registered", feed.name);
     }
     console.log("✅ Deployed the Pragma Feeds Registry");
 
@@ -64,27 +80,27 @@ export class DispatcherDeployer implements Deployer {
 
     deploymentInfo.CryptoRouter = {
       address: cryptoRouter.address,
-      feeds: {},
+      feed_types: {},
     };
 
     // 3. Deploy all unique feeds
-    for (const feed_id of PRAGMA_FEEDS) {
-      console.log(`⏳ Deploying & registering feed type router ${feed_id}...`);
-      const feedRouter = await deployContract(
-        deployer,
-        "FeedTypeUniqueRouter",
-        [PRAGMA_ORACLE_ADDRESS, feed_id],
+    for (const feed_type of FEED_TYPES) {
+      console.log(
+        `⏳ Deploying & registering feed type router ${feed_type.name}...`,
       );
+      const feedRouter = await deployContract(deployer, feed_type.type, [
+        PRAGMA_ORACLE_ADDRESS,
+        feed_type.id,
+      ]);
       console.log("✅ Deployed!");
       await cryptoRouter.invoke("register_feed_type_router", [
-        feed_id,
+        feed_type.id,
         feedRouter.address,
       ]);
-      console.log("✅ Registered with the Crypto Router!\n", feed_id);
-      deploymentInfo.CryptoRouter.feeds[feed_id] = feedRouter.address;
+      console.log("✅ Registered with the Crypto Router!\n");
+      deploymentInfo.CryptoRouter.feeds[feed_type.name] = feedRouter.address;
     }
 
-    // Save deployment info to JSON file
     const jsonContent = JSON.stringify(deploymentInfo, null, 2);
     const filePath = path.join("deployments", "dispatcher.json");
     fs.writeFileSync(filePath, jsonContent);
