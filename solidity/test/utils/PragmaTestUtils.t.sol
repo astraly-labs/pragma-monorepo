@@ -25,8 +25,14 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         emitterChainIds[0] = SOURCE_EMITTER_CHAIN_ID;
         emitterAddresses[0] = SOURCE_EMITTER_ADDRESS;
 
-        Pragma pragma_ = new Pragma(
-            hyperlane, emitterChainIds, emitterAddresses, VALID_TIME_PERIOD_IN_SECONDS, SINGLE_UPDATE_FEE_IN_WEI
+        Pragma pragma_ = new Pragma();
+        pragma_.initialize(
+            hyperlane,
+            address(this),
+            emitterChainIds,
+            emitterAddresses,
+            VALID_TIME_PERIOD_IN_SECONDS,
+            SINGLE_UPDATE_FEE_IN_WEI
         );
 
         return address(pragma_);

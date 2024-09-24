@@ -2,21 +2,21 @@
 
 pragma solidity ^0.8.0;
 
-import {IPragma, DataFeed} from "./interfaces/IPragma.sol";
+import {IPragma, DataFeed} from "../../src/interfaces/IPragma.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "./PragmaDecoder.sol";
-import "./libraries/EventsLib.sol";
-import "./libraries/ErrorsLib.sol";
-import "./interfaces/PragmaStructs.sol";
-import "./libraries/DataParser.sol";
+import "../../src/PragmaDecoder.sol";
+import "../../src/libraries/EventsLib.sol";
+import "../../src/libraries/ErrorsLib.sol";
+import "../../src/interfaces/PragmaStructs.sol";
+import "../../src/libraries/DataParser.sol";
 
 /// @title Pragma
 /// @author Pragma Labs
 /// @custom:contact security@pragma.build
 /// @notice The Pragma contract.
-contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, PragmaDecoder {
+contract PragmaUpgraded is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, PragmaDecoder {
     /* STORAGE */
     uint256 public validTimePeriodSeconds;
     uint256 public singleUpdateFeeInWei;
@@ -35,13 +35,11 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
     ) public initializer {
         __Ownable_init(initial_owner);
         __UUPSUpgradeable_init();
-        hyperlane = IHyperlane(_hyperlane);
+        // __PragmaDecoder_init(_hyperlane, _dataSourceEmitterChainIds, _dataSourceEmitterAddresses);
+        __Pragma_init(_validTimePeriodSeconds, _singleUpdateFeeInWei);
+    }
 
-        for (uint256 i = 0; i < _dataSourceEmitterChainIds.length; i++) {
-            _isValidDataSource[keccak256(
-                abi.encodePacked(_dataSourceEmitterChainIds[i], _dataSourceEmitterAddresses[i])
-            )] = true;
-        }
+    function __Pragma_init(uint256 _validTimePeriodSeconds, uint256 _singleUpdateFeeInWei) internal initializer {
         validTimePeriodSeconds = _validTimePeriodSeconds;
         singleUpdateFeeInWei = _singleUpdateFeeInWei;
     }
@@ -66,7 +64,7 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
 
     /// @inheritdoc IPragma
     function getUpdateFee(bytes[] calldata updateData) external view returns (uint256 feeAmount) {
-        return 0;
+        return 100000;
     }
 
     function getTotalFee(uint256 totalNumUpdates) private view returns (uint256 requiredFee) {
@@ -150,14 +148,8 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         return validTimePeriodSeconds;
     }
 
-    function withdraw_funds(uint256 amount) external onlyOwner {
-        require(amount <= address(this).balance, "Insufficient balance");
-        (bool success, ) = owner().call{value: amount}("");
-        require(success, "Transfer failed");
-    }
-
     function version() public pure returns (string memory) {
-        return "1.0.0";
+        return "2.0.0";
     }
 
     function diff(uint256 x, uint256 y) internal pure returns (uint256) {
