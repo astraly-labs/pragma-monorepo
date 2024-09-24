@@ -2,9 +2,6 @@ name: Task - Test Solidity
 
 on:
   workflow_call: 
-  pull_request:
-    paths:
-      - 'solidity/**'
 
 env:
   FOUNDRY_PROFILE: ci
