@@ -74,8 +74,8 @@ library TestUtils {
                 uint256(86400), // timePeriod
                 uint256(1900 * 1e8), // startPrice
                 uint256(2100 * 1e8), // endPrice
-                uint256(2200 * 1e8), // high_price
-                uint256(1800 * 1e8), // low_price
+                uint256(2200 * 1e8), // highPrice
+                uint256(1800 * 1e8), // lowPrice
                 uint256(1440) // numberOfDataPoints
             );
         } else if (dataType == FeedType.Options) {

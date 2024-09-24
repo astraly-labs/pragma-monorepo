@@ -135,3 +135,21 @@ jobs:
         with:
           name: gas-report
           path: ${{ env.working-directory }}/previous_gas_report.txt
+
+      - name: Static analysis
+        uses: crytic/slither-action@v0.4.0
+        id: slither
+        with:
+          target: 'solidity/'
+          slither-config: 'solidity/slither.config.json'
+          slither-args: --exclude incorrect-exponentiation
+          sarif: results.sarif
+          fail-on: none
+          compile-command: |
+            forge build
+          ignore-compile: false
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ${{ steps.slither.outputs.sarif }}
