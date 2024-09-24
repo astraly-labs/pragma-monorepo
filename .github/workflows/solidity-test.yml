@@ -2,9 +2,6 @@ name: Task - Test Solidity
 
 on:
   workflow_call: 
-  push:
-    paths:
-      - 'solidity/**'
   pull_request:
     paths:
       - 'solidity/**'
