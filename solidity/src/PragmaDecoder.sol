@@ -4,6 +4,9 @@ pragma solidity ^0.8.0;
 
 import {DataFeed, DataFeedType} from "./interfaces/IPragma.sol";
 import {HyMsg, IHyperlane} from "./interfaces/IHyperlane.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "./libraries/ConstantsLib.sol";
 import "./libraries/ErrorsLib.sol";
 import "./libraries/DataParser.sol";
@@ -13,31 +16,17 @@ import "./libraries/MerkleTree.sol";
 import "./libraries/UnsafeCalldataBytesLib.sol";
 import "./libraries/UnsafeBytesLib.sol";
 
-contract PragmaDecoder {
+abstract contract PragmaDecoder {
     using BytesLib for bytes;
 
     /* STORAGE */
-    IHyperlane public immutable hyperlane;
+    IHyperlane public hyperlane;
     mapping(bytes32 => bool) public _isValidDataSource;
     mapping(bytes32 => SpotMedian) public spotMedianFeeds;
     mapping(bytes32 => TWAP) public twapFeeds;
     mapping(bytes32 => RealizedVolatility) public rvFeeds;
     mapping(bytes32 => Options) public optionsFeeds;
     mapping(bytes32 => Perp) public perpFeeds;
-
-    constructor(
-        address _hyperlane,
-        uint16[] memory _dataSourceEmitterChainIds,
-        bytes32[] memory _dataSourceEmitterAddresses
-    ) {
-        hyperlane = IHyperlane(payable(_hyperlane));
-
-        for (uint256 i = 0; i < _dataSourceEmitterChainIds.length; i++) {
-            _isValidDataSource[keccak256(
-                abi.encodePacked(_dataSourceEmitterChainIds[i], _dataSourceEmitterAddresses[i])
-            )] = true;
-        }
-    }
 
     // TODO: set valid data sources
     function isValidDataSource(uint16 chainId, bytes32 emitterAddress) public view returns (bool) {
