@@ -20,6 +20,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for Solidity changes
+        id: check_changes
+        run: |
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} > changes.txt
+          echo "::set-output name=solidity_changed::$(grep -q 'solidity/' changes.txt && echo 'true' || echo 'false')"
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
@@ -27,6 +35,7 @@ jobs:
           version: nightly
 
       - name: Cache gas report
+        if: steps.check_changes.outputs.solidity_changed == 'true'
         uses: actions/cache@v3
         with:
           path: ${{ env.working-directory }}/previous_gas_report.txt
@@ -43,6 +52,7 @@ jobs:
         run: forge test -vvv
 
       - name: Initialize dummy previous gas report if not exists
+        if: steps.check_changes.outputs.solidity_changed == 'true'
         working-directory: ${{ env.working-directory }}
         run: |
           if [ ! -f previous_gas_report.txt ]; then
@@ -56,6 +66,7 @@ jobs:
 
       - name: Run gas report
         working-directory: ${{ env.working-directory }}
+        if: steps.check_changes.outputs.solidity_changed == 'true'
         run: |
           echo "Running Forge test..."
           forge test --match-contract PragmaDecoderGasTest -vvv > full_output.txt
@@ -67,6 +78,7 @@ jobs:
           cat current_gas_report.txt
 
       - name: Compare gas results
+        if: steps.check_changes.outputs.solidity_changed == 'true'
         id: compare-gas
         working-directory: ${{ env.working-directory }}
         run: |
@@ -116,7 +128,7 @@ jobs:
 
       - name: Comment PR
         uses: actions/github-script@v6
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.check_changes.outputs.solidity_changed == 'true'
         env:
           SUMMARY: ${{ steps.compare-gas.outputs.gas_summary }}
         with:
@@ -131,12 +143,14 @@ jobs:
             })
 
       - name: Upload gas report
+        if: steps.check_changes.outputs.solidity_changed == 'true'
         uses: actions/upload-artifact@v3
         with:
           name: gas-report
           path: ${{ env.working-directory }}/previous_gas_report.txt
 
       - name: Static analysis
+        if: steps.check_changes.outputs.solidity_changed == 'true'
         uses: crytic/slither-action@v0.4.0
         id: slither
         with:
@@ -150,6 +164,7 @@ jobs:
           ignore-compile: false
 
       - name: Upload SARIF file
+        if: steps.check_changes.outputs.solidity_changed == 'true'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: ${{ steps.slither.outputs.sarif }}
