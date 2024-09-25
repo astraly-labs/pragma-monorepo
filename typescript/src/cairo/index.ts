@@ -28,19 +28,13 @@ export async function buildAccount(): Promise<Account> {
 
 /// Reads from a pre-compiled contract file.
 function getCompiledContract(name: string): any {
-  const prefix = name.includes("FeedsRegistry")
-    ? "pragma_feeds_registry_"
-    : "pragma_dispatcher_";
-  const contractPath = `${CAIRO_BUILD_FOLDER}/${prefix}${name}.contract_class.json`;
+  const contractPath = `${CAIRO_BUILD_FOLDER}/${name}.contract_class.json`;
   return json.parse(fs.readFileSync(contractPath).toString("ascii"));
 }
 
 /// Reads from a pre-compiled casm file.
 function getCompiledContractCasm(name: string): any {
-  const prefix = name.includes("FeedsRegistry")
-    ? "pragma_feeds_registry_"
-    : "pragma_dispatcher_";
-  const contractPath = `${CAIRO_BUILD_FOLDER}/${prefix}${name}.compiled_contract_class.json`;
+  const contractPath = `${CAIRO_BUILD_FOLDER}/${name}.compiled_contract_class.json`;
   return JSON.parse(fs.readFileSync(contractPath, "utf-8"));
 }
 

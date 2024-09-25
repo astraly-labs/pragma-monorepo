@@ -1,3 +1,5 @@
+import type { DeploymentConfig } from "../config";
+
 // Supported chains
 export type Chain = "starknet" | "ethereum";
 
@@ -5,5 +7,5 @@ export type Chain = "starknet" | "ethereum";
 export interface Deployer {
   readonly allowedChains: Chain[];
   readonly defaultChain: Chain;
-  deploy(chain?: string): Promise<void>;
+  deploy(config: DeploymentConfig, chain?: string): Promise<void>;
 }

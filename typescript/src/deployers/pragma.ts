@@ -2,6 +2,7 @@ import { ethers } from "hardhat";
 import { parseEther, zeroPadValue } from "ethers";
 
 import type { Deployer, Chain } from "./interface";
+import type { DeploymentConfig } from "../config";
 
 const HYPERLANE_CONTRACT_NAME: string = "Hyperlane";
 const PRAGMA_CONTRACT_NAME: string = "Pragma";
@@ -30,7 +31,7 @@ const pragmaConfig = {
 export class PragmaDeployer implements Deployer {
   readonly allowedChains: Chain[] = ["ethereum"];
   readonly defaultChain: Chain = "ethereum";
-  async deploy(chain?: Chain): Promise<void> {
+  async deploy(config: DeploymentConfig, chain?: Chain): Promise<void> {
     if (!chain) chain = this.defaultChain;
     if (!this.allowedChains.includes(chain)) {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);

@@ -140,8 +140,8 @@ jobs:
         uses: crytic/slither-action@v0.4.0
         id: slither
         with:
-          target: 'solidity/'
-          slither-config: 'solidity/slither.config.json'
+          target: "solidity/"
+          slither-config: "solidity/slither.config.json"
           slither-args: --exclude incorrect-exponentiation
           sarif: results.sarif
           fail-on: none

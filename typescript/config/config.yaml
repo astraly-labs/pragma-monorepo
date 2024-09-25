@@ -1,0 +1,12 @@
+# Configuration for the Pragma Oracle
+# TODO
+pragma_oracle:
+
+# Configuration for the Pragma Dispatcher
+pragma_dispatcher:
+  pragma_oracle_address: "0x0"
+  hyperlane_mailbox_address: "0x0"
+
+# Configuration for the Pragma.sol EVM contract
+# TODO
+pragma:

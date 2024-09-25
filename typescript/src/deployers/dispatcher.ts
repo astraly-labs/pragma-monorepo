@@ -1,111 +1,174 @@
-import type { Deployer, Chain } from "./interface";
+import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 
+import type { Deployer, Chain } from "./interface";
 import { deployContract, buildAccount } from "../cairo";
+import {
+  loadConfig,
+  type AssetClassRouter,
+  type DeploymentConfig,
+  type FeedsConfig,
+  type FeedTypeRouter,
+} from "../config";
+import { FEEDS_CONFIG_FILE } from "../constants";
+import type { Account, Contract } from "starknet";
 
-const ASSET_CLASS_CRYPTO_ID = 0;
+dotenv.config();
+const NETWORK = process.env.NETWORK;
 
-// TODO: This should probably be its own configuration *somewhere*. TBD
-const PRAGMA_FEEDS = [
-  {
-    id: "18669995996566340",
-    name: "BTC/USD: SpotMedian",
-  },
-  {
-    id: "19514442401534788",
-    name: "ETH/USD: SpotMedian",
-  },
-];
-
-// TODO: This should probably be its own configuration *somewhere*. TBD
-const FEED_TYPES = [
-  {
-    id: "0",
-    name: "SpotMedian",
-    type: "FeedTypeUniqueRouter",
-  },
-];
-
-// TODO: Shall this be configured at a config file level? Or CLI? Both? TBD
-const PRAGMA_ORACLE_ADDRESS = "0x1";
-const HYPERLANE_MAILBOX_ADDRESS = "0x1";
+const REGISTRY_PREFIX = "pragma_feeds_registry";
+const DISPATCHER_PREFIX = "pragma_dispatcher";
 
 export class DispatcherDeployer implements Deployer {
   readonly allowedChains: Chain[] = ["starknet"];
   readonly defaultChain: Chain = "starknet";
-  async deploy(chain?: Chain): Promise<void> {
+
+  async deploy(config: DeploymentConfig, chain?: Chain): Promise<void> {
     if (!chain) chain = this.defaultChain;
     console.log(`🧩 Deploying Dispatcher to ${chain}...`);
 
-    let deploymentInfo: any = {};
-    let deployer = await buildAccount();
+    if (NETWORK === undefined) {
+      throw new Error("NETWORK in .env must be defined");
+    }
 
-    // 0. Deploy the Feeds Registry
-    let feedsRegistry = await deployContract(deployer, "PragmaFeedsRegistry", [
-      deployer.address,
-    ]);
-    deploymentInfo.PragmaFeedsRegistry = feedsRegistry.address;
-    for (const feed of PRAGMA_FEEDS) {
+    let supported_feeds = loadConfig<FeedsConfig>(FEEDS_CONFIG_FILE);
+    let deployer = await buildAccount();
+    let deploymentInfo: any = {};
+
+    const feedsRegistry = await this.deployFeedsRegistry(
+      deployer,
+      supported_feeds,
+    );
+    deploymentInfo.FeedsRegistry = feedsRegistry.address;
+
+    const dispatcher = await this.deployDispatcher(
+      deployer,
+      feedsRegistry.address,
+      config,
+    );
+    deploymentInfo.PragmaDispatcher = dispatcher.address;
+
+    deploymentInfo.AssetClassRouters = await this.deployAllRouters(
+      deployer,
+      config,
+      supported_feeds,
+      dispatcher,
+    );
+
+    const jsonContent = JSON.stringify(deploymentInfo, null, 2);
+    const filePath = path.join("deployments", NETWORK, "dispatcher.json");
+    fs.writeFileSync(filePath, jsonContent);
+    console.log(`Deployment info saved to ${filePath}`);
+
+    console.log("Deployment complete!");
+  }
+
+  /// Deploys the Pragma Feeds Registry and register all supported feeds.
+  private async deployFeedsRegistry(
+    deployer: Account,
+    supported_feeds: FeedsConfig,
+  ): Promise<Contract> {
+    let feedsRegistry = await deployContract(
+      deployer,
+      `${REGISTRY_PREFIX}_PragmaFeedsRegistry`,
+      [deployer.address],
+    );
+    for (const feed of supported_feeds.feeds) {
       let tx = await feedsRegistry.invoke("add_feed", [feed.id]);
       await deployer.waitForTransaction(tx.transaction_hash);
       console.log("Registered", feed.name);
     }
     console.log("✅ Deployed the Pragma Feeds Registry");
+    return feedsRegistry;
+  }
 
-    // 1. Deploy Dispatcher
-    const dispatcher = await deployContract(deployer, "PragmaDispatcher", [
-      deployer.address,
-      feedsRegistry.address,
-      HYPERLANE_MAILBOX_ADDRESS,
-    ]);
-    deploymentInfo.PragmaDispatcher = dispatcher.address;
-    console.log("✅ Deployed the Pragma Dispatcher");
-
-    // 2. Deploy Asset class router for Crypto
-    console.log(
-      `⏳ Deploying & registering asset class router ${ASSET_CLASS_CRYPTO_ID}...`,
+  /// Deploys the Pragma Dispatcher contract.
+  private async deployDispatcher(
+    deployer: Account,
+    feedsRegistryAddress: string,
+    config: DeploymentConfig,
+  ): Promise<Contract> {
+    const dispatcher = await deployContract(
+      deployer,
+      `${DISPATCHER_PREFIX}_PragmaDispatcher`,
+      [
+        deployer.address,
+        feedsRegistryAddress,
+        config.pragma_dispatcher.hyperlane_mailbox_address,
+      ],
     );
-    let cryptoRouter = await deployContract(deployer, "AssetClassRouter", [
-      deployer.address,
-      ASSET_CLASS_CRYPTO_ID,
-    ]);
-    console.log("✅ Deployed!");
-    let tx = await dispatcher.invoke("register_asset_class_router", [
-      ASSET_CLASS_CRYPTO_ID,
-      cryptoRouter.address,
+    return dispatcher;
+  }
+
+  /// Deploys all supported routers.
+  private async deployAllRouters(
+    deployer: Account,
+    config: DeploymentConfig,
+    supported_feeds: FeedsConfig,
+    pragmaDispatcher: Contract,
+  ): Promise<any> {
+    let assetClassRouters: any = {};
+    for (const asset_class of supported_feeds.asset_classes_routers) {
+      assetClassRouters[asset_class.name] = await this.deployNewAssetClass(
+        deployer,
+        config,
+        asset_class,
+        pragmaDispatcher,
+      );
+    }
+    return assetClassRouters;
+  }
+
+  private async deployNewAssetClass(
+    deployer: Account,
+    config: DeploymentConfig,
+    asset_class: AssetClassRouter,
+    pragmaDispatcher: Contract,
+  ): Promise<any> {
+    let assetRouter = await deployContract(
+      deployer,
+      `${DISPATCHER_PREFIX}_${asset_class.contract}`,
+      [deployer.address, asset_class.id],
+    );
+
+    let tx = await pragmaDispatcher.invoke("register_asset_class_router", [
+      asset_class.id,
+      assetRouter.address,
     ]);
     await deployer.waitForTransaction(tx.transaction_hash);
-    console.log("✅ Registered with the Pragma Dispatcher!\n");
 
-    deploymentInfo.CryptoRouter = {
-      address: cryptoRouter.address,
-      feed_types: {},
-    };
-
-    // 3. Deploy all unique feeds
-    for (const feed_type of FEED_TYPES) {
-      console.log(
-        `⏳ Deploying & registering feed type router ${feed_type.name}...`,
+    let feedTypeRouters: any = {};
+    for (const feed_type of asset_class.feed_types_routers) {
+      feedTypeRouters[feed_type.name] = await this.deployNewFeedType(
+        deployer,
+        config,
+        assetRouter,
+        feed_type,
       );
-      const feedRouter = await deployContract(deployer, feed_type.type, [
-        PRAGMA_ORACLE_ADDRESS,
-        feed_type.id,
-      ]);
-      console.log("✅ Deployed!");
-      await cryptoRouter.invoke("register_feed_type_router", [
-        feed_type.id,
-        feedRouter.address,
-      ]);
-      console.log("✅ Registered with the Crypto Router!\n");
-      deploymentInfo.CryptoRouter.feeds[feed_type.name] = feedRouter.address;
     }
 
-    const jsonContent = JSON.stringify(deploymentInfo, null, 2);
-    const filePath = path.join("deployments", "dispatcher.json");
-    fs.writeFileSync(filePath, jsonContent);
-    console.log(`Deployment info saved to ${filePath}`);
+    return {
+      address: assetRouter.address,
+      feed_type_routers: feedTypeRouters,
+    };
+  }
 
-    console.log("Deployment complete!");
+  private async deployNewFeedType(
+    deployer: Account,
+    config: DeploymentConfig,
+    asset_class: Contract,
+    feed_type: FeedTypeRouter,
+  ): Promise<string> {
+    const feedRouter = await deployContract(
+      deployer,
+      `${DISPATCHER_PREFIX}_${feed_type.contract}`,
+      [config.pragma_dispatcher.pragma_oracle_address, feed_type.id],
+    );
+    await asset_class.invoke("register_feed_type_router", [
+      feed_type.id,
+      feedRouter.address,
+    ]);
+    return feedRouter.address;
   }
 }
