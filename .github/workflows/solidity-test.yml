@@ -1,7 +1,13 @@
 name: Task - Test Solidity
 
 on:
-  workflow_call: 
+  workflow_call:
+  push:
+    paths:
+      - "solidity/**"
+  pull_request:
+    paths:
+      - "solidity/**"
 
 env:
   FOUNDRY_PROFILE: ci
@@ -27,7 +33,7 @@ jobs:
         uses: foundry-rs/foundry-toolchain@v1
         with:
           version: nightly
-          
+
       - name: Cache gas report
         if: steps.check_changes.outputs.solidity_changed == 'true'
         uses: actions/cache@v3
@@ -36,7 +42,6 @@ jobs:
           key: ${{ runner.os }}-gas-report-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-gas-report-
-
 
       - name: Run Forge build
         working-directory: ${{ env.working-directory }}
@@ -149,8 +154,8 @@ jobs:
         uses: crytic/slither-action@v0.4.0
         id: slither
         with:
-          target: 'solidity/'
-          slither-config: 'solidity/slither.config.json'
+          target: "solidity/"
+          slither-config: "solidity/slither.config.json"
           slither-args: --exclude incorrect-exponentiation
           sarif: results.sarif
           fail-on: none

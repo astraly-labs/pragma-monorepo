@@ -1,0 +1,26 @@
+# Contains the supported Feeds by Pragma.
+feeds:
+  - name: "BTC/USD: Spot Median"
+    id: "18669995996566340"
+
+  - name: "ETH/USD: Spot Median"
+    id: "19514442401534788"
+
+# Contract Routers
+asset_classes_routers:
+  - name: "Crypto"
+    contract: "AssetClassRouter"
+    id: "0"
+
+    feed_types_routers:
+      - name: "Unique: Spot Median"
+        contract: "FeedTypeUniqueRouter"
+        id: "0"
+
+      - name: "Unique: Perp Median"
+        contract: "FeedTypeUniqueRouter"
+        id: "1"
+
+      - name: "Unique: Spot Mean"
+        contract: "FeedTypeUniqueRouter"
+        id: "2"

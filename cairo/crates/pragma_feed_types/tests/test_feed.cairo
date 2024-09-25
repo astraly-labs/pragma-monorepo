@@ -47,7 +47,6 @@ fn test_valid_feed_id_conversion() {
     assert(out_feed.id().unwrap() == feed_id, 'Incorrect feed id');
 }
 
-
 #[test]
 fn test_pair_id_exceeds_max() {
     let invalid_feed = Feed {
