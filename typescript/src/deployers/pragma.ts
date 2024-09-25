@@ -28,7 +28,7 @@ export class PragmaDeployer implements Deployer {
       throw new Error("⛔ NETWORK in .env must be defined");
     }
 
-    console.log(`🧩 Deploying Pragma.sol to ${chain}...`);
+    console.log(`🧩 Deploying Pragma.sol to ${chain}:${NETWORK}...`);
 
     const [deployer] = await ethers.getSigners();
 

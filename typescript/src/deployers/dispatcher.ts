@@ -34,7 +34,7 @@ export class DispatcherDeployer implements Deployer {
       throw new Error("⛔ NETWORK in .env must be defined");
     }
 
-    console.log(`🧩 Deploying Dispatcher to ${chain}...`);
+    console.log(`🧩 Deploying Dispatcher to ${chain}:${NETWORK}...`);
     let supported_feeds = loadConfig<FeedsConfig>(FEEDS_CONFIG_FILE);
     let deployer = await buildAccount();
     let deploymentInfo: any = {};
