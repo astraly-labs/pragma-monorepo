@@ -26,12 +26,15 @@ export class DispatcherDeployer implements Deployer {
 
   async deploy(config: DeploymentConfig, chain?: Chain): Promise<void> {
     if (!chain) chain = this.defaultChain;
-    console.log(`🧩 Deploying Dispatcher to ${chain}...`);
-
-    if (NETWORK === undefined) {
-      throw new Error("NETWORK in .env must be defined");
+    if (!this.allowedChains.includes(chain)) {
+      throw new Error(`⛔ Deployment to ${chain} is not supported.`);
     }
 
+    if (NETWORK === undefined) {
+      throw new Error("⛔ NETWORK in .env must be defined");
+    }
+
+    console.log(`🧩 Deploying Dispatcher to ${chain}...`);
     let supported_feeds = loadConfig<FeedsConfig>(FEEDS_CONFIG_FILE);
     let deployer = await buildAccount();
     let deploymentInfo: any = {};

@@ -8,5 +8,20 @@ pragma_dispatcher:
   hyperlane_mailbox_address: "0x0"
 
 # Configuration for the Pragma.sol EVM contract
-# TODO
 pragma:
+  data_source_emitters:
+    - chain_id: 1
+      address: "0x51298007E4e8A48d11B64D9361d6ED64f2B4309D"
+    - chain_id: 2
+      address: "0x51298007E4e8A48d11B64D9361d6ED64f2B4309D"
+    - chaind_id: 3
+      address: "0x51298007E4e8A48d11B64D9361d6ED64f2B4309D"
+
+  valid_time_period_in_seconds: 3600 # 1 hour
+  single_update_fee_in_wei: "0.01" # 0.01 eth
+
+  hyperlane:
+    validators:
+      - "0x1234567890123456789012345678901234567890"
+      - "0x2345678901234567890123456789012345678901"
+      - "0x3456789012345678901234567890123456789012"
