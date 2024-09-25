@@ -60,7 +60,7 @@ export class DispatcherDeployer implements Deployer {
     );
 
     const jsonContent = JSON.stringify(deploymentInfo, null, 2);
-    const filePath = path.join("deployments", NETWORK, "dispatcher.json");
+    const filePath = path.join("..", "deployments", NETWORK, "dispatcher.json");
     fs.writeFileSync(filePath, jsonContent);
     console.log(`Deployment info saved to ${filePath}`);
 
@@ -168,10 +168,11 @@ export class DispatcherDeployer implements Deployer {
       `${DISPATCHER_PREFIX}_${feed_type.contract}`,
       [config.pragma_dispatcher.pragma_oracle_address, feed_type.id],
     );
-    await asset_class.invoke("register_feed_type_router", [
+    let tx = await asset_class.invoke("register_feed_type_router", [
       feed_type.id,
       feedRouter.address,
     ]);
+    await deployer.waitForTransaction(tx.transaction_hash);
     return feedRouter.address;
   }
 }
