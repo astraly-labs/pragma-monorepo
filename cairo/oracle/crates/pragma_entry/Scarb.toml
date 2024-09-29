@@ -1,16 +1,13 @@
 [package]
-name = "pragma_oracle"
+name = "pragma_entry"
 edition = "2024_07"
 version = "0.1.0"
 
 [dependencies]
 starknet.workspace = true
+alexandria_sorting.workspace = true
+alexandria_storage.workspace = true
 
-openzeppelin.workspace = true
-alexandria_math.workspace = true
-
-pragma_publisher_registry.workspace = true
-pragma_entry.workspace = true
 
 [tool]
 fmt.workspace = true
@@ -20,7 +17,7 @@ casm = true
 casm-add-pythonic-hints = true
 
 [lib]
-name = "pragma_oracle"
+name = "pragma_entry"
 
 [dev-dependencies]
 snforge_std.workspace = true

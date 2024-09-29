@@ -14,12 +14,12 @@ mod PublisherRegistry {
     use core::num::traits::Zero;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{UpgradeableComponent, interface::IUpgradeable};
-    use pragma_publisher_registry::{errors, interface::IPublisherRegistryABI};
+    use pragma_publisher_registry::{errors::PublisherErrors, interface::IPublisherRegistryABI};
     use starknet::storage::{
         StoragePointerReadAccess, StoragePointerWriteAccess, Vec, VecTrait, MutableVecTrait,
         StoragePathEntry, Map
     };
-    use starknet::{get_caller_address, ClassHash,ContractAddress};
+    use starknet::{get_caller_address, ClassHash, ContractAddress};
 
     // ================== COMPONENTS ==================
 
@@ -98,7 +98,7 @@ mod PublisherRegistry {
     #[constructor]
     fn constructor(ref self: ContractState, owner: ContractAddress) {
         // [Check]
-        assert(!owner.is_zero(), errors::OWNER_IS_ZERO);
+        assert(!owner.is_zero(), PublisherErrors::OWNER_IS_ZERO);
         // [Effect]
         self.ownable.initializer(owner);
     }
@@ -121,15 +121,15 @@ mod PublisherRegistry {
             // [Checks] Publisher address already registered for another publisher name
             assert(
                 !self.is_address_registered(publisher_address),
-                errors::ADDRESS_ALREADY_REGISTERED
+                PublisherErrors::ADDRESS_ALREADY_REGISTERED
             );
 
             // [Checks] Publisher name already registered
             let existing_publisher_address = self.get_publisher_address(publisher);
-            assert(existing_publisher_address.is_zero(), errors::NAME_ALREADY_REGISTERED);
+            assert(existing_publisher_address.is_zero(), PublisherErrors::NAME_ALREADY_REGISTERED);
 
             // [Check] Publisher address is not null
-            assert(!publisher_address.is_zero(), errors::CANNOT_SET_ADDRESS_TO_ZERO);
+            assert(!publisher_address.is_zero(), PublisherErrors::CANNOT_SET_ADDRESS_TO_ZERO);
 
             // [Effect] Insert new publisher
             self.publishers.append().write(publisher);
@@ -152,20 +152,22 @@ mod PublisherRegistry {
         ) {
             // [Check] Publisher is registered
             let existing_publisher_address = self.get_publisher_address(publisher);
-            assert(!existing_publisher_address.is_zero(), errors::NAME_NOT_REGISTERED);
+            assert(!existing_publisher_address.is_zero(), PublisherErrors::NAME_NOT_REGISTERED);
 
             // [Check] Address already registered for another publisher
             assert(
                 !self.is_address_registered(new_publisher_address),
-                errors::ADDRESS_ALREADY_REGISTERED
+                PublisherErrors::ADDRESS_ALREADY_REGISTERED
             );
 
             // [Check] Caller is the publisher associated to the current address
             let caller = get_caller_address();
-            assert(caller == existing_publisher_address, errors::CALLER_IS_NOT_PUBLISHER);
+            assert(caller == existing_publisher_address, PublisherErrors::CALLER_IS_NOT_PUBLISHER);
 
             // [Check] Publisher address is not zero
-            assert(!new_publisher_address.is_zero(), errors::PUBLISHER_ADDDRESS_CANNOT_BE_ZERO);
+            assert(
+                !new_publisher_address.is_zero(), PublisherErrors::PUBLISHER_ADDDRESS_CANNOT_BE_ZERO
+            );
 
             // [Effect] update publisher address
             self.publisher_address.entry(publisher).write(new_publisher_address);
@@ -191,7 +193,7 @@ mod PublisherRegistry {
 
             // [Check] Publisher exists
             let not_exists: bool = self.publisher_address.entry(publisher).read().is_zero();
-            assert(!not_exists, errors::PUBLISHER_NOT_FOUND);
+            assert(!not_exists, PublisherErrors::PUBLISHER_NOT_FOUND);
 
             // [Effect] Delete address (set to 0)
             self.publisher_address.entry(publisher).write(Zero::zero());
@@ -211,7 +213,7 @@ mod PublisherRegistry {
             let mut publisher_idx = 0;
             match self.find_publisher_idx(publisher) {
                 Option::Some(cur_idx) => publisher_idx = cur_idx,
-                Option::None => panic(array![errors::PUBLISHER_NOT_FOUND])
+                Option::None => panic(array![PublisherErrors::PUBLISHER_NOT_FOUND])
             };
             let publishers_len = self.publishers_len.read();
 
@@ -239,11 +241,11 @@ mod PublisherRegistry {
 
             // [Check] Publisher existence
             let existing_publisher_address = self.get_publisher_address(publisher);
-            assert(!existing_publisher_address.is_zero(), errors::PUBLISHER_NOT_FOUND);
+            assert(!existing_publisher_address.is_zero(), PublisherErrors::PUBLISHER_NOT_FOUND);
 
             // [Check] Verify if the source is already available for the publisher
             let can_publish = self.can_publish_source(publisher, source);
-            assert(!can_publish, errors::SOURCE_ALREADY_REGISTERED);
+            assert(!can_publish, PublisherErrors::SOURCE_ALREADY_REGISTERED);
 
             // [Effect] Add new source to publisher
             self.publisher_sources.entry(publisher).append().write(source);
@@ -283,14 +285,15 @@ mod PublisherRegistry {
 
             // [Check] Source list not empty
             assert(
-                self.publisher_sources.entry(publisher).len() != 0, errors::NO_SOURCES_FOR_PUBLISHER
+                self.publisher_sources.entry(publisher).len() != 0,
+                PublisherErrors::NO_SOURCES_FOR_PUBLISHER
             );
 
             // [Effect] Retrieve the list of sources for the publisher
             let mut source_idx = 0;
             match self.find_source_idx(publisher, source) {
                 Option::Some(idx) => source_idx = idx,
-                Option::None => panic(array![errors::SOURCE_NOT_FOUND_FOR_PUBLISHER])
+                Option::None => panic(array![PublisherErrors::SOURCE_NOT_FOUND_FOR_PUBLISHER])
             };
             let sources_len = self.publisher_sources_len.entry(publisher).read();
             if (source_idx == sources_len - 1) {
@@ -420,7 +423,6 @@ mod PublisherRegistry {
         ) {}
 
 
-        
         fn find_publisher_idx(self: @ContractState, publisher: felt252) -> Option<u64> {
             let mut cur_idx = 0;
             loop {

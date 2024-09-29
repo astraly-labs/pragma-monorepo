@@ -21,11 +21,15 @@ openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", br
 # TODO: Update back to main repository once PR is merged:
 # https://github.com/keep-starknet-strange/alexandria/pull/332
 alexandria_bytes = { git = "https://github.com/maxdesalle/alexandria.git" }
+alexandria_sorting = { git = "https://github.com/maxdesalle/alexandria.git" }
+alexandria_storage = { git = "https://github.com/maxdesalle/alexandria.git" }
+alexandria_math = { git = "https://github.com/maxdesalle/alexandria.git" }
 
 # Pragma Oracle crates
 pragma_oracle = { path = "crates/pragma_oracle" }
 pragma_publisher_registry = { path = "crates/pragma_publisher_registry" }
 pragma_summary_stats = { path = "crates/pragma_summary_stats" }
+pragma_entry = { path = "crates/pragma_entry" }
 
 # Test dependencies
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.30.0" }
