@@ -80,9 +80,9 @@ mod Oracle {
         //oracle_data_entry_storage, Map between (pair_id, source, publisher)
         oracle_data_generic_entry_storage: Map::<(felt252, felt252, felt252), GenericEntryStorage>,
         //oracle_list_of_publishers_for_sources_storage, Map between
-        //(source,(SPOT/FUTURES/OPTIONS/GENERIC), and the pair_id) and the list of publishers
+        //(source,(SPOT/FUTURES/OPTIONS/GENERIC), expiration_timestamp, and the pair_id) and the list of publishers
         oracle_list_of_publishers_for_sources_storage: Map::<
-            (felt252, felt252, felt252), Vec<felt252>
+            (felt252, felt252, u64, felt252), Vec<felt252>
         >,
         //oracle_data_entry_storage len , Map between pair_id, (SPOT/FUTURES/OPTIONS/GENERIC),
         //expiration_timestamp and the length
@@ -374,7 +374,7 @@ mod Oracle {
                                         let filtered_data = self
                                             .filter_array_by_source::<
                                                 SpotEntry
-                                            >(array_spot.span(), source, SPOT, pair_id);
+                                            >(array_spot.span(), source, SPOT, pair_id, 0);
                                         let response = self
                                             .compute_median_for_source::<
                                                 SpotEntry
@@ -415,7 +415,7 @@ mod Oracle {
                                         let filtered_data = self
                                             .filter_array_by_source::<
                                                 FutureEntry
-                                            >(array_future.span(), source, FUTURE, pair_id);
+                                            >(array_future.span(), source, FUTURE, pair_id, expiration_timestamp);
                                         let response = self
                                             .compute_median_for_source::<
                                                 FutureEntry
@@ -454,7 +454,7 @@ mod Oracle {
                                         let filtered_data = self
                                             .filter_array_by_source::<
                                                 GenericEntry
-                                            >(array_generic.span(), source, GENERIC, key);
+                                            >(array_generic.span(), source, GENERIC, key, 0);
                                         let response = self
                                             .compute_median_for_source::<
                                                 GenericEntry
@@ -793,7 +793,7 @@ mod Oracle {
             let mut volumes = ArrayTrait::<u128>::new();
             match data_type {
                 DataType::SpotEntry(pair_id) => {
-                    let publishers = self.get_publishers_for_source(source, SPOT, pair_id);
+                    let publishers = self.get_publishers_for_source(source, SPOT, pair_id, 0);
                     let mut spot_entries = ArrayTrait::<SpotEntry>::new();
                     loop {
                         if (cur_idx == publishers.len()) {
@@ -833,7 +833,7 @@ mod Oracle {
                     pair_id, expiration_timestamp
                 )) => {
                     let mut future_entries = ArrayTrait::<FutureEntry>::new();
-                    let publishers = self.get_publishers_for_source(source, FUTURE, pair_id);
+                    let publishers = self.get_publishers_for_source(source, FUTURE, pair_id, expiration_timestamp);
 
                     loop {
                         if (cur_idx == publishers.len()) {
@@ -872,7 +872,7 @@ mod Oracle {
                     );
                 },
                 DataType::GenericEntry(key) => {
-                    let publishers = self.get_publishers_for_source(source, GENERIC, key);
+                    let publishers = self.get_publishers_for_source(source, GENERIC, key, 0);
 
                     let mut generic_entries = ArrayTrait::<GenericEntry>::new();
                     loop {
@@ -945,7 +945,7 @@ mod Oracle {
                     } else {
                         let mut publishers_list = self
                             .get_publishers_for_source(
-                                spot_entry.base.source, SPOT, spot_entry.pair_id
+                                spot_entry.base.source, SPOT, spot_entry.pair_id, 0
                             );
                         if (publishers_list.len() == 0) {
                             let sources_len = self
@@ -981,7 +981,7 @@ mod Oracle {
                         if (!publishers_list.contains(@spot_entry.base.publisher)) {
                             self
                                 .oracle_list_of_publishers_for_sources_storage
-                                .entry((spot_entry.base.source, SPOT, spot_entry.pair_id))
+                                .entry((spot_entry.base.source, SPOT, 0,spot_entry.pair_id))
                                 .append()
                                 .write(spot_entry.base.publisher);
                         }
@@ -1042,7 +1042,7 @@ mod Oracle {
                     } else {
                         let mut publishers_list = self
                             .get_publishers_for_source(
-                                future_entry.base.source, FUTURE, future_entry.pair_id
+                                future_entry.base.source, FUTURE, future_entry.pair_id, future_entry.expiration_timestamp
                             );
                         if (publishers_list.len() == 0) {
                             let sources_len = self
@@ -1118,12 +1118,12 @@ mod Oracle {
                         }
                         let mut publishers_list = self
                             .get_publishers_for_source(
-                                future_entry.base.source, FUTURE, future_entry.pair_id
+                                future_entry.base.source, FUTURE, future_entry.pair_id, future_entry.expiration_timestamp
                             );
                         if (!publishers_list.contains(@future_entry.base.publisher)) {
                             self
                                 .oracle_list_of_publishers_for_sources_storage
-                                .entry((future_entry.base.source, FUTURE, future_entry.pair_id))
+                                .entry((future_entry.base.source, FUTURE, future_entry.expiration_timestamp, future_entry.pair_id))
                                 .append()
                                 .write(future_entry.base.publisher);
                         }
@@ -1185,7 +1185,7 @@ mod Oracle {
                     } else {
                         let mut publishers_list = self
                             .get_publishers_for_source(
-                                generic_entry.base.source, GENERIC, generic_entry.key
+                                generic_entry.base.source, GENERIC, generic_entry.key, 0
                             );
                         if (publishers_list.len() == 0) {
                             let sources_len = self
@@ -1221,7 +1221,7 @@ mod Oracle {
                         if (!publishers_list.contains(@generic_entry.base.publisher)) {
                             self
                                 .oracle_list_of_publishers_for_sources_storage
-                                .entry((generic_entry.base.source, GENERIC, generic_entry.key))
+                                .entry((generic_entry.base.source, GENERIC, 0,generic_entry.key))
                                 .append()
                                 .write(generic_entry.base.publisher);
                         }
@@ -1953,19 +1953,20 @@ mod Oracle {
         // @param type_of_data: the type of data to consider (e.g SPOT, FUTURE, GENERIC)
         // @returns a span of publishers
         fn get_publishers_for_source(
-            self: @ContractState, source: felt252, type_of_data: felt252, pair_id: felt252
+            self: @ContractState, source: felt252, type_of_data: felt252, pair_id: felt252, expiration_timestamp: u64
         ) -> Span<felt252> {
             let mut publishers = array![];
+            let publishers_len = self
+            .oracle_list_of_publishers_for_sources_storage
+            .entry((source, type_of_data, expiration_timestamp,pair_id))
+            .len();
             for i in 0
-                ..self
-                    .oracle_list_of_publishers_for_sources_storage
-                    .entry((source, type_of_data, pair_id))
-                    .len() {
+                ..publishers_len {
                         publishers
                             .append(
                                 self
                                     .oracle_list_of_publishers_for_sources_storage
-                                    .entry((source, type_of_data, pair_id))
+                                    .entry((source, type_of_data, expiration_timestamp, pair_id))
                                     .at(i)
                                     .read()
                             );
@@ -2008,12 +2009,13 @@ mod Oracle {
         ) -> u64 {
             let mut cur_idx = 0;
             let mut latest_timestamp = 0;
-            let (storage_bool, type_of_data, pair_id) = match data_type {
+            let (storage_bool, type_of_data, pair_id, expiration_timestamp) = match data_type {
                 DataType::SpotEntry(pair_id) => {
                     (
                         self.oracle_data_len_all_sources.entry((pair_id, SPOT, 0)).read(),
                         SPOT,
-                        pair_id
+                        pair_id, 
+                        0
                     )
                 },
                 DataType::FutureEntry((
@@ -2025,11 +2027,12 @@ mod Oracle {
                             .entry((pair_id, FUTURE, expiration_timestamp))
                             .read(),
                         FUTURE,
-                        pair_id
+                        pair_id, 
+                        expiration_timestamp
                     )
                 },
                 DataType::GenericEntry(key) => {
-                    (self.oracle_data_len_all_sources.entry((key, GENERIC, 0)).read(), GENERIC, key)
+                    (self.oracle_data_len_all_sources.entry((key, GENERIC, 0)).read(), GENERIC, key, 0)
                 }
             };
 
@@ -2043,7 +2046,7 @@ mod Oracle {
                     let source: felt252 = *sources.get(cur_idx).unwrap().unbox();
                     let publishers = self
                         .get_publishers_for_source(
-                            source, type_of_data, pair_id
+                            source, type_of_data, pair_id, expiration_timestamp
                         ); // In case a publisher cannot add data for another data type, will require a check before
                     let mut publisher_cur_idx = 0;
                     loop {
@@ -2096,10 +2099,10 @@ mod Oracle {
             ref entries: Array<PossibleEntries>,
             latest_timestamp: u64
         ) {
-            let (type_of_data, pair_id) = match data_type {
-                DataType::SpotEntry(pair_id) => (SPOT, pair_id),
-                DataType::FutureEntry((pair_id, _)) => (FUTURE, pair_id),
-                DataType::GenericEntry(key) => (GENERIC, key)
+            let (type_of_data, pair_id, expiration_timestamp) = match data_type {
+                DataType::SpotEntry(pair_id) => (SPOT, pair_id, 0),
+                DataType::FutureEntry((pair_id, expiration_timestamp)) => (FUTURE, pair_id, expiration_timestamp),
+                DataType::GenericEntry(key) => (GENERIC, key, 0)
             };
             let mut cur_idx = 0;
             loop {
@@ -2107,7 +2110,7 @@ mod Oracle {
                     break ();
                 }
                 let source: felt252 = *sources.get(cur_idx).unwrap().unbox();
-                let publishers = self.get_publishers_for_source(source, type_of_data, pair_id);
+                let publishers = self.get_publishers_for_source(source, type_of_data, pair_id, expiration_timestamp);
                 assert(publishers.len() != 0, PublisherErrors::NO_PUBLISHER_FOR_SOURCE);
                 let mut publisher_cur_idx = 0;
 
@@ -2196,11 +2199,12 @@ mod Oracle {
             array: Span<T>,
             source: felt252,
             type_of_data: felt252,
-            pair_id: felt252
+            pair_id: felt252, 
+            expiration_timestamp: u64
         ) -> Span<T> {
             let mut cur_idx = 0;
             let mut publisher_filtered_array = ArrayTrait::<T>::new();
-            let publishers = self.get_publishers_for_source(source, type_of_data, pair_id);
+            let publishers = self.get_publishers_for_source(source, type_of_data, pair_id, expiration_timestamp);
             loop {
                 if (cur_idx == array.len()) {
                     break ();
