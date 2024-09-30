@@ -11,6 +11,7 @@ mod SummaryStats {
     use pragma_operations::metrics::{mean,volatility, twap};
     use cubit::f128::types::fixed::{ONE_u128, FixedInto, FixedTrait,
     };
+    use pragma_summary_stats::errors::SummaryStatsErrors;
     use core::pedersen::PedersenTrait;
     use core::hash::{HashStateTrait, HashStateExTrait};
     use pragma_operations::structures::TickElem;
@@ -53,7 +54,7 @@ mod SummaryStats {
             stop: u64,
             aggregation_mode: AggregationMode
         ) -> (u128, u32) {
-            assert(start < stop, 'start must be < stop');
+            assert(start < stop, SummaryStatsErrors::START_MUST_BE_LOWER_THAN_STOP);
             let oracle_address = self.oracle_address.read();
             let oracle_dispatcher = IOracleABIDispatcher { contract_address: oracle_address };
 
@@ -99,11 +100,11 @@ mod SummaryStats {
                 Option::Some(entry) => {
                     match entry.unbox() {
                         PossibleEntries::Spot(_) => {
-                            assert(false, 'Invalid data type');
+                            panic(array![SummaryStatsErrors::INVALID_DATA_TYPE]);
                             Default::default()
                         },
                         PossibleEntries::Future(_) => {
-                            assert(false, 'Invalid data type');
+                            panic(array![SummaryStatsErrors::INVALID_DATA_TYPE]);
                             Default::default()
                         },
                         PossibleEntries::Generic(entry) => {
@@ -112,7 +113,7 @@ mod SummaryStats {
                     }
                 },
                 Option::None => {
-                    assert(false, 'No data available');
+                    panic(array![SummaryStatsErrors::NO_DATA_AVAILABLE]);
                     Default::default()
                 }
             };
@@ -121,7 +122,7 @@ mod SummaryStats {
             let leaf = self.get_options_data_hash(update_data);
 
             let merkle_root_felt: felt252 = (*merkle_root.value).try_into().unwrap();
-            assert(merkle_root_felt == compute_pedersen_root(leaf, merkle_proof), 'INVALID_PROOF');
+            assert(merkle_root_felt == compute_pedersen_root(leaf, merkle_proof), SummaryStatsErrors::INVALID_PROOF);
 
             // Update the data
             let old_data = self.options_data.entry(update_data.instrument_name).read();
@@ -186,8 +187,8 @@ mod SummaryStats {
         ) -> (u128, u32) {
             let oracle_address = self.oracle_address.read();
 
-            assert(num_samples > 0, 'num_samples must be > 0');
-            assert(num_samples <= 200, 'num_samples is too large');
+            assert(num_samples > 0, SummaryStatsErrors::NUM_SAMPLE_MUST_BE_ABOVE_ZERO);
+            assert(num_samples <= 200, SummaryStatsErrors::NUM_SAMPLE_IS_TOO_LARGE);
 
             let oracle_dispatcher = IOracleABIDispatcher { contract_address: oracle_address };
             let (latest_checkpoint_index, _) = oracle_dispatcher
@@ -203,8 +204,8 @@ mod SummaryStats {
                     .get_last_checkpoint_before(data_type, end_tick, aggregation_mode);
                 end_index = _end_idx;
             }
-            assert(start_index < end_index, 'start_tick must be < end_tick');
-            assert(start_index != latest_checkpoint_index, 'Not enough data');
+            assert(start_index < end_index, SummaryStatsErrors::START_TICK_MUST_BE_LOWER_THAN_END_TICK);
+            assert(start_index != latest_checkpoint_index,  SummaryStatsErrors::NOT_ENOUGH_DATA);
             let mut tick_arr = ArrayTrait::<TickElem>::new();
             let skip_frequency = calculate_skip_frequency(end_index - start_index, num_samples);
             let total_samples = (end_index - start_index) / skip_frequency;
@@ -248,7 +249,7 @@ mod SummaryStats {
             let (_stop_cp, stop_index) = oracle_dispatcher
                 .get_last_checkpoint_before(data_type, start_time + time, aggregation_mode);
             let decimals = oracle_dispatcher.get_decimals(data_type);
-            assert(start_index != stop_index, 'Not enough data');
+            assert(start_index != stop_index, SummaryStatsErrors::NOT_ENOUGH_DATA);
             let mut tick_arr = ArrayTrait::<TickElem>::new();
             let mut idx = start_index;
             loop {
