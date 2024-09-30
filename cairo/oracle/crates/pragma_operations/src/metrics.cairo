@@ -102,7 +102,7 @@ pub fn volatility(arr: Span<TickElem>) -> u128 {
 
 fn _sum_volatility(arr: Span<TickElem>) -> Fixed {
     let mut sum = FixedTrait::new(0, false);
-    for i in 0
+    for i in 1
         ..arr
             .len() {
                 let cur_val = *arr.at(i);
@@ -144,7 +144,7 @@ pub fn twap(arr: Span<TickElem>) -> u128 {
         //we assume that all tick values are the same
         panic(array![OperationsErrors::FAILED_TO_COMPUTE_TWAP]);
     }
-    for i in 0
+    for i in 1
         ..arr
             .len() {
                 if *arr.at(i - 1).tick > *arr.at(i).tick {
