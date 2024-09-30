@@ -31,4 +31,5 @@ pub mod OracleErrors {
     // CHECKPOINTS
 
     pub const NO_CHECKPOINT_AVAILABLE: felt252 = 'No checkpoint available';
+    pub const CHECKPOINT_DOES_NOT_EXIST: felt252 = 'Checkpoint does not exist';
 }

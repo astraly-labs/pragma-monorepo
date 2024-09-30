@@ -1,6 +1,6 @@
 pub mod Entry {
     use alexandria_sorting::MergeSort;
-    use pragma_entry::errors;
+    use pragma_entry::errors::EntryErrors;
     use pragma_entry::structures::{AggregationMode, HasPrice, HasBaseEntry,};
     //
     // Helpers
@@ -32,7 +32,7 @@ pub mod Entry {
                 value
             },
             AggregationMode::Error(()) => {
-                panic(array![errors::WRONG_AGGREGATION_MODE]);
+                panic(array![EntryErrors::WRONG_AGGREGATION_MODE]);
                 0
             }
         }
@@ -54,7 +54,6 @@ pub mod Entry {
             return 0;
         }
         let mut max_timestamp: u64 = (*entries[0_usize]).get_base_timestamp();
-        let mut index = 1_usize;
         loop {
             match entries.pop_front() {
                 Option::Some(entry) => {
@@ -83,7 +82,7 @@ pub mod Entry {
     ) -> u128 {
         let sorted_entries = MergeSort::sort(entries);
         let entries_len = sorted_entries.len();
-        assert(entries_len > 0_usize, 'entries must not be empty');
+        assert(entries_len > 0_usize, EntryErrors::ENTRIES_MUST_NOT_BE_EMPTY);
         let is_even = 1 - entries_len % 2_usize;
         if (is_even == 0) {
             let median_idx = (entries_len) / 2;
@@ -106,7 +105,6 @@ pub mod Entry {
         mut entries: Span<T>
     ) -> u128 {
         let mut sum: u128 = 0;
-        let mut index: u32 = 0;
         let entries_len: u32 = entries.len();
         loop {
             match entries.pop_front() {
@@ -120,7 +118,7 @@ pub mod Entry {
         let span_entry_array = entry_array.span();
         let sorted_array = MergeSort::sort(span_entry_array);
         let entries_len = sorted_array.len();
-        assert(entries_len > 0_usize, 'entries must not be empty');
+        assert(entries_len > 0_usize, EntryErrors::ENTRIES_MUST_NOT_BE_EMPTY);
         let is_even = 1 - entries_len % 2_usize;
         if (is_even == 0) {
             let median_idx = (entries_len) / 2;

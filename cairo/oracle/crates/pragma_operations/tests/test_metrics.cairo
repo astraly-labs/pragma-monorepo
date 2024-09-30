@@ -1,7 +1,13 @@
 //Tests
 
-use pragma_operations::{structures::TickElem, metrics::{extract_value,pairwise_1D_sub, pairwise_1D_mul,standard_deviation,volatility, variance, mean, sum_tick_array, sum_array,fill_1d}};
 use cubit::f128::types::fixed::{ONE_u128, FixedInto, FixedTrait, Fixed};
+use pragma_operations::{
+    structures::TickElem,
+    metrics::{
+        extract_value, pairwise_1D_sub, pairwise_1D_mul, standard_deviation, volatility, variance,
+        mean, sum_tick_array, sum_array, fill_1d
+    }
+};
 #[test]
 fn test_utils() {
     //extract_value

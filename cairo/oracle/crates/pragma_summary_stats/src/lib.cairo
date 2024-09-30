@@ -1,3 +1,3 @@
-pub mod interface; 
-pub mod contract; 
+pub mod contract;
 pub mod errors;
+pub mod interface;

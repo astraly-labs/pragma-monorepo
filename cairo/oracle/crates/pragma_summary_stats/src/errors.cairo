@@ -1,6 +1,5 @@
 pub mod SummaryStatsErrors {
-
-    // DATA 
+    // DATA
     pub const INVALID_DATA_TYPE: felt252 = 'Invalid data type';
     pub const NO_DATA_AVAILABLE: felt252 = 'No data available';
     pub const NOT_ENOUGH_DATA: felt252 = 'Not enough data';

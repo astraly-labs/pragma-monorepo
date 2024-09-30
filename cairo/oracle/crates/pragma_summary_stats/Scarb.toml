@@ -5,11 +5,7 @@ version = "0.1.0"
 
 [dependencies]
 starknet.workspace = true
-
-openzeppelin.workspace = true
-alexandria_math.workspace = true
-
-pragma_publisher_registry.workspace = true
+pragma_oracle.workspace = true
 pragma_operations.workspace = true
 pragma_entry.workspace = true
 

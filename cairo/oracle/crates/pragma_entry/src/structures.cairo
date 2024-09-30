@@ -1,4 +1,4 @@
-use pragma_entry::errors;
+use pragma_entry::errors::EntryErrors;
 use starknet::{ContractAddress, storage_access::StorePacking};
 
 pub const SPOT: felt252 = 'SPOT';
@@ -359,19 +359,20 @@ impl EntryStorePacking of StorePacking<EntryStorage, felt252> {
         // entries verifications (no overflow)
         assert(
             (value.timestamp.into() == value.timestamp.into() & TIMESTAMP_SHIFT_MASK_U32),
-            errors::TIMESTAMP_TOO_BIG
+            EntryErrors::TIMESTAMP_TOO_BIG
         );
         assert(
             value.volume.into() == value.volume.into() & VOLUME_SHIFT_MASK_U100,
-            errors::VOLUME_TOO_BIG
+            EntryErrors::VOLUME_TOO_BIG
         );
         assert(
-            value.price.into() == value.price.into() & PRICE_SHIFT_MASK_U120, errors::PRICE_TOO_BIG
+            value.price.into() == value.price.into() & PRICE_SHIFT_MASK_U120,
+            EntryErrors::PRICE_TOO_BIG
         );
         let pack_value: felt252 = value.timestamp.into()
             + value.volume.into() * TIMESTAMP_SHIFT_U32
             + value.price.into() * VOLUME_SHIFT_U132;
-        assert(pack_value.into() < MAX_FELT, errors::DATA_TOO_BIG);
+        assert(pack_value.into() < MAX_FELT, EntryErrors::DATA_TOO_BIG);
         pack_value
     }
     fn unpack(value: felt252) -> EntryStorage {

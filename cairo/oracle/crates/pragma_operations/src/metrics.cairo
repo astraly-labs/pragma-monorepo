@@ -1,8 +1,7 @@
-use pragma_operations::{structures::{TickElem}, errors::OperationsErrors};
-
-use cubit::f128::types::fixed::{ONE_u128, Fixed, FixedInto, FixedTrait, FixedAdd, FixedDiv, FixedMul,
-    FixedNeg
+use cubit::f128::types::fixed::{
+    ONE_u128, Fixed, FixedInto, FixedTrait, FixedAdd, FixedDiv, FixedMul, FixedNeg
 };
+use pragma_operations::{structures::{TickElem}, errors::OperationsErrors};
 
 const ONE_YEAR_IN_SECONDS: u128 = 31536000_u128;
 
@@ -17,12 +16,8 @@ pub fn extract_value(mut tick_arr: Span<TickElem>) -> Array<Fixed> {
     let mut output = ArrayTrait::<Fixed>::new();
     loop {
         match tick_arr.pop_front() {
-            Option::Some(cur_val) => {
-                output.append(*cur_val.value);
-            },
-            Option::None(_) => {
-                break ();
-            }
+            Option::Some(cur_val) => { output.append(*cur_val.value); },
+            Option::None(_) => { break (); }
         };
     };
     output
@@ -33,12 +28,8 @@ pub fn sum_tick_array(mut tick_arr: Span<TickElem>) -> u128 {
     let mut output = 0;
     loop {
         match tick_arr.pop_front() {
-            Option::Some(cur_val) => {
-                output += *cur_val.value.mag;
-            },
-            Option::None(_) => {
-                break ();
-            }
+            Option::Some(cur_val) => { output += *cur_val.value.mag; },
+            Option::None(_) => { break (); }
         };
     };
 
@@ -58,9 +49,7 @@ pub fn sum_array(mut tick_arr: Span<Fixed>) -> u128 {
                     panic(array![OperationsErrors::SQUARE_OPERATION_FAILED])
                 }
             },
-            Option::None(_) => {
-                break ();
-            }
+            Option::None(_) => { break (); }
         };
     };
     output
@@ -78,7 +67,6 @@ pub fn variance(tick_arr: Span<TickElem>) -> u128 {
 
     let arr_len = arr_.len();
     let mean_ = mean(tick_arr);
-    let tick_arr_len = tick_arr.len();
     let diff_arr = pairwise_1D_sub(arr_len, arr_.span(), FixedTrait::new(mag: mean_, sign: false));
 
     let diff_squared = pairwise_1D_mul(arr_len, diff_arr, diff_arr);
@@ -114,30 +102,33 @@ pub fn volatility(arr: Span<TickElem>) -> u128 {
 
 fn _sum_volatility(arr: Span<TickElem>) -> Fixed {
     let mut sum = FixedTrait::new(0, false);
-    for i in 0..arr.len(){
-        let cur_val = *arr.at(i);
-        let prev_val = *arr.at(i - 1);
-        let cur_value = cur_val.value;
-        let prev_value = prev_val.value;
-        assert(prev_value.mag > 0, OperationsErrors::FAILED_TO_COMPUTE_VOLATILITY);
-        let cur_timestamp = cur_val.tick;
-        let prev_timestamp = prev_val.tick;
-        assert(cur_timestamp > prev_timestamp, OperationsErrors::FAILED_TO_COMPUTE_VOLATILITY);
-        if (prev_timestamp > cur_timestamp) {
-            panic(array![ OperationsErrors::FAILED_TO_COMPUTE_VOLATILITY]);
-        }
-        let numerator_value = FixedTrait::ln(cur_value / prev_value);
-        let numerator = numerator_value.pow(FixedTrait::new(2 * ONE_u128, false));
-        let denominator = FixedTrait::new((cur_timestamp - prev_timestamp).into(), false)
-            / FixedTrait::new(ONE_YEAR_IN_SECONDS, false);
-        let fraction_ = numerator / denominator;
-        sum = sum + fraction_;
-    };
+    for i in 0
+        ..arr
+            .len() {
+                let cur_val = *arr.at(i);
+                let prev_val = *arr.at(i - 1);
+                let cur_value = cur_val.value;
+                let prev_value = prev_val.value;
+                assert(prev_value.mag > 0, OperationsErrors::FAILED_TO_COMPUTE_VOLATILITY);
+                let cur_timestamp = cur_val.tick;
+                let prev_timestamp = prev_val.tick;
+                assert(
+                    cur_timestamp > prev_timestamp, OperationsErrors::FAILED_TO_COMPUTE_VOLATILITY
+                );
+                if (prev_timestamp > cur_timestamp) {
+                    panic(array![OperationsErrors::FAILED_TO_COMPUTE_VOLATILITY]);
+                }
+                let numerator_value = FixedTrait::ln(cur_value / prev_value);
+                let numerator = numerator_value.pow(FixedTrait::new(2 * ONE_u128, false));
+                let denominator = FixedTrait::new((cur_timestamp - prev_timestamp).into(), false)
+                    / FixedTrait::new(ONE_YEAR_IN_SECONDS, false);
+                let fraction_ = numerator / denominator;
+                sum = sum + fraction_;
+            };
     sum
 }
 
 pub fn twap(arr: Span<TickElem>) -> u128 {
-    let mut cur_idx = 1;
     let mut twap = 0;
     let mut sum_p = 0;
     let mut sum_t = 0;
@@ -153,17 +144,19 @@ pub fn twap(arr: Span<TickElem>) -> u128 {
         //we assume that all tick values are the same
         panic(array![OperationsErrors::FAILED_TO_COMPUTE_TWAP]);
     }
-    for i in 0..arr.len(){
-        if *arr.at(i - 1).tick > *arr.at(i).tick {
-            //edge case
-            panic(array![OperationsErrors::FAILED_TO_COMPUTE_TWAP]);
-        }
-        let sub_timestamp = *arr.at(i).tick - *arr.at(i - 1).tick;
+    for i in 0
+        ..arr
+            .len() {
+                if *arr.at(i - 1).tick > *arr.at(i).tick {
+                    //edge case
+                    panic(array![OperationsErrors::FAILED_TO_COMPUTE_TWAP]);
+                }
+                let sub_timestamp = *arr.at(i).tick - *arr.at(i - 1).tick;
 
-        let weighted_prices = *arr.at(i - 1).value.mag * sub_timestamp.into();
-        sum_p = sum_p + weighted_prices;
-        sum_t = sum_t + sub_timestamp;
-    };    
+                let weighted_prices = *arr.at(i - 1).value.mag * sub_timestamp.into();
+                sum_p = sum_p + weighted_prices;
+                sum_t = sum_t + sub_timestamp;
+            };
     twap = sum_p / sum_t.into();
     return twap;
 }
@@ -173,14 +166,15 @@ pub fn twap(arr: Span<TickElem>) -> u128 {
 pub fn pairwise_1D_sub(x_len: u32, x: Span<Fixed>, y: Fixed) -> Span<Fixed> {
     //We assume, for simplicity, that the input arrays (x & y) are arrays of positive elements
     let mut output = ArrayTrait::<Fixed>::new();
-    for i in 0..x_len {
-        let x1 = *x.get(i).unwrap().unbox();
-        if x1 < y {
-            output.append(FixedTrait::new(mag: y.mag - x1.mag, sign: true));
-        } else {
-            output.append(FixedTrait::new(mag: x1.mag - y.mag, sign: false));
-        }
-    };
+    for i in 0
+        ..x_len {
+            let x1 = *x.get(i).unwrap().unbox();
+            if x1 < y {
+                output.append(FixedTrait::new(mag: y.mag - x1.mag, sign: true));
+            } else {
+                output.append(FixedTrait::new(mag: x1.mag - y.mag, sign: false));
+            }
+        };
     output.span()
 }
 
@@ -189,15 +183,16 @@ pub fn pairwise_1D_sub(x_len: u32, x: Span<Fixed>, y: Fixed) -> Span<Fixed> {
 pub fn pairwise_1D_mul(x_len: u32, x: Span<Fixed>, y: Span<Fixed>) -> Span<Fixed> {
     //We assume, for simplicity, that the input arrays (x & y) are arrays of positive
     let mut output = ArrayTrait::<Fixed>::new();
-    for i in 0..x_len{
-        let x1 = *x.get(i).unwrap().unbox();
-        let y1 = *y.get(i).unwrap().unbox();
-        if x1.sign == y1.sign {
-            output.append(FixedTrait::new(mag: x1.mag * y1.mag, sign: false));
-        } else {
-            output.append(FixedTrait::new(mag: x1.mag * y1.mag, sign: true));
-        }
-    };
+    for i in 0
+        ..x_len {
+            let x1 = *x.get(i).unwrap().unbox();
+            let y1 = *y.get(i).unwrap().unbox();
+            if x1.sign == y1.sign {
+                output.append(FixedTrait::new(mag: x1.mag * y1.mag, sign: false));
+            } else {
+                output.append(FixedTrait::new(mag: x1.mag * y1.mag, sign: true));
+            }
+        };
     output.span()
 }
 
@@ -205,7 +200,7 @@ pub fn pairwise_1D_mul(x_len: u32, x: Span<Fixed>, y: Span<Fixed>) -> Span<Fixed
 /// Fills an array with one `value`
 pub fn fill_1d(arr_len: u32, value: u128) -> Array<Fixed> {
     let mut output = ArrayTrait::new();
-    for i in 0..arr_len{
+    for _ in 0..arr_len {
         output.append(FixedTrait::new(mag: value, sign: false));
     };
     output

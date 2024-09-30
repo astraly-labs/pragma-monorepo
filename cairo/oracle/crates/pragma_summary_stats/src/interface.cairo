@@ -1,4 +1,4 @@
-use pragma_entry::structures::{AggregationMode, DataType,OptionsFeedData };
+use pragma_entry::structures::{AggregationMode, DataType, OptionsFeedData};
 use starknet::ContractAddress;
 
 pub const DERIBIT_OPTIONS_FEED_ID: felt252 = 'DERIBIT_OPTIONS_MERKLE_ROOT';
