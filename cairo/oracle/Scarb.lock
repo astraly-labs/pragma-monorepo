@@ -64,6 +64,11 @@ version = "0.3.0"
 source = "git+https://github.com/maxdesalle/alexandria.git#51653c50277491d77ab0783f0ad1d89237c940dd"
 
 [[package]]
+name = "cubit"
+version = "1.3.0"
+source = "git+https://github.com/dojoengine/cubit?branch=cairo_2.7#53020b6320a10f2ab55b661be9b8d895aca945e9"
+
+[[package]]
 name = "openzeppelin"
 version = "0.16.0"
 source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
@@ -164,6 +169,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "pragma_operations"
+version = "0.1.0"
+dependencies = [
+ "cubit",
+ "snforge_std",
+]
+
+[[package]]
 name = "pragma_oracle"
 version = "0.1.0"
 dependencies = [
@@ -179,6 +192,18 @@ name = "pragma_publisher_registry"
 version = "0.1.0"
 dependencies = [
  "openzeppelin",
+ "snforge_std",
+]
+
+[[package]]
+name = "pragma_summary_stats"
+version = "0.1.0"
+dependencies = [
+ "alexandria_math",
+ "openzeppelin",
+ "pragma_entry",
+ "pragma_operations",
+ "pragma_publisher_registry",
  "snforge_std",
 ]
 

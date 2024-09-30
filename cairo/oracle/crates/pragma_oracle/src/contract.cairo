@@ -1,8 +1,6 @@
 #[starknet::contract]
 mod Oracle {
-    use alexandria_data_structures::array_ext::ArrayTraitExt;
     use alexandria_data_structures::span_ext::SpanTraitExt;
-    use alexandria_storage::list::{List, ListTrait};
     use core::{num::traits::Zero, cmp::{min}};
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{UpgradeableComponent, interface::IUpgradeable};
@@ -314,7 +312,6 @@ mod Oracle {
         // @returns a span of PossibleEntries, which can be spot entries, future entries, generic
         // entries...
         fn get_data_entries(self: @ContractState, data_type: DataType) -> Span<PossibleEntries> {
-            let mut sources = ArrayTrait::<felt252>::new();
             let sources = IOracleABI::get_all_sources(self, data_type);
             let (entries, _) = IOracleABI::get_data_entries_for_sources(self, data_type, sources);
             entries
@@ -456,13 +453,7 @@ mod Oracle {
                         },
                         _ => {
                             panic(array![OracleErrors::WRONG_DATA_TYPE]);
-                            return PragmaPricesResponse {
-                                price: 0,
-                                decimals: 0,
-                                last_updated_timestamp: 0,
-                                num_sources_aggregated: 0,
-                                expiration_timestamp: Option::Some(0),
-                            };
+                            return Default::default();
                         },
                     }
                 },
@@ -504,13 +495,7 @@ mod Oracle {
                         },
                         _ => {
                             panic(array![OracleErrors::WRONG_DATA_TYPE]);
-                            return PragmaPricesResponse {
-                                price: 0,
-                                decimals: 0,
-                                last_updated_timestamp: 0,
-                                num_sources_aggregated: 0,
-                                expiration_timestamp: Option::Some(0),
-                            };
+                            return Default::default();
                         }
                     }
                 },
@@ -550,13 +535,7 @@ mod Oracle {
                         },
                         _ => {
                             panic(array![OracleErrors::WRONG_DATA_TYPE]);
-                            return PragmaPricesResponse {
-                                price: 0,
-                                decimals: 0,
-                                last_updated_timestamp: 0,
-                                num_sources_aggregated: 0,
-                                expiration_timestamp: Option::Some(0),
-                            };
+                            return Default::default();
                         },
                     }
                 },

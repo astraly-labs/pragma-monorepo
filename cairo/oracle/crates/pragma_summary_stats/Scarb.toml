@@ -1,0 +1,31 @@
+[package]
+name = "pragma_summary_stats"
+edition = "2024_07"
+version = "0.1.0"
+
+[dependencies]
+starknet.workspace = true
+
+openzeppelin.workspace = true
+alexandria_math.workspace = true
+
+pragma_publisher_registry.workspace = true
+pragma_operations.workspace = true
+pragma_entry.workspace = true
+
+[tool]
+fmt.workspace = true
+
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
+
+[lib]
+name = "pragma_summary_stats"
+
+[dev-dependencies]
+snforge_std.workspace = true
+
+[scripts]
+test = "snforge test --max-n-steps 4294967295"
+test-profiling = "snforge test --max-n-steps 4294967295 --build-profile"

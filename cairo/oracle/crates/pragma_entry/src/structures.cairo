@@ -169,7 +169,7 @@ pub struct Checkpoint {
     pub num_sources_aggregated: u32,
 }
 
-#[derive(Serde, Drop, Copy)]
+#[derive(Serde, Drop, Copy, Default)]
 pub struct PragmaPricesResponse {
     pub price: u128,
     pub decimals: u32,
