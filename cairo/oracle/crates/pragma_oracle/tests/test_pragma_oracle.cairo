@@ -365,7 +365,7 @@ fn get_data_median_for_sources() {
     assert(entry.price == (2500000), 'wrong price');
 }
 #[test]
-#[should_panic(expected: ('No ppublisher for source',))]
+#[should_panic(expected: ('No publisher for source',))]
 fn get_data_median_for_sources_should_fail_if_wrong_sources() {
     let (_, oracle) = setup();
     let mut sources = ArrayTrait::<felt252>::new();
