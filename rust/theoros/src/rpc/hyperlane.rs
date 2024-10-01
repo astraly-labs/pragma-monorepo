@@ -23,6 +23,11 @@ pub trait HyperlaneCalls {
     /// core contract.
     /// The felts are validators addresses.
     async fn get_announced_validators(&self, hyperlane_core_address: &Felt) -> anyhow::Result<Vec<Felt>>;
+
+    /// Retrieves the latest checkpoint (root, index) tuple from the merkle tree hook contract.
+    /// The index is the latest checkpoint index.
+    /// The root is the latest checkpoint root.
+    async fn get_latest_checkpoint(&self, merkle_tree_hook_address: &Felt) -> anyhow::Result<Vec<Felt>>;
 }
 
 #[async_trait::async_trait]
@@ -50,6 +55,16 @@ impl HyperlaneCalls for StarknetRpc {
         let call = FunctionCall {
             contract_address: *hyperlane_core_address,
             entry_point_selector: selector!("get_announced_validators"),
+            calldata: vec![],
+        };
+        let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
+        Ok(response)
+    }
+
+    async fn get_latest_checkpoint(&self, merkle_tree_hook_address: &Felt) -> anyhow::Result<Vec<Felt>> {
+        let call = FunctionCall {
+            contract_address: *merkle_tree_hook_address,
+            entry_point_selector: selector!("get_latest_checkpoint"),
             calldata: vec![],
         };
         let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;

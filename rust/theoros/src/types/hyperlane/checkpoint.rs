@@ -2,6 +2,11 @@ use serde::{Deserialize, Serialize};
 
 use alloy::primitives::U256;
 
+use super::SignedType;
+
+/// Signed (checkpoint, messageId) tuple
+pub type SignedCheckpointWithMessageId = SignedType<CheckpointWithMessageId>;
+
 /// A Hyperlane (checkpoint, messageId) tuple
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct CheckpointWithMessageId {

@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 
-use crate::types::hyperlane::{CheckpointWithMessageId, FetchFromStorage};
+use crate::types::hyperlane::{FetchFromStorage, SignedCheckpointWithMessageId};
 
 #[allow(unused)]
 #[derive(Debug, Clone)]
@@ -32,7 +32,7 @@ impl LocalStorage {
 
 #[async_trait]
 impl FetchFromStorage for LocalStorage {
-    async fn fetch(&self, index: u32) -> Result<Option<CheckpointWithMessageId>> {
+    async fn fetch(&self, index: u32) -> Result<Option<SignedCheckpointWithMessageId>> {
         let Ok(data) = tokio::fs::read(self.checkpoint_file_path(index)).await else {
             return Ok(None);
         };

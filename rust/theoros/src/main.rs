@@ -21,7 +21,7 @@ use pragma_utils::{
 };
 
 use rpc::StarknetRpc;
-use services::{ApiService, IndexerService, MetricsService};
+use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
 // TODO: Everything below here should be configurable, either via CLI or config file.
 // See: https://github.com/astraly-labs/pragma-monorepo/issues/17
@@ -37,6 +37,7 @@ const SERVER_PORT: u16 = 3000;
 
 const _PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt = Felt::ZERO;
 const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt = Felt::ZERO;
+const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt = Felt::ZERO;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -75,7 +76,10 @@ async fn main() -> Result<()> {
 
     let api_service = ApiService::new(state.clone(), SERVER_HOST, SERVER_PORT);
 
-    let theoros = ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service);
+    let hyperlane_service = HyperlaneService::new(state.clone(), HYPERLANE_MERKLE_TREE_HOOK_ADDRESS);
+
+    let theoros =
+        ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service).with(hyperlane_service);
     theoros.start_and_drive_to_end().await?;
 
     // Ensure that the tracing provider is shutdown correctly
