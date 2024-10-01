@@ -1,9 +1,9 @@
 pub mod PublisherErrors {
     pub const OWNER_IS_ZERO: felt252 = 'Owner cannot be 0';
     pub const ADDRESS_ALREADY_REGISTERED: felt252 = 'Address already registered';
-    pub const NAME_ALREADY_REGISTERED: felt252 = 'Name already registered';
+    pub const NAME_ALREADY_REGISTERED: felt252 = 'Pbsher name already registered';
     pub const CANNOT_SET_ADDRESS_TO_ZERO: felt252 = 'Cannot set address to zero';
-    pub const NAME_NOT_REGISTERED: felt252 = 'Name not registered';
+    pub const NAME_NOT_REGISTERED: felt252 = 'Pbsher name not registered';
     pub const CALLER_IS_NOT_PUBLISHER: felt252 = 'Caller is not the publisher';
     pub const PUBLISHER_ADDDRESS_CANNOT_BE_ZERO: felt252 = 'Publishr address cannot be zero';
     pub const PUBLISHER_NOT_FOUND: felt252 = 'Publisher not found';

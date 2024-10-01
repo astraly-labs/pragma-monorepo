@@ -10,7 +10,7 @@
 /// However, we will have to verify if it is worth it on a gas perspective
 
 #[starknet::contract]
-mod PublisherRegistry {
+pub mod PublisherRegistry {
     use core::num::traits::Zero;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::{UpgradeableComponent, interface::IUpgradeable};

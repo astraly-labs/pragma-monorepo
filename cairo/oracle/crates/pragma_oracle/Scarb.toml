@@ -18,12 +18,19 @@ fmt.workspace = true
 [[target.starknet-contract]]
 casm = true
 casm-add-pythonic-hints = true
+build-external-contracts = ["pragma_publisher_registry::*"]
+
 
 [lib]
 name = "pragma_oracle"
 
 [dev-dependencies]
 snforge_std.workspace = true
+
+[[tool.snforge.setup]]
+# This tells snforge to include artifacts from pragma_publisher_registry
+pragma_publisher_registry = { path = "../pragma_publisher_registry" }
+
 
 [scripts]
 test = "snforge test --max-n-steps 4294967295"
