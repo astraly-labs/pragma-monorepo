@@ -4,9 +4,9 @@ edition = "2024_07"
 version = "0.1.0"
 
 [dependencies]
-starknet.workspace = true
 openzeppelin.workspace = true
 pragma_feed_types.workspace = true
+starknet.workspace = true
 
 [tool]
 fmt.workspace = true

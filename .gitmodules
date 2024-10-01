@@ -7,7 +7,3 @@
 [submodule "solidity/lib/openzeppelin-contracts-upgradeable"]
 	path = solidity/lib/openzeppelin-contracts-upgradeable
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable
-[submodule "solidity/lib/hyperlane-monorepo"]
-	path = solidity/lib/hyperlane-monorepo
-	url = https://github.com/hyperlane-xyz/hyperlane-monorepo
-	tag = v3-solidity

@@ -60,10 +60,12 @@ export class DispatcherDeployer implements Deployer {
     );
 
     const jsonContent = JSON.stringify(deploymentInfo, null, 2);
-    const filePath = path.join("..", "deployments", NETWORK, "dispatcher.json");
+    const directoryPath = path.join("..", "deployments", NETWORK);
+    const filePath = path.join(directoryPath, "dispatcher.json");
+    // Create the directory if it doesn't exist
+    fs.mkdirSync(directoryPath, { recursive: true });
     fs.writeFileSync(filePath, jsonContent);
     console.log(`Deployment info saved to ${filePath}`);
-
     console.log("Deployment complete!");
   }
 

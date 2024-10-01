@@ -4,8 +4,8 @@ edition = "2024_07"
 version = "0.1.0"
 
 [dependencies]
-starknet.workspace = true
 pragma_maths.workspace = true
+starknet.workspace = true
 
 [tool]
 fmt.workspace = true
