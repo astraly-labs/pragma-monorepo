@@ -1,5 +1,6 @@
 use axum::extract::{Query, State};
 use axum::Json;
+use pragma_feeds::{Feed, FeedType};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToResponse, ToSchema};
 
@@ -30,10 +31,20 @@ pub struct GetCalldataResponse {
     ),
 )]
 pub async fn get_calldata(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     PathExtractor(feed_id): PathExtractor<String>,
     Query(_params): Query<GetCalldataQuery>,
 ) -> Result<Json<GetCalldataResponse>, GetCalldataError> {
     tracing::info!("Received get calldata request for feed: {feed_id}");
+
+    let feed: Feed = feed_id.parse().map_err(|_| GetCalldataError::InvalidFeedId)?;
+
+    let checkpoints = state.storage.checkpoints().all().await;
+    let events = state.storage.dispatch_events().all().await;
+
+    
+
     Ok(Json(GetCalldataResponse::default()))
 }
+
+

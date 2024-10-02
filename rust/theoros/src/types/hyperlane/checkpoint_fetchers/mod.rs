@@ -5,8 +5,8 @@ pub mod s3;
 // Source:
 // https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/3e90734310fb1ca9a607ce3d334015fa7aaa9208/rust/hyperlane-base/src/settings/checkpoint_syncer.rs#L14
 
+use std::env;
 use std::fmt::Debug;
-use std::{env, path::PathBuf};
 
 use anyhow::{anyhow, bail, Context, Error, Result};
 use async_trait::async_trait;
@@ -16,7 +16,6 @@ use ya_gcp::{AuthFlow, ServiceAccountAuth};
 
 use crate::types::hyperlane::{
     gcs::{GcsStorageClientBuilder, GCS_SERVICE_ACCOUNT_KEY, GCS_USER_SECRET},
-    local::LocalStorage,
     s3::S3Storage,
 };
 
@@ -34,11 +33,6 @@ pub trait FetchFromStorage: Debug + Send + Sync {
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub enum CheckpointStorage {
-    /// A local checkpoint storage
-    LocalStorage {
-        /// Path
-        path: PathBuf,
-    },
     /// A checkpoint storage on S3
     S3 {
         /// Bucket name
@@ -89,9 +83,6 @@ impl FromStr for CheckpointStorage {
                     region: region.parse().context("Invalid region when parsing storage location")?,
                 })
             }
-            "file" => Ok(CheckpointStorage::LocalStorage { path: suffix.into() }),
-            // for google cloud both options (with or without folder) from str are for anonymous access only
-            // or env variables parsing
             "gs" => {
                 let service_account_key = env::var(GCS_SERVICE_ACCOUNT_KEY).ok();
                 let user_secrets = env::var(GCS_USER_SECRET).ok();
@@ -116,7 +107,6 @@ impl CheckpointStorage {
     /// Turn conf info a Checkpoint Syncer
     pub async fn build(&self) -> Result<Box<dyn FetchFromStorage>> {
         Ok(match self {
-            CheckpointStorage::LocalStorage { path } => Box::new(LocalStorage::new(path.clone())?),
             CheckpointStorage::S3 { bucket, folder, region } => {
                 Box::new(S3Storage::new(bucket.clone(), folder.clone(), region.clone()))
             }

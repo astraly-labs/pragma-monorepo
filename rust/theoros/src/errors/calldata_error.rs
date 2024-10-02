@@ -9,6 +9,8 @@ pub enum GetCalldataError {
     InternalServerError,
     #[error("could not establish a connection with the database")]
     DatabaseConnection,
+    #[error("invalid feed id")]
+    InvalidFeedId,
 }
 
 impl IntoResponse for GetCalldataError {
