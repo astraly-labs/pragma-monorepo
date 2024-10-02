@@ -6,6 +6,8 @@ use utoipa::{IntoParams, ToResponse, ToSchema};
 
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
+use crate::types::pragma::calldata::{HyperlaneMessage, ValidatorSignature};
+use crate::types::pragma::constants::HYPERLANE_VERSION;
 use crate::AppState;
 
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
@@ -24,6 +26,11 @@ pub struct GetCalldataResponse {
             status = 200,
             description = "Constructs the calldata used to update the feed id specified",
             body = [GetCalldataResponse]
+        ),
+        (
+            status = 404,
+            description = "Unknown Feed Id",
+            body = [GetCalldataError]
         )
     ),
     params(
@@ -44,9 +51,30 @@ pub async fn get_calldata(
     let checkpoints = state.storage.checkpoints().all().await;
     let events = state.storage.dispatch_events().all().await;
 
-
+    let num_validators = checkpoints.keys().len();
+    let signers = checkpoints
+        .keys()
+        .map(|validator_index| {
+            // SAFE to unwrap because we just checked that the key exists
+            let signed_checkpoint = checkpoints.get(validator_index).unwrap();
+            let validator_index = 0; // TODO: fetch index from storage
+            ValidatorSignature {
+                validator_index,
+                signature: signed_checkpoint.signature
+            }
+        })
+        .collect();
+    
+    let hyperlane_message = HyperlaneMessage {
+        hyperlane_version: HYPERLANE_VERSION,
+        signers_len: num_validators as u8,
+        signers,
+        nonce: todo!(),
+        timestamp: todo!(),
+        emitter_chain_id: todo!(),
+        emitter_address: todo!(),
+        payload: todo!(),
+    };
 
     Ok(Json(GetCalldataResponse::default()))
 }
-
-
