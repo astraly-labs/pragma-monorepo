@@ -55,7 +55,7 @@ impl ValidatorStorage {
     }
 }
 
-/// Contains a mapping between the validators and their checkpoints.
+/// Contains a mapping between the validators and their latest fetched checkpoint.
 #[derive(Debug, Default)]
 pub struct ValidatorCheckpointStorage(RwLock<HashMap<Felt, SignedCheckpointWithMessageId>>);
 
