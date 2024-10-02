@@ -20,14 +20,14 @@ use crate::types::hyperlane::{
     s3::S3Storage,
 };
 
-use super::CheckpointWithMessageId;
+use super::SignedCheckpointWithMessageId;
 
 #[allow(unused)]
 /// A generic trait to read/write Checkpoints offchain
 #[async_trait]
 pub trait FetchFromStorage: Debug + Send + Sync {
     /// Attempt to fetch the signed (checkpoint, messageId) tuple at this index
-    async fn fetch(&self, index: u32) -> Result<Option<CheckpointWithMessageId>>;
+    async fn fetch(&self, index: u32) -> Result<Option<SignedCheckpointWithMessageId>>;
     /// Return the announcement storage location for this syncer
     fn announcement_location(&self) -> String;
 }
