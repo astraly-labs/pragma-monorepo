@@ -13,7 +13,7 @@ pub struct GetCalldataQuery {}
 
 #[derive(Debug, Default, Serialize, Deserialize, ToResponse, ToSchema)]
 pub struct GetCalldataResponse {
-    pub hash: String,
+    pub calldata: Vec<String>,
 }
 
 #[utoipa::path(
@@ -37,12 +37,14 @@ pub async fn get_calldata(
 ) -> Result<Json<GetCalldataResponse>, GetCalldataError> {
     tracing::info!("Received get calldata request for feed: {feed_id}");
 
+    // TODO: check that feed_id exists
+
     let feed: Feed = feed_id.parse().map_err(|_| GetCalldataError::InvalidFeedId)?;
 
     let checkpoints = state.storage.checkpoints().all().await;
     let events = state.storage.dispatch_events().all().await;
 
-    
+
 
     Ok(Json(GetCalldataResponse::default()))
 }
