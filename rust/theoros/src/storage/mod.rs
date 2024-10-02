@@ -17,7 +17,7 @@ use crate::{
 ///   * a set of all available data feeds,
 ///   * an events storage containing the most recents [DispatchEvent] events indexed,
 ///   * a mapping of all the validators and their fetchers.
-///   * a mapping of all the validators and their checkpoints.
+///   * a mapping of all the validators and their latest fetched checkpoints.
 #[derive(Default)]
 pub struct TheorosStorage {
     data_feeds: HashSet<String>,
