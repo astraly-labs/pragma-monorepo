@@ -80,8 +80,30 @@ function parseCommandLineArguments() {
   return options;
 }
 
-async function getCalldataFromTheoros(theorosEndpoint: string, contractId: string, feedId: string): Promise<Uint8Array> {
-  throw new Error('Non implémenté');
+async function getCalldataFromTheoros(theorosEndpoint: string, feedId: string): Promise<Uint8Array> {
+  try {
+    const url = `${theorosEndpoint}/v1/calldata/${feedId}`;
+    console.log(`Fetching calldata from: ${url}`);
+
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Assuming that we retrieve calldata as hex string from theoros
+    // TODO: change this part with real calldata from theoros
+    if (!data.calldata || typeof data.calldata !== 'string') {
+      throw new Error('Invalid response format: calldata missing or invalid');
+    }
+    const calldataHex = data.calldata.startsWith('0x') ? data.calldata.slice(2) : data.calldata;
+    return new Uint8Array(Buffer.from(calldataHex, 'hex'));
+  } catch (error) {
+    console.error('Error fetching data from Theoros:', error);
+    throw error;
+  }
 }
 
 async function main() {
@@ -98,7 +120,7 @@ async function main() {
   // 2. Get calldata from Theoros
   let calldata: Uint8Array;
   try {
-    calldata = await getCalldataFromTheoros(theorosEndpoint, chainConfig.contractId, feedId);
+    calldata = await getCalldataFromTheoros(theorosEndpoint, feedId);
     console.log('Calldata retrieved from Theoros:', calldata);
   } catch (error) {
     console.error('Failed to retrieve calldata from Theoros:', error);
