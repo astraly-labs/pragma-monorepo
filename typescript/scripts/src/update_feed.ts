@@ -1,14 +1,14 @@
-// ## Cli
+// ## CLI
 // - chain
-// - target-chain (de Pragma.sol - donc ça doit être déployé)
+// - target-chain (from Pragma.sol - must be deployed)
 // - feed_id
 // - private_key
 // - (keystore)
 
 // ## Steps
-// 1. Theoros ? (choix de l'endpoint)
+// 1. Theoros ? (endpoint selection)
 // 2. Get calldata from Theoros
-// 3. Call `updateDataFeeds` avec la calldata
+// 3. Call `updateDataFeeds` with the calldata
 // 4. Assertions - check that on the destination chain everything is correctly updated
 //    Show gas consumption
 
@@ -16,33 +16,30 @@
 import { Command, type OptionValues } from "commander";
 import { ethers } from "ethers";
 import dotenv from "dotenv";
+import yaml from 'js-yaml';
+import fs from 'fs';
 
 dotenv.config();
 
 interface ChainConfig {
-  contractId: string;
+  contract_address: string;
 }
 
-function getChainConfig(chainId: string): ChainConfig {
-  const chainConfigs: { [key: string]: ChainConfig } = {
-    "0x1": { contractId: "0x1111111111111111111111111111111111111111" }, // Ethereum Mainnet
-    "0xaa36a7": { contractId: "0x2222222222222222222222222222222222222222" }, // Ethereum Sepolia
-    "0x534e5f4d41494e": {
-      contractId: "0x3333333333333333333333333333333333333333",
-    }, // StarkNet Mainnet
-    "0x534e5f474f45524c49": {
-      contractId: "0x4444444444444444444444444444444444444444",
-    }, // StarkNet Sepolia (Goerli)
-    "0xa4b1": { contractId: "0x5555555555555555555555555555555555555555" }, // Arbitrum
-    "0xa": { contractId: "0x6666666666666666666666666666666666666666" }, // Optimism
-  };
+function getChainConfig(chainName: string): ChainConfig {
+  try {
+    const fileContents = fs.readFileSync('configs/contracts.yaml', 'utf8');
+    const chainConfigs = yaml.load(fileContents) as { [key: string]: ChainConfig };
 
-  const config = chainConfigs[chainId];
-  if (!config) {
-    throw new Error(`Configuration non trouvée pour le chainId ${chainId}`);
+    const chainConfig = chainConfigs[chainName];
+    if (!chainConfig) {
+      throw new Error(`Configuration not found for chain ${chainName}`);
+    }
+
+    return chainConfig;
+  } catch (error) {
+    console.error("Error reading configuration file:", error);
+    throw error;
   }
-
-  return config;
 }
 
 function parseCommandLineArguments(): OptionValues {
@@ -51,7 +48,7 @@ function parseCommandLineArguments(): OptionValues {
   program
     .name("update-data-feed")
     .description("CLI to update a Pragma data feed")
-    .requiredOption("--target-chain <chain_id>", "Chain ID of the target chain")
+    .requiredOption("--target-chain <chain_name>", "Name of the target chain (e.g., ethereum_mainnet)")
     .requiredOption("--feed-id <feed_id>", "ID of the data feed to update")
     .requiredOption(
       "--private-key <private_key>",
@@ -66,8 +63,8 @@ function parseCommandLineArguments(): OptionValues {
 
   const options = program.opts();
 
-  if (!ethers.isHexString(options.targetChain)) {
-    console.error("Error: Target chain ID must be a valid hexadecimal string");
+  if (!options.targetChain || typeof options.targetChain !== 'string') {
+    console.error("Error: Target chain name must be a valid string");
     process.exit(1);
   }
 
@@ -133,7 +130,7 @@ async function main() {
   const theorosEndpoint = options.theorosEndpoint;
 
   console.log(
-    `Updating data feed ${feedId} for contract ${chainConfig.contractId} on chain ${options.targetChain}`,
+    `Updating data feed ${feedId} for contract ${chainConfig.contract_address} on chain ${options.targetChain}`,
   );
   console.log(`Using Theoros endpoint: ${theorosEndpoint}`);
 
@@ -157,7 +154,7 @@ async function main() {
   }
   const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   const wallet = new ethers.Wallet(privateKey, provider);
-  const contract = new ethers.Contract(chainConfig.contractId, abi.abi, wallet);
+  const contract = new ethers.Contract(chainConfig.contract_address, abi.abi, wallet);
 
   try {
     const tx = await contract.updateDataFeeds(calldata);
