@@ -11,14 +11,28 @@ import {
   ContractFactory,
 } from "starknet";
 
-import type { Chain } from "../deployers/interface";
-import { getStarknetRpcUrl } from "../config";
+import { STARKNET_CHAINS, type Chain } from "../deployers/interface";
 
 dotenv.config();
 const ACCOUNT_ADDRESS = process.env.STARKNET_ACCOUNT_ADDRESS;
 const PRIVATE_KEY = process.env.STARKNET_PRIVATE_KEY;
 
 type projectName = "oracle" | "dispatcher";
+
+/// Get an RPC for a starknet chain.
+export function getStarknetRpcUrl(chain: Chain): string {
+  if (!STARKNET_CHAINS.includes(chain)) {
+    throw new Error("Must be a starknet chain.");
+  }
+  if (chain === "starknet") {
+    return "https://free-rpc.nethermind.io/mainnet-juno";
+  } else if (chain === "starknet_devnet") {
+    return "http://127.0.0.1:9615";
+  } else {
+    // sepolia
+    return "https://free-rpc.nethermind.io/sepolia-juno";
+  }
+}
 
 function getProjectBuildFolder(project: projectName): string {
   if (project === "oracle") {
