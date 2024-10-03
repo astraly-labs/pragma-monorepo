@@ -29,20 +29,12 @@
       "path": "cairo",
     },
     {
+      "name": "pragma_oracle",
+      "path": "cairo/oracle",
+    },
+    {
       "name": "pragma_dispatcher",
-      "path": "cairo/crates/pragma_dispatcher",
-    },
-    {
-      "name": "pragma_feeds_registry",
-      "path": "cairo/crates/pragma_feeds_registry",
-    },
-    {
-      "name": "pragma_feed_types",
-      "path": "cairo/crates/pragma_feed_types",
-    },
-    {
-      "name": "pragma_maths",
-      "path": "cairo/crates/pragma_maths",
+      "path": "cairo/dispatcher",
     },
     {
       "name": "===== SOLIDITY =====",

@@ -5,7 +5,7 @@ import path from "path";
 import { ethers } from "hardhat";
 import { parseEther, zeroPadValue } from "ethers";
 
-import type { Deployer, Chain } from "./interface";
+import { type Deployer, type Chain, EVM_CHAINS } from "./interface";
 import type { DeploymentConfig } from "../config";
 
 const HYPERLANE_CONTRACT_NAME: string = "Hyperlane";
@@ -15,7 +15,7 @@ dotenv.config();
 const NETWORK = process.env.NETWORK;
 
 export class PragmaDeployer implements Deployer {
-  readonly allowedChains: Chain[] = ["ethereum"];
+  readonly allowedChains: Chain[] = EVM_CHAINS;
   readonly defaultChain: Chain = "ethereum";
 
   async deploy(config: DeploymentConfig, chain?: Chain): Promise<void> {

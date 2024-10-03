@@ -2,8 +2,8 @@ import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 
-import type { Deployer, Chain } from "./interface";
-import { deployContract, buildAccount } from "../cairo";
+import { type Deployer, type Chain, STARKNET_CHAINS } from "./interface";
+import { deployStarknetContract, buildStarknetAccount } from "../cairo";
 import {
   loadConfig,
   type AssetClassRouter,
@@ -15,13 +15,9 @@ import { FEEDS_CONFIG_FILE } from "../constants";
 import type { Account, Contract } from "starknet";
 
 dotenv.config();
-const NETWORK = process.env.NETWORK;
-
-const REGISTRY_PREFIX = "pragma_feeds_registry";
-const DISPATCHER_PREFIX = "pragma_dispatcher";
 
 export class DispatcherDeployer implements Deployer {
-  readonly allowedChains: Chain[] = ["starknet"];
+  readonly allowedChains: Chain[] = STARKNET_CHAINS;
   readonly defaultChain: Chain = "starknet";
 
   async deploy(config: DeploymentConfig, chain?: Chain): Promise<void> {
@@ -30,21 +26,19 @@ export class DispatcherDeployer implements Deployer {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);
     }
 
-    if (NETWORK === undefined) {
-      throw new Error("⛔ NETWORK in .env must be defined");
-    }
-
-    console.log(`🧩 Deploying Dispatcher to ${chain}:${NETWORK}...`);
+    console.log(`🧩 Deploying Dispatcher to ${chain}...`);
     let supported_feeds = loadConfig<FeedsConfig>(FEEDS_CONFIG_FILE);
-    let deployer = await buildAccount();
+    let deployer = await buildStarknetAccount(chain);
     let deploymentInfo: any = {};
 
+    // 0. Deploy feeds registry
     const feedsRegistry = await this.deployFeedsRegistry(
       deployer,
       supported_feeds,
     );
     deploymentInfo.FeedsRegistry = feedsRegistry.address;
 
+    // 1. Deploy pragma dispatcher
     const dispatcher = await this.deployDispatcher(
       deployer,
       feedsRegistry.address,
@@ -52,6 +46,7 @@ export class DispatcherDeployer implements Deployer {
     );
     deploymentInfo.PragmaDispatcher = dispatcher.address;
 
+    // 2. Deploy & register all routers
     deploymentInfo.AssetClassRouters = await this.deployAllRouters(
       deployer,
       config,
@@ -59,8 +54,9 @@ export class DispatcherDeployer implements Deployer {
       dispatcher,
     );
 
+    // 3. Save deployment addresses
     const jsonContent = JSON.stringify(deploymentInfo, null, 2);
-    const directoryPath = path.join("..", "deployments", NETWORK);
+    const directoryPath = path.join("..", "deployments", chain);
     const filePath = path.join(directoryPath, "dispatcher.json");
     // Create the directory if it doesn't exist
     fs.mkdirSync(directoryPath, { recursive: true });
@@ -74,9 +70,10 @@ export class DispatcherDeployer implements Deployer {
     deployer: Account,
     supported_feeds: FeedsConfig,
   ): Promise<Contract> {
-    let feedsRegistry = await deployContract(
+    let feedsRegistry = await deployStarknetContract(
       deployer,
-      `${REGISTRY_PREFIX}_PragmaFeedsRegistry`,
+      "dispatcher",
+      `pragma_feeds_registry_PragmaFeedsRegistry`,
       [deployer.address],
     );
     for (const feed of supported_feeds.feeds) {
@@ -94,9 +91,10 @@ export class DispatcherDeployer implements Deployer {
     feedsRegistryAddress: string,
     config: DeploymentConfig,
   ): Promise<Contract> {
-    const dispatcher = await deployContract(
+    const dispatcher = await deployStarknetContract(
       deployer,
-      `${DISPATCHER_PREFIX}_PragmaDispatcher`,
+      "dispatcher",
+      `pragma_dispatcher_PragmaDispatcher`,
       [
         deployer.address,
         feedsRegistryAddress,
@@ -131,9 +129,10 @@ export class DispatcherDeployer implements Deployer {
     asset_class: AssetClassRouter,
     pragmaDispatcher: Contract,
   ): Promise<any> {
-    let assetRouter = await deployContract(
+    let assetRouter = await deployStarknetContract(
       deployer,
-      `${DISPATCHER_PREFIX}_${asset_class.contract}`,
+      "dispatcher",
+      `pragma_dispatcher_${asset_class.contract}`,
       [deployer.address, asset_class.id],
     );
 
@@ -165,9 +164,10 @@ export class DispatcherDeployer implements Deployer {
     asset_class: Contract,
     feed_type: FeedTypeRouter,
   ): Promise<string> {
-    const feedRouter = await deployContract(
+    const feedRouter = await deployStarknetContract(
       deployer,
-      `${DISPATCHER_PREFIX}_${feed_type.contract}`,
+      "dispatcher",
+      `pragma_dispatcher_${feed_type.contract}`,
       [config.pragma_dispatcher.pragma_oracle_address, feed_type.id],
     );
     let tx = await asset_class.invoke("register_feed_type_router", [

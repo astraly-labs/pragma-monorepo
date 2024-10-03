@@ -1,6 +1,47 @@
 # Configuration for the Pragma Oracle
-# TODO
 pragma_oracle:
+  publishers:
+    - name: "PRAGMA"
+      address: "0x04C1D9DA136846AB084AE18CF6CE7A652DF7793B666A16CE46B1BF5850CC739D"
+      sources:
+        - "ASCENDEX"
+        - "BITSTAMP"
+        - "CEX"
+        - "COINBASE"
+        - "DEFILLAMA"
+        - "GEMINI"
+        - "KAIKO"
+        - "OKX"
+        - "BINANCE"
+        - "BYBIT"
+        - "GECKOTERMINAL"
+        - "STARKNET"
+        - "PROPELLER"
+        - "KUCOIN"
+        - "BINANCE"
+        - "HUOBI"
+        - "BYBIT"
+        - "INDEXCOOP"
+        - "MEXC"
+        - "GATEIO"
+        - "EKUBO"
+        - "DEXSCREENER"
+    - name: "PRAGMA_MERKLE"
+      address: "0x064b4dAcea78c6394572f4534400AbB74a872A059b68630fba80895C646AA97f"
+      sources:
+        - "DERIBIT"
+    - name: "FOURLEAF"
+      address: "0x037A10F2808C05F4A328BDAC9A9344358547AE4676EBDDC005E24FF887B188FD"
+      sources:
+        - "FOURLEAF"
+    - name: "AVNU"
+      address: "0x0279FDE026E3E6CCEACB9C263FECE0C8D66A8F59E8448F3DA5A1968976841C62"
+      sources:
+        - "AVNU"
+    - name: "ALENO"
+      address: "0x06C58C048FC1483362D6AB56A542B74ADF5FD5C00706AEDA32EAD142E38B8646"
+      sources:
+        - "ALENO"
 
 # Configuration for the Pragma Dispatcher
 pragma_dispatcher:

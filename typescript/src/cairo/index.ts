@@ -11,14 +11,27 @@ import {
   ContractFactory,
 } from "starknet";
 
+import type { Chain } from "../deployers/interface";
+import { getStarknetRpcUrl } from "../config";
+
 dotenv.config();
 const ACCOUNT_ADDRESS = process.env.STARKNET_ACCOUNT_ADDRESS;
 const PRIVATE_KEY = process.env.STARKNET_PRIVATE_KEY;
-const CAIRO_BUILD_FOLDER = "../cairo/target/dev";
+
+type projectName = "oracle" | "dispatcher";
+
+function getProjectBuildFolder(project: projectName): string {
+  if (project === "oracle") {
+    return "../cairo/oracle/target/dev";
+  } else {
+    return "../cairo/dispatcher/target/dev";
+  }
+}
 
 /// Creates a Starknet account from the .env variables provided.
-export async function buildAccount(): Promise<Account> {
-  const provider = new RpcProvider({ nodeUrl: process.env.STARKNET_RPC_URL });
+export async function buildStarknetAccount(chain: Chain): Promise<Account> {
+  const nodeUrl = getStarknetRpcUrl(chain);
+  const provider = new RpcProvider({ nodeUrl });
 
   if (!PRIVATE_KEY || !ACCOUNT_ADDRESS) {
     throw new Error("Private key or account address not set in .env file");
@@ -27,27 +40,31 @@ export async function buildAccount(): Promise<Account> {
 }
 
 /// Reads from a pre-compiled contract file.
-function getCompiledContract(name: string): any {
-  const contractPath = `${CAIRO_BUILD_FOLDER}/${name}.contract_class.json`;
-  return json.parse(fs.readFileSync(contractPath).toString("ascii"));
+function getCompiledContract(project: projectName, contractName: string): any {
+  const fullContractPath = `${getProjectBuildFolder(project)}/${contractName}.contract_class.json`;
+  return json.parse(fs.readFileSync(fullContractPath).toString("ascii"));
 }
 
 /// Reads from a pre-compiled casm file.
-function getCompiledContractCasm(name: string): any {
-  const contractPath = `${CAIRO_BUILD_FOLDER}/${name}.compiled_contract_class.json`;
-  return JSON.parse(fs.readFileSync(contractPath, "utf-8"));
+function getCompiledContractCasm(
+  project: projectName,
+  contractName: string,
+): any {
+  const fullContractPath = `${getProjectBuildFolder(project)}/${contractName}.compiled_contract_class.json`;
+  return JSON.parse(fs.readFileSync(fullContractPath, "utf-8"));
 }
 
 /// Deploys a contract using the account provided.
-export async function deployContract(
+export async function deployStarknetContract(
   deployer: Account,
+  projectName: projectName,
   contractName: string,
   calldata: RawArgs,
 ): Promise<Contract> {
   console.log(`Deploying contract ${contractName}...`);
 
-  const compiledContract = getCompiledContract(contractName);
-  const casm = getCompiledContractCasm(contractName);
+  const compiledContract = getCompiledContract(projectName, contractName);
+  const casm = getCompiledContractCasm(projectName, contractName);
   const constructorCalldata = CallData.compile(calldata);
   const params: ContractFactoryParams = {
     compiledContract,
