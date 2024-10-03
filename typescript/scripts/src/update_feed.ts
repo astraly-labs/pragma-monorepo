@@ -15,7 +15,6 @@
 import { Command, type OptionValues } from "commander";
 import { ethers } from "ethers";
 import dotenv from "dotenv";
-import yaml from 'js-yaml';
 import fs from 'fs';
 
 dotenv.config();
@@ -26,17 +25,17 @@ interface ChainConfig {
 
 function getChainConfig(chainName: string): ChainConfig {
   try {
-    const fileContents = fs.readFileSync('configs/contracts.yaml', 'utf8');
-    const chainConfigs = yaml.load(fileContents) as { [key: string]: ChainConfig };
+    const filePath = `../../../deployement/${chainName}/pragma.json`;
+    const fileContents = fs.readFileSync(filePath, 'utf8');
+    const config = JSON.parse(fileContents);
 
-    const chainConfig = chainConfigs[chainName];
-    if (!chainConfig) {
-      throw new Error(`Configuration not found for chain ${chainName}`);
+    if (!config.Pragma || !ethers.isAddress(config.Pragma)) {
+      throw new Error(`Invalid or missing Pragma contract address for chain ${chainName}`);
     }
 
-    return chainConfig;
+    return { contract_address: config.Pragma };
   } catch (error) {
-    console.error("Error reading configuration file:", error);
+    console.error(`Error reading configuration file for chain ${chainName}:`, error);
     throw error;
   }
 }
