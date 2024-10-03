@@ -3,7 +3,6 @@
 // - target-chain (from Pragma.sol - must be deployed)
 // - feed_id
 // - private_key
-// - (keystore)
 
 // ## Steps
 // 1. Theoros ? (endpoint selection)
