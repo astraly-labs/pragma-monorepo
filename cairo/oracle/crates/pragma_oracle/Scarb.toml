@@ -6,11 +6,11 @@ version = "0.1.0"
 [dependencies]
 starknet.workspace = true
 
-openzeppelin.workspace = true
 alexandria_math.workspace = true
+openzeppelin.workspace = true
 
-pragma_publisher_registry.workspace = true
 pragma_entry.workspace = true
+pragma_publisher_registry.workspace = true
 
 [tool]
 fmt.workspace = true

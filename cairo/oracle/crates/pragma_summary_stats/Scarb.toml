@@ -4,10 +4,10 @@ edition = "2024_07"
 version = "0.1.0"
 
 [dependencies]
-starknet.workspace = true
-pragma_oracle.workspace = true
-pragma_operations.workspace = true
 pragma_entry.workspace = true
+pragma_operations.workspace = true
+pragma_oracle.workspace = true
+starknet.workspace = true
 
 [tool]
 fmt.workspace = true

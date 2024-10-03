@@ -32,7 +32,7 @@ pragma_oracle = { path = "crates/pragma_oracle" }
 pragma_publisher_registry = { path = "crates/pragma_publisher_registry" }
 pragma_summary_stats = { path = "crates/pragma_summary_stats" }
 pragma_entry = { path = "crates/pragma_entry" }
-pragma_operations = { path = "crates/pragma_operations"}
+pragma_operations = { path = "crates/pragma_operations" }
 
 # Test dependencies
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.30.0" }
