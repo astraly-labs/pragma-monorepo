@@ -7,9 +7,10 @@ import {
   loadConfig,
   type DeploymentConfig,
 } from "../config";
-import { type Deployer, type Chain, STARKNET_CHAINS } from "./interface";
+import { type Deployer } from "./interface";
 import { CURRENCIES_CONFIG_FILE } from "../constants";
-import { generateAllPairs } from "../config/currencies";
+import { Currency, generateAllPairs } from "../config/currencies";
+import { STARKNET_CHAINS, type Chain } from "../chains";
 
 export class OracleDeployer implements Deployer {
   readonly allowedChains: Chain[] = STARKNET_CHAINS;
@@ -69,6 +70,7 @@ export class OracleDeployer implements Deployer {
       `pragma_publisher_registry_PublisherRegistry`,
       [deployer.address],
     );
+    console.log("⏳ Registering every publishers and their sources...");
     for (const publisher of config.pragma_oracle.publishers) {
       // Register the publisher
       let tx = await publisherRegistry.invoke("add_publisher", [
@@ -83,6 +85,7 @@ export class OracleDeployer implements Deployer {
       ]);
       await deployer.waitForTransaction(tx.transaction_hash);
     }
+    console.log("✅ Done!");
     return publisherRegistry;
   }
 
@@ -92,7 +95,17 @@ export class OracleDeployer implements Deployer {
     currencies: CurrenciesConfig,
     publisherRegistryAddress: string,
   ): Promise<Contract> {
+    console.log("Generating pairs...");
     const pairs = generateAllPairs(currencies);
+    console.log("Ok!");
+
+    console.log(
+      currencies.map((currencyConfig) =>
+        Currency.fromCurrencyConfig(currencyConfig).serialize(),
+      ),
+    );
+    console.log(pairs.map((pair) => pair.serialize()));
+
     const pragmaOracle = await deployStarknetContract(
       deployer,
       "oracle",
@@ -101,8 +114,10 @@ export class OracleDeployer implements Deployer {
         deployer.address, // admin
         publisherRegistryAddress,
         // TODO: This serialzation probably don't work :)
-        currencies,
-        pairs,
+        currencies.map((currencyConfig) =>
+          Currency.fromCurrencyConfig(currencyConfig).serialize(),
+        ),
+        pairs.map((pair) => pair.serialize()),
       ],
     );
     return pragmaOracle;

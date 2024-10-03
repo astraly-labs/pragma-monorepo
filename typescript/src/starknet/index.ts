@@ -10,8 +10,7 @@ import {
   Contract,
   ContractFactory,
 } from "starknet";
-
-import { STARKNET_CHAINS, type Chain } from "../deployers/interface";
+import { STARKNET_CHAINS, type Chain } from "../chains";
 
 dotenv.config();
 const ACCOUNT_ADDRESS = process.env.STARKNET_ACCOUNT_ADDRESS;
@@ -26,8 +25,8 @@ export function getStarknetRpcUrl(chain: Chain): string {
   }
   if (chain === "starknet") {
     return "https://free-rpc.nethermind.io/mainnet-juno";
-  } else if (chain === "starknet_devnet") {
-    return "http://127.0.0.1:9615";
+  } else if (chain === "madara_devnet") {
+    return "http://127.0.0.1:9944";
   } else {
     // sepolia
     return "https://free-rpc.nethermind.io/sepolia-juno";

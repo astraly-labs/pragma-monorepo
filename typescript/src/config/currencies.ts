@@ -86,23 +86,17 @@ export class Currency {
 
 export class Pair {
   id: string;
-  baseCurrencyId: string;
-  quoteCurrencyId: string;
+  baseCurrency: string;
+  quoteCurrency: string;
 
   constructor(baseCurrency: string, quoteCurrency: string) {
-    this.id = shortString.encodeShortString(
-      `${baseCurrency}/${quoteCurrency}`.toUpperCase(),
-    );
-    this.baseCurrencyId = shortString.encodeShortString(baseCurrency);
-    this.quoteCurrencyId = shortString.encodeShortString(quoteCurrency);
-  }
-
-  toString(): string {
-    return `Pair(${shortString.decodeShortString(this.id)}, ${shortString.decodeShortString(this.baseCurrencyId)}, ${shortString.decodeShortString(this.quoteCurrencyId)})`;
+    this.id = `${baseCurrency}/${quoteCurrency}`.toUpperCase();
+    this.baseCurrency = baseCurrency;
+    this.quoteCurrency = quoteCurrency;
   }
 
   serialize(): [string, string, string] {
-    return [this.id, this.quoteCurrencyId, this.baseCurrencyId];
+    return [this.id, this.baseCurrency, this.quoteCurrency];
   }
 }
 

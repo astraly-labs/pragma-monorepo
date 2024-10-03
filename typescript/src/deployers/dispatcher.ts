@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-import { type Deployer, type Chain, STARKNET_CHAINS } from "./interface";
+import { type Deployer } from "./interface";
 import { deployStarknetContract, buildStarknetAccount } from "../starknet";
 import {
   loadConfig,
@@ -12,6 +12,7 @@ import {
 } from "../config";
 import { FEEDS_CONFIG_FILE } from "../constants";
 import type { Account, Contract } from "starknet";
+import { STARKNET_CHAINS, type Chain } from "../chains";
 
 export class DispatcherDeployer implements Deployer {
   readonly allowedChains: Chain[] = STARKNET_CHAINS;
