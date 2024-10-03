@@ -13,7 +13,7 @@
 //    Show gas consumption
 
 
-import { Command } from "commander";
+import { Command, type OptionValues } from "commander";
 import { ethers } from "ethers";
 import dotenv from "dotenv";
 
@@ -45,7 +45,7 @@ function getChainConfig(chainId: string): ChainConfig {
   return config;
 }
 
-function parseCommandLineArguments() {
+function parseCommandLineArguments(): OptionValues {
   const program = new Command();
 
   program
