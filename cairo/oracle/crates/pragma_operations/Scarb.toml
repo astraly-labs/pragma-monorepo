@@ -1,0 +1,26 @@
+[package]
+name = "pragma_operations"
+edition = "2024_07"
+version = "0.1.0"
+
+[dependencies]
+cubit.workspace = true
+starknet.workspace = true
+
+
+[tool]
+fmt.workspace = true
+
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
+
+[lib]
+name = "pragma_operations"
+
+[dev-dependencies]
+snforge_std.workspace = true
+
+[scripts]
+test = "snforge test --max-n-steps 4294967295"
+test-profiling = "snforge test --max-n-steps 4294967295 --build-profile"

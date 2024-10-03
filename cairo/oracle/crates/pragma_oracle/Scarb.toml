@@ -1,0 +1,37 @@
+[package]
+name = "pragma_oracle"
+edition = "2024_07"
+version = "0.1.0"
+
+[dependencies]
+starknet.workspace = true
+
+alexandria_math.workspace = true
+openzeppelin.workspace = true
+
+pragma_entry.workspace = true
+pragma_publisher_registry.workspace = true
+
+[tool]
+fmt.workspace = true
+
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
+build-external-contracts = ["pragma_publisher_registry::*"]
+
+
+[lib]
+name = "pragma_oracle"
+
+[dev-dependencies]
+snforge_std.workspace = true
+
+[[tool.snforge.setup]]
+# This tells snforge to include artifacts from pragma_publisher_registry
+pragma_publisher_registry = { path = "../pragma_publisher_registry" }
+
+
+[scripts]
+test = "snforge test --max-n-steps 4294967295"
+test-profiling = "snforge test --max-n-steps 4294967295 --build-profile"
