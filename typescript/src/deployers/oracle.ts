@@ -6,10 +6,11 @@ import {
   type CurrenciesConfig,
   loadConfig,
   type DeploymentConfig,
+  parsePairsFromConfig,
 } from "../config";
 import { type Deployer } from "./interface";
 import { CURRENCIES_CONFIG_FILE } from "../constants";
-import { Currency, generateAllPairs } from "../config/currencies";
+import { Currency } from "../config/currencies";
 import { STARKNET_CHAINS, type Chain } from "../chains";
 
 export class OracleDeployer implements Deployer {
@@ -36,6 +37,7 @@ export class OracleDeployer implements Deployer {
     // 1. Deploy Pragma Oracle
     const pragmaOracle = await this.deployPragmaOracle(
       deployer,
+      config,
       currencies,
       publisherRegistry.address,
     );
@@ -92,20 +94,11 @@ export class OracleDeployer implements Deployer {
   /// Deploys the Pragma Oracle with the currencies & pairs from the config.
   private async deployPragmaOracle(
     deployer: Account,
+    config: DeploymentConfig,
     currencies: CurrenciesConfig,
     publisherRegistryAddress: string,
   ): Promise<Contract> {
-    console.log("Generating pairs...");
-    const pairs = generateAllPairs(currencies);
-    console.log("Ok!");
-
-    console.log(
-      currencies.map((currencyConfig) =>
-        Currency.fromCurrencyConfig(currencyConfig).serialize(),
-      ),
-    );
-    console.log(pairs.map((pair) => pair.serialize()));
-
+    const pairs = parsePairsFromConfig(config);
     const pragmaOracle = await deployStarknetContract(
       deployer,
       "oracle",
@@ -113,11 +106,8 @@ export class OracleDeployer implements Deployer {
       [
         deployer.address, // admin
         publisherRegistryAddress,
-        // TODO: This serialzation probably don't work :)
-        currencies.map((currencyConfig) =>
-          Currency.fromCurrencyConfig(currencyConfig).serialize(),
-        ),
-        pairs.map((pair) => pair.serialize()),
+        currencies,
+        pairs,
       ],
     );
     return pragmaOracle;

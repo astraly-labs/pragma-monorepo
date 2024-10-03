@@ -1,5 +1,6 @@
 export interface DeploymentConfig {
   pragma_oracle: {
+    pairs: string[];
     publishers: Array<{
       name: string;
       address: string;

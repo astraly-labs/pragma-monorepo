@@ -16,6 +16,8 @@ export type {
   FeedsConfig,
 } from "./feeds";
 
+export { Pair, parsePairsFromConfig } from "./pairs";
+
 export function loadConfig<T>(filePath: string): T {
   try {
     const fileContents = fs.readFileSync(filePath, "utf8");

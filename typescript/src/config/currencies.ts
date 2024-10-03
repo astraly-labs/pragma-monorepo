@@ -38,7 +38,11 @@ export class Currency {
       return BigInt(0);
     }
     if (typeof address === "string") {
-      return BigInt(`0x${address}`);
+      if (address.startsWith("0x")) {
+        return BigInt(`${address}`);
+      } else {
+        return BigInt(`0x${address}`);
+      }
     }
     return address;
   }
@@ -98,30 +102,4 @@ export class Pair {
   serialize(): [string, string, string] {
     return [this.id, this.baseCurrency, this.quoteCurrency];
   }
-}
-
-/// From a Currency config, generate all possible pairs.
-export function generateAllPairs(currencies: CurrencyConfig[]): Pair[] {
-  const pairs: Pair[] = [];
-  const nonAbstractCurrencies = currencies.filter((c) => !c.abstract);
-  const abstractCurrencies = currencies.filter((c) => c.abstract);
-
-  // Generate pairs between non-abstract currencies
-  for (let i = 0; i < nonAbstractCurrencies.length; i++) {
-    for (let j = i + 1; j < nonAbstractCurrencies.length; j++) {
-      const base = nonAbstractCurrencies[i];
-      const quote = nonAbstractCurrencies[j];
-      pairs.push(new Pair(base.ticker, quote.ticker));
-      pairs.push(new Pair(quote.ticker, base.ticker));
-    }
-  }
-
-  // Generate pairs between non-abstract and abstract currencies
-  for (const nonAbstract of nonAbstractCurrencies) {
-    for (const abstract of abstractCurrencies) {
-      pairs.push(new Pair(nonAbstract.ticker, abstract.ticker));
-    }
-  }
-
-  return pairs;
 }

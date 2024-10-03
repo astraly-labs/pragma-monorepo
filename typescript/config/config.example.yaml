@@ -1,5 +1,8 @@
 # Configuration for the Pragma Oracle
 pragma_oracle:
+  pairs:
+    - "BTC/USD"
+    - "ETH/USD"
   publishers:
     - name: "PRAGMA"
       address: "0x04C1D9DA136846AB084AE18CF6CE7A652DF7793B666A16CE46B1BF5850CC739D"
