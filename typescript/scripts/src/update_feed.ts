@@ -12,9 +12,12 @@
 // 4. Assertions - check that on the destination chain everything is correctly updated
 //    Show gas consumption
 
+
 import { Command } from "commander";
 import { ethers } from "ethers";
-import abi from "../../solidity/out/Pragma.sol/Pragma.json";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 interface ChainConfig {
   contractId: string;
@@ -143,11 +146,16 @@ async function main() {
     console.error("Failed to retrieve calldata from Theoros:", error);
     process.exit(1);
   }
-
+  
   // 3. Call `updateDataFeeds` with the calldata
-  const { ethers } = require("ethers");
-  const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
-
+  let abi;
+  try {
+    abi = await import("../../../solidity/out/Pragma.sol/Pragma.json");
+  } catch (error) {
+    console.error("Failed to import ABI:", error);
+    throw new Error("ABI file not found or invalid");
+  }
+  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
   const wallet = new ethers.Wallet(privateKey, provider);
   const contract = new ethers.Contract(chainConfig.contractId, abi.abi, wallet);
 
