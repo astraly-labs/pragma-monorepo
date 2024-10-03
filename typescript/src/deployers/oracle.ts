@@ -95,10 +95,20 @@ export class OracleDeployer implements Deployer {
   private async deployPragmaOracle(
     deployer: Account,
     config: DeploymentConfig,
-    currencies: CurrenciesConfig,
+    currenciesConfig: CurrenciesConfig,
     publisherRegistryAddress: string,
   ): Promise<Contract> {
+    const currencies = currenciesConfig.map(Currency.fromCurrencyConfig);
+    const serializedCurrencies = currencies.map((currency) =>
+      currency.toObject(),
+    );
+
     const pairs = parsePairsFromConfig(config);
+    const serializedPairs = pairs.map((pair) => pair.toObject());
+
+    console.log(serializedCurrencies);
+    console.log(serializedPairs);
+
     const pragmaOracle = await deployStarknetContract(
       deployer,
       "oracle",
@@ -106,10 +116,11 @@ export class OracleDeployer implements Deployer {
       [
         deployer.address, // admin
         publisherRegistryAddress,
-        currencies,
-        pairs,
+        serializedCurrencies,
+        serializedPairs,
       ],
     );
+
     return pragmaOracle;
   }
 

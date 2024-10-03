@@ -87,19 +87,3 @@ export class Currency {
     return `Currency(${this.id}, ${this.decimals}, ${this.isAbstractCurrency}, ${this.starknetAddress}, ${this.ethereumAddress})`;
   }
 }
-
-export class Pair {
-  id: string;
-  baseCurrency: string;
-  quoteCurrency: string;
-
-  constructor(baseCurrency: string, quoteCurrency: string) {
-    this.id = `${baseCurrency}/${quoteCurrency}`.toUpperCase();
-    this.baseCurrency = baseCurrency;
-    this.quoteCurrency = quoteCurrency;
-  }
-
-  serialize(): [string, string, string] {
-    return [this.id, this.baseCurrency, this.quoteCurrency];
-  }
-}

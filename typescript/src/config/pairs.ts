@@ -19,6 +19,18 @@ export class Pair {
     return [this.id, this.baseCurrency, this.quoteCurrency];
   }
 
+  toObject(): {
+    id: string;
+    baseCurrency: string;
+    quoteCurrency: string;
+  } {
+    return {
+      id: this.id,
+      baseCurrency: this.baseCurrency,
+      quoteCurrency: this.quoteCurrency,
+    };
+  }
+
   static fromStr(pairStr: string): Pair {
     const [base, quote] = pairStr.split("/");
     if (!base || !quote) {
