@@ -1,10 +1,10 @@
 pub mod event;
-pub mod utils;
 pub mod validators;
+pub mod cache;
 
 pub use event::*;
 pub use validators::*;
-
+use crate::storage::cache::EventCache;
 use std::collections::HashSet;
 
 use starknet::core::types::Felt;
@@ -24,7 +24,9 @@ pub struct TheorosStorage {
     data_feeds: HashSet<String>,
     validators: ValidatorStorage,
     checkpoints: ValidatorCheckpointStorage,
+    cached_events: EventCache,
     dispatch_events: EventStorage<DispatchEvent>,
+
 }
 
 impl TheorosStorage {
@@ -69,5 +71,9 @@ impl TheorosStorage {
 
     pub fn dispatch_events(&self) -> &EventStorage<DispatchEvent> {
         &self.dispatch_events
+    }
+
+    pub fn cached_event(&self) -> &EventCache {
+        &self.cached_events
     }
 }

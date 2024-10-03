@@ -1,8 +1,10 @@
 use anyhow::{Context, Result};
 use apibara_core::starknet::v1alpha2::FieldElement;
-use bigdecimal::BigDecimal;
+use bigdecimal::{BigDecimal,ToPrimitive};
 use pragma_feeds::{AssetClass, FeedType};
 use starknet::core::types::U256;
+use alloy_primitives::{FixedBytes, U256 as alloy_U256};
+use alloy::primitives::keccak256;
 
 use pragma_utils::conversions::apibara::FromFieldBytes;
 
@@ -66,6 +68,51 @@ impl FromStarknetEventData for DispatchEvent {
 
         let dispatch = Self { sender, destination_domain, recipient_address, message };
         Ok(dispatch)
+    }
+}
+
+impl DispatchEvent {
+    pub fn format_message(&self) -> alloy_U256 {
+        let mut input = Vec::new();
+        
+        // Formatting header part
+        input.push(self.message.header.version);
+        input.extend_from_slice(&self.message.header.nonce.to_be_bytes());
+        input.extend_from_slice(&self.message.header.origin.to_be_bytes());
+        input.extend_from_slice(&self.message.header.sender.low().to_be_bytes());
+        input.extend_from_slice(&self.message.header.sender.high().to_be_bytes());
+        input.extend_from_slice(&self.message.header.destination.to_be_bytes());
+        input.extend_from_slice(&self.message.header.recipient.low().to_be_bytes());
+        input.extend_from_slice(&self.message.header.recipient.high().to_be_bytes());
+
+        // Formatting body part
+        input.extend_from_slice(&self.message.body.nb_updated.to_be_bytes());
+
+        for update in &self.message.body.updates {
+            match update {
+                DispatchUpdate::SpotMedian(spot_update) => {
+                    // Append pair_id (U256 split into high and low parts)
+                    input.extend_from_slice(&spot_update.pair_id.low().to_be_bytes());
+                    input.extend_from_slice(&spot_update.pair_id.high().to_be_bytes());
+
+                    // Scale price by 10^decimals and convert to u128
+                    let scaled_price = (spot_update.price.clone() * BigDecimal::from(10u32.pow(spot_update.metadata.decimals)))
+                        .to_u128()
+                        .unwrap_or(0);
+
+                    // Append scaled price, volume, decimals, timestamp, and num_sources_aggregated
+                    input.extend_from_slice(&scaled_price.to_be_bytes());
+                    input.extend_from_slice(&spot_update.volume.to_be_bytes());
+                    input.extend_from_slice(&spot_update.metadata.decimals.to_be_bytes());
+                    input.extend_from_slice(&spot_update.metadata.timestamp.to_be_bytes());
+                    input.extend_from_slice(&spot_update.metadata.num_sources_aggregated.to_be_bytes());
+                }
+            }
+        }
+
+        let hash = keccak256(&input);
+        alloy_U256::from_be_bytes(<[u8; 32]>::try_from(hash.as_slice()).expect("Hash should be 32 bytes"))
+
     }
 }
 

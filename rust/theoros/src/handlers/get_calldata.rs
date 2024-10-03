@@ -58,13 +58,10 @@ pub async fn get_calldata(
             // SAFE to unwrap because we just checked that the key exists
             let signed_checkpoint = checkpoints.get(validator_index).unwrap();
             let validator_index = 0; // TODO: fetch index from storage
-            ValidatorSignature {
-                validator_index,
-                signature: signed_checkpoint.signature
-            }
+            ValidatorSignature { validator_index, signature: signed_checkpoint.signature }
         })
         .collect();
-    
+
     let hyperlane_message = HyperlaneMessage {
         hyperlane_version: HYPERLANE_VERSION,
         signers_len: num_validators as u8,

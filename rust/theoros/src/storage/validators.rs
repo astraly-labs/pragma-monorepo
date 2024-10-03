@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use anyhow::bail;
-use starknet::core::types::Felt;
+use starknet::core::types::{Felt};
+use alloy_primitives::U256;
 use tokio::sync::RwLock;
 
 use crate::types::hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent};
@@ -79,5 +80,17 @@ impl ValidatorCheckpointStorage {
     /// Returns the checkpoint for the given validator
     pub async fn get(&self, validator: Felt) -> Option<SignedCheckpointWithMessageId> {
         self.0.read().await.get(&validator).cloned()
+    }
+
+    // Check the existence of a checkpoint for a given message_id
+    pub async fn contains_message_id(&self, message_id: U256) -> bool {
+        let all_checkpoints = self.0.read().await;
+
+        for checkpoint in all_checkpoints.values() {
+            if checkpoint.value.message_id == message_id {
+                return true;
+            }
+        }
+        false
     }
 }
