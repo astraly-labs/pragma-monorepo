@@ -1,3 +1,5 @@
+import { shortString } from "starknet";
+
 export interface CurrencyConfig {
   name: string;
   decimals: number;
@@ -80,4 +82,52 @@ export class Currency {
   toString(): string {
     return `Currency(${this.id}, ${this.decimals}, ${this.isAbstractCurrency}, ${this.starknetAddress}, ${this.ethereumAddress})`;
   }
+}
+
+export class Pair {
+  id: string;
+  baseCurrencyId: string;
+  quoteCurrencyId: string;
+
+  constructor(baseCurrency: string, quoteCurrency: string) {
+    this.id = shortString.encodeShortString(
+      `${baseCurrency}/${quoteCurrency}`.toUpperCase(),
+    );
+    this.baseCurrencyId = shortString.encodeShortString(baseCurrency);
+    this.quoteCurrencyId = shortString.encodeShortString(quoteCurrency);
+  }
+
+  toString(): string {
+    return `Pair(${shortString.decodeShortString(this.id)}, ${shortString.decodeShortString(this.baseCurrencyId)}, ${shortString.decodeShortString(this.quoteCurrencyId)})`;
+  }
+
+  serialize(): [string, string, string] {
+    return [this.id, this.quoteCurrencyId, this.baseCurrencyId];
+  }
+}
+
+/// From a Currency config, generate all possible pairs.
+export function generateAllPairs(currencies: CurrencyConfig[]): Pair[] {
+  const pairs: Pair[] = [];
+  const nonAbstractCurrencies = currencies.filter((c) => !c.abstract);
+  const abstractCurrencies = currencies.filter((c) => c.abstract);
+
+  // Generate pairs between non-abstract currencies
+  for (let i = 0; i < nonAbstractCurrencies.length; i++) {
+    for (let j = i + 1; j < nonAbstractCurrencies.length; j++) {
+      const base = nonAbstractCurrencies[i];
+      const quote = nonAbstractCurrencies[j];
+      pairs.push(new Pair(base.ticker, quote.ticker));
+      pairs.push(new Pair(quote.ticker, base.ticker));
+    }
+  }
+
+  // Generate pairs between non-abstract and abstract currencies
+  for (const nonAbstract of nonAbstractCurrencies) {
+    for (const abstract of abstractCurrencies) {
+      pairs.push(new Pair(nonAbstract.ticker, abstract.ticker));
+    }
+  }
+
+  return pairs;
 }

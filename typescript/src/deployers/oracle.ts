@@ -1,7 +1,15 @@
+import path from "path";
+import fs from "fs";
 import type { Account, Contract } from "starknet";
-import { buildStarknetAccount, deployStarknetContract } from "../cairo";
-import type { DeploymentConfig } from "../config";
+import { buildStarknetAccount, deployStarknetContract } from "../starknet";
+import {
+  type CurrenciesConfig,
+  loadConfig,
+  type DeploymentConfig,
+} from "../config";
 import { type Deployer, type Chain, STARKNET_CHAINS } from "./interface";
+import { CURRENCIES_CONFIG_FILE } from "../constants";
+import { generateAllPairs } from "../config/currencies";
 
 export class OracleDeployer implements Deployer {
   readonly allowedChains: Chain[] = STARKNET_CHAINS;
@@ -13,34 +21,103 @@ export class OracleDeployer implements Deployer {
     }
 
     console.log(`🧩 Deploying Oracle to ${chain}...`);
+    let currencies = loadConfig<CurrenciesConfig>(CURRENCIES_CONFIG_FILE);
     let deployer = await buildStarknetAccount(chain);
     let deploymentInfo: any = {};
 
     // 0. Deploy pragma publisher registry
+    const publisherRegistry = await this.deployPublisherRegistry(
+      deployer,
+      config,
+    );
+    deploymentInfo.PublisherRegistry = publisherRegistry.address;
 
     // 1. Deploy Pragma Oracle
+    const pragmaOracle = await this.deployPragmaOracle(
+      deployer,
+      currencies,
+      publisherRegistry.address,
+    );
+    deploymentInfo.PragmaOracle = pragmaOracle.address;
 
-    // 2. Add Pairs
+    // 3. Deploy Summary stats
+    const summaryStats = await this.deploySummaryStats(
+      deployer,
+      pragmaOracle.address,
+    );
+    deploymentInfo.SummaryStats = summaryStats.address;
 
-    // 3. Register Publishers
-
-    // 4. Deploy Summary stats
-
-    // 5. Deploy randomness
-
-    // 6. Save deployment addresses
+    // 4. Save deployment addresses
+    const jsonContent = JSON.stringify(deploymentInfo, null, 2);
+    const directoryPath = path.join("..", "deployments", chain);
+    const filePath = path.join(directoryPath, "oracle.json");
+    // Create the directory if it doesn't exist
+    fs.mkdirSync(directoryPath, { recursive: true });
+    fs.writeFileSync(filePath, jsonContent);
+    console.log(`Deployment info saved to ${filePath}`);
+    console.log("Deployment complete!");
   }
 
-  private async deployPublisherRegistry(deployer: Account): Promise<Contract> {
+  /// Deploys the Pragma Publisher Registry & register all publishers with their sources.
+  private async deployPublisherRegistry(
+    deployer: Account,
+    config: DeploymentConfig,
+  ): Promise<Contract> {
     let publisherRegistry = await deployStarknetContract(
       deployer,
       "oracle",
       `pragma_publisher_registry_PublisherRegistry`,
+      [deployer.address],
+    );
+    for (const publisher of config.pragma_oracle.publishers) {
+      // Register the publisher
+      let tx = await publisherRegistry.invoke("add_publisher", [
+        publisher.name,
+        publisher.address,
+      ]);
+      await deployer.waitForTransaction(tx.transaction_hash);
+      // Register sources for the publisher
+      tx = await publisherRegistry.invoke("add_sources_for_publisher", [
+        publisher.name,
+        publisher.sources,
+      ]);
+      await deployer.waitForTransaction(tx.transaction_hash);
+    }
+    return publisherRegistry;
+  }
+
+  /// Deploys the Pragma Oracle with the currencies & pairs from the config.
+  private async deployPragmaOracle(
+    deployer: Account,
+    currencies: CurrenciesConfig,
+    publisherRegistryAddress: string,
+  ): Promise<Contract> {
+    const pairs = generateAllPairs(currencies);
+    const pragmaOracle = await deployStarknetContract(
+      deployer,
+      "oracle",
+      `pragma_oracle_Oracle`,
       [
         deployer.address, // admin
+        publisherRegistryAddress,
+        // TODO: This serialzation probably don't work :)
+        currencies,
+        pairs,
       ],
     );
-    console.log("✅ Deployed the Pragma Publisher Registry");
-    return publisherRegistry;
+    return pragmaOracle;
+  }
+
+  private async deploySummaryStats(
+    deployer: Account,
+    pragmaOracleAddress: string,
+  ): Promise<Contract> {
+    const summaryStats = await deployStarknetContract(
+      deployer,
+      "oracle",
+      "pragma_summary_stats_SummaryStats",
+      [pragmaOracleAddress],
+    );
+    return summaryStats;
   }
 }

@@ -1,9 +1,8 @@
-import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 
 import { type Deployer, type Chain, STARKNET_CHAINS } from "./interface";
-import { deployStarknetContract, buildStarknetAccount } from "../cairo";
+import { deployStarknetContract, buildStarknetAccount } from "../starknet";
 import {
   loadConfig,
   type AssetClassRouter,
@@ -13,8 +12,6 @@ import {
 } from "../config";
 import { FEEDS_CONFIG_FILE } from "../constants";
 import type { Account, Contract } from "starknet";
-
-dotenv.config();
 
 export class DispatcherDeployer implements Deployer {
   readonly allowedChains: Chain[] = STARKNET_CHAINS;
@@ -27,15 +24,12 @@ export class DispatcherDeployer implements Deployer {
     }
 
     console.log(`🧩 Deploying Dispatcher to ${chain}...`);
-    let supported_feeds = loadConfig<FeedsConfig>(FEEDS_CONFIG_FILE);
+    let feeds = loadConfig<FeedsConfig>(FEEDS_CONFIG_FILE);
     let deployer = await buildStarknetAccount(chain);
     let deploymentInfo: any = {};
 
     // 0. Deploy feeds registry
-    const feedsRegistry = await this.deployFeedsRegistry(
-      deployer,
-      supported_feeds,
-    );
+    const feedsRegistry = await this.deployFeedsRegistry(deployer, feeds);
     deploymentInfo.FeedsRegistry = feedsRegistry.address;
 
     // 1. Deploy pragma dispatcher
@@ -50,7 +44,7 @@ export class DispatcherDeployer implements Deployer {
     deploymentInfo.AssetClassRouters = await this.deployAllRouters(
       deployer,
       config,
-      supported_feeds,
+      feeds,
       dispatcher,
     );
 
@@ -68,7 +62,7 @@ export class DispatcherDeployer implements Deployer {
   /// Deploys the Pragma Feeds Registry and register all supported feeds.
   private async deployFeedsRegistry(
     deployer: Account,
-    supported_feeds: FeedsConfig,
+    feeds: FeedsConfig,
   ): Promise<Contract> {
     let feedsRegistry = await deployStarknetContract(
       deployer,
@@ -76,7 +70,7 @@ export class DispatcherDeployer implements Deployer {
       `pragma_feeds_registry_PragmaFeedsRegistry`,
       [deployer.address],
     );
-    for (const feed of supported_feeds.feeds) {
+    for (const feed of feeds.feeds) {
       let tx = await feedsRegistry.invoke("add_feed", [feed.id]);
       await deployer.waitForTransaction(tx.transaction_hash);
       console.log("Registered", feed.name);
@@ -108,11 +102,11 @@ export class DispatcherDeployer implements Deployer {
   private async deployAllRouters(
     deployer: Account,
     config: DeploymentConfig,
-    supported_feeds: FeedsConfig,
+    feeds: FeedsConfig,
     pragmaDispatcher: Contract,
   ): Promise<any> {
     let assetClassRouters: any = {};
-    for (const asset_class of supported_feeds.asset_classes_routers) {
+    for (const asset_class of feeds.asset_classes_routers) {
       assetClassRouters[asset_class.name] = await this.deployNewAssetClass(
         deployer,
         config,
