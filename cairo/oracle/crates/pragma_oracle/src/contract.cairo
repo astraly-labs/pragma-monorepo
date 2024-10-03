@@ -398,10 +398,7 @@ mod Oracle {
                                 // Should be None
                             };
                         },
-                        _ => {
-                            panic(array![OracleErrors::WRONG_DATA_TYPE]);
-                            return Default::default();
-                        },
+                        _ => panic(array![OracleErrors::WRONG_DATA_TYPE])
                     }
                 },
                 DataType::FutureEntry((
@@ -445,10 +442,7 @@ mod Oracle {
                                 // Should be None
                             };
                         },
-                        _ => {
-                            panic(array![OracleErrors::WRONG_DATA_TYPE]);
-                            return Default::default();
-                        }
+                        _ => panic(array![OracleErrors::WRONG_DATA_TYPE])
                     }
                 },
                 DataType::GenericEntry(key) => {
@@ -484,10 +478,7 @@ mod Oracle {
                                 // Should be None
                             };
                         },
-                        _ => {
-                            panic(array![OracleErrors::WRONG_DATA_TYPE]);
-                            return Default::default();
-                        },
+                        _ => panic(array![OracleErrors::WRONG_DATA_TYPE]),
                     }
                 },
             }

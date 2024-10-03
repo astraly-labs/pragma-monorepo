@@ -1,10 +1,7 @@
 use pragma_publisher_registry::interface::{
     IPublisherRegistryABIDispatcher, IPublisherRegistryABIDispatcherTrait
 };
-use snforge_std::{
-    declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address,
-    stop_cheat_caller_address, spy_events, EventSpyAssertionsTrait
-};
+use snforge_std::{declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address};
 use starknet::{ContractAddress, contract_address_const};
 
 /// Returns the mock owner

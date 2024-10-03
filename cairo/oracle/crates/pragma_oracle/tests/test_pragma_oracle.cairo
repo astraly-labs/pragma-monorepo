@@ -3,14 +3,12 @@ use pragma_entry::structures::{
     Checkpoint, SimpleDataType, PossibleEntries, AggregationMode, DataType
 };
 use pragma_oracle::interface::{IOracleABIDispatcher, IOracleABIDispatcherTrait};
-use pragma_publisher_registry::contract::PublisherRegistry;
 use pragma_publisher_registry::interface::{
     IPublisherRegistryABIDispatcher, IPublisherRegistryABIDispatcherTrait
 };
 use snforge_std::{
     declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address,
-    start_cheat_block_timestamp_global, stop_cheat_caller_address, spy_events,
-    EventSpyAssertionsTrait
+    start_cheat_block_timestamp_global,
 };
 use starknet::{ContractAddress, contract_address_const};
 

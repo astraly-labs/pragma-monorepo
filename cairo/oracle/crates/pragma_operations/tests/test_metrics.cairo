@@ -1,6 +1,6 @@
 //Tests
 
-use cubit::f128::types::fixed::{ONE_u128, FixedInto, FixedTrait, Fixed};
+use cubit::f128::types::fixed::{FixedInto, FixedTrait, Fixed};
 use pragma_operations::{
     structures::TickElem,
     metrics::{
@@ -95,5 +95,5 @@ fn test_metrics() {
     array.append(TickElem { tick: 1641254400, value: FixedTrait::from_felt(45897) });
     array.append(TickElem { tick: 1641340800, value: FixedTrait::from_felt(43569) });
     let value = volatility(array.span());
-    assert(volatility(array.span()) == 48830960, 'wrong volatility'); //10^8
+    assert(value == 48830960, 'wrong volatility'); //10^8
 }

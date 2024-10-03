@@ -1,7 +1,6 @@
 use pragma_entry::structures::{
     USD_CURRENCY_ID, OptionsFeedData, GenericEntry, Currency, Pair, SpotEntry, FutureEntry,
-    PragmaPricesResponse, BaseEntry, Checkpoint, SimpleDataType, PossibleEntries, AggregationMode,
-    DataType
+    BaseEntry, PossibleEntries, AggregationMode, DataType
 };
 use pragma_oracle::interface::{IOracleABIDispatcher, IOracleABIDispatcherTrait};
 use pragma_publisher_registry::interface::{
@@ -12,10 +11,10 @@ use pragma_summary_stats::interface::{
 };
 use snforge_std::{
     declare, ContractClassTrait, DeclareResultTrait, start_cheat_caller_address,
-    start_cheat_block_timestamp_global, stop_cheat_caller_address, spy_events,
-    EventSpyAssertionsTrait
+    start_cheat_block_timestamp_global,
 };
 use starknet::{ContractAddress, contract_address_const};
+
 const NOW: u64 = 100000;
 
 fn owner() -> ContractAddress {
@@ -464,7 +463,7 @@ fn publish_future_entries_and_checkpoints(oracle: IOracleABIDispatcher, NOW: u64
 
 #[test]
 fn test_summary_stats_mean_median() {
-    let (summary_stats, oracle) = setup();
+    let (summary_stats, _oracle) = setup();
     start_cheat_block_timestamp_global(NOW + 101);
     let (mean, _) = summary_stats
         .calculate_mean(
@@ -500,7 +499,7 @@ fn test_summary_stats_mean_median() {
 
 #[test]
 fn test_summary_stats_mean_mean() {
-    let (summary_stats, oracle) = setup();
+    let (summary_stats, _oracle) = setup();
     let (mean, _) = summary_stats
         .calculate_mean(DataType::SpotEntry(2), 100000, (100002 + 400), AggregationMode::Mean(()));
     assert(mean == 2750000, 'wrong mean(1)');
@@ -558,7 +557,7 @@ fn test_set_future_checkpoint() {
         );
     assert(twap_test_5 == 5500000, 'wrong twap(5)');
     assert(decimals == 6, 'wrong decimals(5)');
-    let (twap_test_6, decimals) = summary_stats
+    let (twap_test_6, _decimals) = summary_stats
         .calculate_twap(
             DataType::FutureEntry((3, 11111110)), AggregationMode::Median(()), 10000, 100401
         );
@@ -584,7 +583,7 @@ fn test_update_options_data() {
 
     oracle.publish_data(PossibleEntries::Generic(generic_entry));
 
-    let data_entry = oracle
+    let _data_entry = oracle
         .get_data_entries(DataType::GenericEntry(DERIBIT_OPTIONS_FEED_ID))
         .get(0);
 
@@ -640,7 +639,7 @@ fn test_update_options_data_fail_with_invalid_data() {
 
     oracle.publish_data(PossibleEntries::Generic(generic_entry));
 
-    let data_entry = oracle
+    let _data_entry = oracle
         .get_data_entries(DataType::GenericEntry(DERIBIT_OPTIONS_FEED_ID))
         .get(0);
 
@@ -667,7 +666,7 @@ fn test_update_options_data_fail_with_invalid_data() {
         mark_price: 45431835920,
     };
 
-    let leaf = summary_stats.get_options_data_hash(update_data);
+    let _leaf = summary_stats.get_options_data_hash(update_data);
 
     summary_stats.update_options_data(merkle_proof.span(), update_data);
 }
@@ -690,7 +689,7 @@ fn test_update_options_data_fail_with_invalid_proof() {
 
     oracle.publish_data(PossibleEntries::Generic(generic_entry));
 
-    let data_entry = oracle
+    let _data_entry = oracle
         .get_data_entries(DataType::GenericEntry(DERIBIT_OPTIONS_FEED_ID))
         .get(0);
 
@@ -716,7 +715,7 @@ fn test_update_options_data_fail_with_invalid_proof() {
         mark_price: 45431835920,
     };
 
-    let leaf = summary_stats.get_options_data_hash(update_data);
+    let _leaf = summary_stats.get_options_data_hash(update_data);
 
     summary_stats.update_options_data(merkle_proof.span(), update_data);
 }
