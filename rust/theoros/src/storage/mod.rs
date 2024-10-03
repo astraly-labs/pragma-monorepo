@@ -1,4 +1,5 @@
 pub mod event;
+pub mod utils;
 pub mod validators;
 
 pub use event::*;

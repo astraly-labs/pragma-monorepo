@@ -37,3 +37,4 @@ ya-gcp = { workspace = true }
 
 pragma-feeds = { workspace = true }
 pragma-utils = { workspace = true }
+alloy-primitives = "0.8.5"
