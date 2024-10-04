@@ -2,7 +2,7 @@ use std::collections::{HashMap};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use alloy_primitives::U256;
-use crate::types::hyperlane::DispatchEvent;
+use crate::types::hyperlane::DispatchUpdate;
 const DEFAULT_STORAGE_MAX_SIZE: usize = 16;
 use anyhow::Result;
 
@@ -10,31 +10,31 @@ use anyhow::Result;
 /// The first element is the latest.
 #[derive(Debug, Default)]
 pub struct EventStorage {
-    events: RwLock<HashMap<U256, DispatchEvent>>,
+    events: RwLock<HashMap<String, DispatchUpdate>>,
 }
 
 impl EventStorage {
     /// Creates a new `EventStorage` with the specified maximum size.
-    pub fn new(max_size: usize) -> Self {
+    pub fn new() -> Self {
         Self {
             events: RwLock::new(HashMap::new()),
         }
     }
 
-    pub async fn add(&self, message_id: U256, event: DispatchEvent) -> Result<()> {
+    pub async fn add(&self, feed_id: String, event: DispatchUpdate) -> Result<()> {
         let mut events = self.events.write().await;
-        events.insert(message_id, event);
+        events.insert(feed_id, event);
         Ok(())
     }
 
-    pub async fn get(&self, message_id: &U256) -> Result<Option<DispatchEvent>> {
+    pub async fn get(&self, message_id: &String) -> Result<Option<DispatchUpdate>> {
         let events = self.events.read().await;
         Ok(events.get(message_id).cloned())
     }
 
-    pub async fn get_all(&self) -> Result<Vec<(U256, DispatchEvent)>> {
+    pub async fn get_all(&self) -> Result<Vec<(String, DispatchUpdate)>> {
         let events = self.events.read().await;
-        Ok(events.iter().map(|(k, v)| (*k, v.clone())).collect())
+        Ok(events.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
     }
 
 }
@@ -45,7 +45,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_event_storage() {
-        let storage = EventStorage::new(3);
+        let storage = EventStorage::new();
 
         // TODO refactor tests
         // storage.add(1, 1).await;

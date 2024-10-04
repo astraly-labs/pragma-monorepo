@@ -49,7 +49,7 @@ pub async fn get_calldata(
     let feed: Feed = feed_id.parse().map_err(|_| GetCalldataError::InvalidFeedId)?;
 
     let checkpoints = state.storage.checkpoints().all().await;
-    let events = state.storage.dispatch_events().all().await;
+    let events = state.storage.dispatch_events().get_all().await;
 
     let num_validators = checkpoints.keys().len();
     let signers = checkpoints

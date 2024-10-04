@@ -33,6 +33,7 @@ impl EventCache {
         for (message_id, dispatch_event) in cache.iter() {
             if checkpoint_storage.contains_message_id(*message_id).await {
                 // Store the event
+                // Compute feed_id
                 event_storage.add(*message_id, dispatch_event.clone()).await;
                 to_remove.push(*message_id);
                 tracing::info!("Processed cached event with message ID: {:?}", message_id);

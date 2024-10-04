@@ -3,8 +3,8 @@ use apibara_core::starknet::v1alpha2::FieldElement;
 use bigdecimal::{BigDecimal,ToPrimitive};
 use pragma_feeds::{AssetClass, FeedType};
 use starknet::core::types::U256;
-use alloy_primitives::{FixedBytes, U256 as alloy_U256};
-use alloy::primitives::keccak256;
+use alloy_primitives::{hex,FixedBytes, U256 as alloy_U256};
+use alloy::{primitives::keccak256};
 
 use pragma_utils::conversions::apibara::FromFieldBytes;
 
@@ -90,7 +90,7 @@ impl DispatchEvent {
 
         for update in &self.message.body.updates {
             match update {
-                DispatchUpdate::SpotMedian(spot_update) => {
+                DispatchUpdate::SpotMedian{feed_id:_, update:spot_update} => {
                     // Append pair_id (U256 split into high and low parts)
                     input.extend_from_slice(&spot_update.pair_id.low().to_be_bytes());
                     input.extend_from_slice(&spot_update.pair_id.high().to_be_bytes());
@@ -188,27 +188,51 @@ impl FromStarknetEventData for DispatchMessageBody {
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub enum DispatchUpdate {
-    SpotMedian(SpotMedianUpdate),
+    SpotMedian {
+        update: SpotMedianUpdate,
+        feed_id: String,
+    },
 }
 
 impl FromStarknetEventData for DispatchUpdate {
     fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         // Asset class is always Crypto for now.
-        #[allow(unused)]
-        let asset_class =
-            AssetClass::try_from(u8::from_field_bytes(data.next().context("Missing asset class")?.to_bytes()))?;
+        let raw_asset_class = u8::from_field_bytes(data.next().context("Missing asset class")?.to_bytes());
+        let asset_class = AssetClass::try_from(raw_asset_class)?;
 
-        let feed_type =
-            FeedType::try_from(u16::from_field_bytes(data.next().context("Missing data type")?.to_bytes()))?;
+        let raw_feed_type = u16::from_field_bytes(data.next().context("Missing data type")?.to_bytes());
+        let feed_type = FeedType::try_from(raw_feed_type)?;
+
+        let pair_id_low = u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes());
+        let pair_id_high = u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes());
+
+        // Create the feed ID string
+        let mut bytes: Vec<u8> = Vec::with_capacity(35);
+        bytes.push(raw_asset_class);
+        bytes.extend_from_slice(&raw_feed_type.to_be_bytes());
+        bytes.extend_from_slice(&pair_id_high.to_be_bytes());
+        bytes.extend_from_slice(&pair_id_low.to_be_bytes());
+        let feed_id = format!("0x{}", hex::encode(&bytes));
+
+        let pair_id = U256::from_words(
+            u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes()),
+            u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes()),
+        );
 
         let update = match feed_type {
-            FeedType::SpotMedian => DispatchUpdate::SpotMedian(SpotMedianUpdate::from_starknet_event_data(&mut data)?),
+            FeedType::SpotMedian => {
+                let mut res = SpotMedianUpdate::from_starknet_event_data(&mut data)?;
+                res.pair_id = pair_id;
+                DispatchUpdate::SpotMedian{update: res, feed_id}
+            }
             _ => unimplemented!("TODO: Implement the other updates"),
         };
 
         Ok(update)
     }
 }
+
+
 
 #[derive(Debug, Clone)]
 pub struct MetadataUpdate {
@@ -228,10 +252,6 @@ pub struct SpotMedianUpdate {
 
 impl FromStarknetEventData for SpotMedianUpdate {
     fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let pair_id = U256::from_words(
-            u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes()),
-            u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes()),
-        );
 
         let price_felt = data.next().context("Missing price")?;
         let volume = u128::from_field_bytes(data.next().context("Missing volume")?.to_bytes());
@@ -244,7 +264,8 @@ impl FromStarknetEventData for SpotMedianUpdate {
         let num_sources_aggregated =
             u32::from_field_bytes(data.next().context("Missing sources aggregated")?.to_bytes());
 
-        Ok(Self { pair_id, metadata: MetadataUpdate { decimals, timestamp, num_sources_aggregated }, price, volume })
+        // We set 0 for the pair_id, will be filled at the upper level
+        Ok(Self { pair_id:  U256::from(0_u8), metadata: MetadataUpdate { decimals, timestamp, num_sources_aggregated }, price, volume })
     }
 }
 
@@ -304,7 +325,7 @@ mod tests {
         assert_eq!(body.updates.len(), 1);
 
         match &body.updates[0] {
-            DispatchUpdate::SpotMedian(update) => {
+            DispatchUpdate::SpotMedian{feed_id: _,update} => {
                 assert_eq!(update.pair_id, U256::from(9_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
                 assert_eq!(update.volume, 0_u128);
