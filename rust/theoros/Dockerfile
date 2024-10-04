@@ -11,15 +11,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends  \
 
 WORKDIR /app
 
-COPY . .
+COPY ./rust .
 
 RUN cargo build --release --package ${PACKAGE_NAME}
 
 FROM debian:bookworm-slim
 
-WORKDIR /usr/local/bin
+RUN apt-get update && apt-get install -y --no-install-recommends  \
+    libssl-dev  && \
+    apt-get autoremove -y  && \
+    apt-get clean  && \
+    rm -rf /var/lib/apt/lists/*  
+RUN groupadd pragma
+
+RUN useradd -g pragma pragma
+
+USER pragma
+
+WORKDIR /home/pragma
+EXPOSE 3000
+EXPOSE 8080
 
 # Copy artifacts from other images
-COPY --from=build /app/target/release/theoros .
+COPY --from=build /app/target/release/theoros /usr/local/bin/
 
-ENTRYPOINT ["./theoros"]
+ENTRYPOINT ["theoros"]
