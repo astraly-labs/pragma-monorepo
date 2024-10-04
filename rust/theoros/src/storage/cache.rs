@@ -1,10 +1,11 @@
+use crate::storage::EventStorage;
+use crate::types::hyperlane::HasFeedId;
+use crate::{storage::ValidatorCheckpointStorage, types::hyperlane::DispatchEvent};
+use alloy::primitives::U256;
+use anyhow::Result;
+use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use std::collections::HashMap;
-use anyhow::Result;
-use alloy::primitives::U256;
-use crate::{storage::ValidatorCheckpointStorage, types::hyperlane::DispatchEvent};
-use crate::storage::EventStorage;
 #[derive(Clone, Default)]
 pub struct EventCache {
     cache: Arc<RwLock<HashMap<U256, DispatchEvent>>>,
@@ -12,14 +13,12 @@ pub struct EventCache {
 
 impl EventCache {
     pub fn new() -> Self {
-        Self {
-            cache: Arc::new(RwLock::new(HashMap::new())),
-        }
+        Self { cache: Arc::new(RwLock::new(HashMap::new())) }
     }
 
-    pub async fn add_event(&self, message_id: U256, event: DispatchEvent) {
+    pub async fn add_event(&self, message_id: U256, event: &DispatchEvent) {
         let mut cache = self.cache.write().await;
-        cache.insert(message_id, event);
+        cache.insert(message_id, event.clone());
     }
 
     pub async fn process_cached_events(
@@ -32,9 +31,12 @@ impl EventCache {
 
         for (message_id, dispatch_event) in cache.iter() {
             if checkpoint_storage.contains_message_id(*message_id).await {
-                // Store the event
-                // Compute feed_id
-                event_storage.add(*message_id, dispatch_event.clone()).await;
+                // Store all updates in event
+                for update in dispatch_event.message.body.updates.iter() {
+                    let feed_id = update.feed_id();
+                    event_storage.add(feed_id, update).await;
+                }
+
                 to_remove.push(*message_id);
                 tracing::info!("Processed cached event with message ID: {:?}", message_id);
             }

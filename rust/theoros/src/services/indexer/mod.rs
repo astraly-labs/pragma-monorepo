@@ -13,7 +13,7 @@ use tokio::task::JoinSet;
 use pragma_utils::{conversions::apibara::felt_as_apibara_field, services::Service};
 
 use crate::{
-    types::hyperlane::{DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
+    types::hyperlane::{DispatchEvent, FromStarknetEventData, HasFeedId, ValidatorAnnouncementEvent},
     AppState, HYPERLANE_CORE_CONTRACT_ADDRESS,
 };
 
@@ -91,11 +91,12 @@ impl IndexerService {
             match stream.try_next().await {
                 Ok(Some(response)) => {
                     self.process_batch(response).await?;
-                    self.state.storage.cached_event().process_cached_events(
-                        &self.state.storage.checkpoints(),
-                        &self.state.storage.dispatch_events()
-                    ).await?;
-                },
+                    self.state
+                        .storage
+                        .cached_event()
+                        .process_cached_events(&self.state.storage.checkpoints(), &self.state.storage.dispatch_events())
+                        .await?;
+                }
                 Ok(None) => continue,
                 Err(e) => bail!("Error while streaming indexed batch: {}", e),
             }
@@ -138,15 +139,20 @@ impl IndexerService {
 
                 tracing::info!("Checking checkpoint storage for correspondence");
                 let message_id = dispatch_event.format_message();
-                 // Check if there's a corresponding checkpoint
-                 if self.state.storage.checkpoints().contains_message_id(message_id).await {
-                    tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
-                    // If found, store the event directly
-                    self.state.storage.dispatch_events().add(message_id,dispatch_event).await;
-                } else {
-                    tracing::info!("No checkpoint found, caching dispatch event");
-                    // If no checkpoint found, add to cache
-                    self.state.storage.cached_event().add_event(message_id, dispatch_event).await;
+
+                for update in dispatch_event.message.body.updates.iter() {
+                    let feed_id = update.feed_id();
+
+                    // Check if there's a corresponding checkpoint
+                    if self.state.storage.checkpoints().contains_message_id(message_id).await {
+                        tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
+                        // If found, store the event directly
+                        self.state.storage.dispatch_events().add(feed_id, update).await?;
+                    } else {
+                        tracing::info!("No checkpoint found, caching dispatch event");
+                        // If no checkpoint found, add to cache
+                        self.state.storage.cached_event().add_event(message_id, &dispatch_event).await;
+                    }
                 }
             }
             selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {

@@ -23,7 +23,7 @@ use pragma_utils::{
 use rpc::StarknetRpc;
 use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
-// TODO: Everything below here should be configurable, either via CLI or config file.
+// TODO: Everything below here should be configurable, either via CLI  or config file.
 // See: https://github.com/astraly-labs/pragma-monorepo/issues/17
 const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;

@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use anyhow::bail;
-use starknet::core::types::{Felt};
 use alloy_primitives::U256;
+use anyhow::bail;
+use starknet::core::types::Felt;
 use tokio::sync::RwLock;
 
 use crate::types::hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent};

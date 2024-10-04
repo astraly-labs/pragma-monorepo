@@ -1,10 +1,9 @@
-use std::collections::{HashMap};
-use std::sync::Arc;
-use tokio::sync::RwLock;
-use alloy_primitives::U256;
 use crate::types::hyperlane::DispatchUpdate;
-const DEFAULT_STORAGE_MAX_SIZE: usize = 16;
 use anyhow::Result;
+use std::collections::HashMap;
+use tokio::sync::RwLock;
+
+// const DEFAULT_STORAGE_MAX_SIZE: usize = 16;
 
 /// FIFO Buffer of fixed size used to store events.
 /// The first element is the latest.
@@ -16,14 +15,12 @@ pub struct EventStorage {
 impl EventStorage {
     /// Creates a new `EventStorage` with the specified maximum size.
     pub fn new() -> Self {
-        Self {
-            events: RwLock::new(HashMap::new()),
-        }
+        Self { events: RwLock::new(HashMap::new()) }
     }
 
-    pub async fn add(&self, feed_id: String, event: DispatchUpdate) -> Result<()> {
+    pub async fn add(&self, feed_id: String, event: &DispatchUpdate) -> Result<()> {
         let mut events = self.events.write().await;
-        events.insert(feed_id, event);
+        events.insert(feed_id, event.clone());
         Ok(())
     }
 
@@ -36,7 +33,6 @@ impl EventStorage {
         let events = self.events.read().await;
         Ok(events.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
     }
-
 }
 
 #[cfg(test)]

@@ -1,10 +1,10 @@
+use alloy::primitives::keccak256;
+use alloy_primitives::{hex, FixedBytes, U256 as alloy_U256};
 use anyhow::{Context, Result};
 use apibara_core::starknet::v1alpha2::FieldElement;
-use bigdecimal::{BigDecimal,ToPrimitive};
+use bigdecimal::{BigDecimal, ToPrimitive};
 use pragma_feeds::{AssetClass, FeedType};
 use starknet::core::types::U256;
-use alloy_primitives::{hex,FixedBytes, U256 as alloy_U256};
-use alloy::{primitives::keccak256};
 
 use pragma_utils::conversions::apibara::FromFieldBytes;
 
@@ -74,7 +74,7 @@ impl FromStarknetEventData for DispatchEvent {
 impl DispatchEvent {
     pub fn format_message(&self) -> alloy_U256 {
         let mut input = Vec::new();
-        
+
         // Formatting header part
         input.push(self.message.header.version);
         input.extend_from_slice(&self.message.header.nonce.to_be_bytes());
@@ -90,15 +90,16 @@ impl DispatchEvent {
 
         for update in &self.message.body.updates {
             match update {
-                DispatchUpdate::SpotMedian{feed_id:_, update:spot_update} => {
+                DispatchUpdate::SpotMedian { feed_id: _, update: spot_update } => {
                     // Append pair_id (U256 split into high and low parts)
                     input.extend_from_slice(&spot_update.pair_id.low().to_be_bytes());
                     input.extend_from_slice(&spot_update.pair_id.high().to_be_bytes());
 
                     // Scale price by 10^decimals and convert to u128
-                    let scaled_price = (spot_update.price.clone() * BigDecimal::from(10u32.pow(spot_update.metadata.decimals)))
-                        .to_u128()
-                        .unwrap_or(0);
+                    let scaled_price = (spot_update.price.clone()
+                        * BigDecimal::from(10u32.pow(spot_update.metadata.decimals)))
+                    .to_u128()
+                    .unwrap_or(0);
 
                     // Append scaled price, volume, decimals, timestamp, and num_sources_aggregated
                     input.extend_from_slice(&scaled_price.to_be_bytes());
@@ -112,7 +113,6 @@ impl DispatchEvent {
 
         let hash = keccak256(&input);
         alloy_U256::from_be_bytes(<[u8; 32]>::try_from(hash.as_slice()).expect("Hash should be 32 bytes"))
-
     }
 }
 
@@ -185,13 +185,22 @@ impl FromStarknetEventData for DispatchMessageBody {
     }
 }
 
+pub trait HasFeedId {
+    fn feed_id(&self) -> String;
+}
+
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub enum DispatchUpdate {
-    SpotMedian {
-        update: SpotMedianUpdate,
-        feed_id: String,
-    },
+    SpotMedian { update: SpotMedianUpdate, feed_id: String },
+}
+
+impl HasFeedId for DispatchUpdate {
+    fn feed_id(&self) -> String {
+        match self {
+            DispatchUpdate::SpotMedian { feed_id, update: _ } => feed_id.clone(),
+        }
+    }
 }
 
 impl FromStarknetEventData for DispatchUpdate {
@@ -207,12 +216,7 @@ impl FromStarknetEventData for DispatchUpdate {
         let pair_id_high = u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes());
 
         // Create the feed ID string
-        let mut bytes: Vec<u8> = Vec::with_capacity(35);
-        bytes.push(raw_asset_class);
-        bytes.extend_from_slice(&raw_feed_type.to_be_bytes());
-        bytes.extend_from_slice(&pair_id_high.to_be_bytes());
-        bytes.extend_from_slice(&pair_id_low.to_be_bytes());
-        let feed_id = format!("0x{}", hex::encode(&bytes));
+        let feed_id = build_feed_id(raw_asset_class, raw_feed_type, pair_id_high, pair_id_low);
 
         let pair_id = U256::from_words(
             u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes()),
@@ -223,7 +227,7 @@ impl FromStarknetEventData for DispatchUpdate {
             FeedType::SpotMedian => {
                 let mut res = SpotMedianUpdate::from_starknet_event_data(&mut data)?;
                 res.pair_id = pair_id;
-                DispatchUpdate::SpotMedian{update: res, feed_id}
+                DispatchUpdate::SpotMedian { update: res, feed_id }
             }
             _ => unimplemented!("TODO: Implement the other updates"),
         };
@@ -232,7 +236,15 @@ impl FromStarknetEventData for DispatchUpdate {
     }
 }
 
-
+fn build_feed_id(raw_asset_class: u8, raw_feed_type: u16, pair_id_high: u128, pair_id_low: u128) -> String {
+    let mut bytes: Vec<u8> = Vec::with_capacity(35);
+    bytes.push(raw_asset_class);
+    bytes.extend_from_slice(&raw_feed_type.to_be_bytes());
+    bytes.extend_from_slice(&pair_id_high.to_be_bytes());
+    bytes.extend_from_slice(&pair_id_low.to_be_bytes());
+    let feed_id = format!("0x{}", hex::encode(&bytes));
+    feed_id
+}
 
 #[derive(Debug, Clone)]
 pub struct MetadataUpdate {
@@ -252,7 +264,6 @@ pub struct SpotMedianUpdate {
 
 impl FromStarknetEventData for SpotMedianUpdate {
     fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-
         let price_felt = data.next().context("Missing price")?;
         let volume = u128::from_field_bytes(data.next().context("Missing volume")?.to_bytes());
         let decimals = u32::from_field_bytes(data.next().context("Missing decimals")?.to_bytes());
@@ -265,7 +276,12 @@ impl FromStarknetEventData for SpotMedianUpdate {
             u32::from_field_bytes(data.next().context("Missing sources aggregated")?.to_bytes());
 
         // We set 0 for the pair_id, will be filled at the upper level
-        Ok(Self { pair_id:  U256::from(0_u8), metadata: MetadataUpdate { decimals, timestamp, num_sources_aggregated }, price, volume })
+        Ok(Self {
+            pair_id: U256::from(0_u8),
+            metadata: MetadataUpdate { decimals, timestamp, num_sources_aggregated },
+            price,
+            volume,
+        })
     }
 }
 
@@ -325,7 +341,7 @@ mod tests {
         assert_eq!(body.updates.len(), 1);
 
         match &body.updates[0] {
-            DispatchUpdate::SpotMedian{feed_id: _,update} => {
+            DispatchUpdate::SpotMedian { feed_id: _, update } => {
                 assert_eq!(update.pair_id, U256::from(9_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
                 assert_eq!(update.volume, 0_u128);
