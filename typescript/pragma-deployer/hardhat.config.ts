@@ -18,7 +18,6 @@ if (!INFURA_PROJECT_ID) {
 }
 
 const chainIds = {
-  goerli: 5,
   hardhat: 31337,
   sepolia: 11155111,
   mainnet: 1,
