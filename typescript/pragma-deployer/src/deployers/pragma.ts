@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import hre, { ethers, network } from "hardhat";
-import { parseEther, zeroPadValue } from "ethers";
+import { parseEther, zeroPadBytes, zeroPadValue } from "ethers";
 
 import { type Deployer } from "./interface";
 import { EVM_CHAINS, type Chain } from "../chains";
@@ -77,20 +77,19 @@ export class PragmaDeployer implements Deployer {
       console.log("Initializing Pragma contract...");
       const dataSourceEmitterChainIds = config.pragma.data_source_emitters.map(
         (emitter) => emitter.chain_id,
-      ) as number[];
+      );
       const dataSourceEmitterAddresses = config.pragma.data_source_emitters.map(
         (emitter) => zeroPadValue(emitter.address, 32),
       );
-      // TODO: This create a segfault... Gotta investigate. :)
-      // const initTx = await pragma.initialize(
-      //   hyperlaneAddress,
-      //   await deployer.getAddress(),
-      //   dataSourceEmitterChainIds,
-      //   dataSourceEmitterAddresses,
-      //   config.pragma.valid_time_period_in_seconds,
-      //   parseEther(config.pragma.single_update_fee_in_wei),
-      // );
-      // await initTx.wait();
+      const initTx = await pragma.initialize(
+        hyperlaneAddress,
+        deployer.address,
+        dataSourceEmitterChainIds,
+        dataSourceEmitterAddresses,
+        config.pragma.valid_time_period_in_seconds,
+        parseEther(config.pragma.single_update_fee_in_wei),
+      );
+      await initTx.wait();
       console.log(`✅ Pragma.sol deployed and initialized at ${pragmaAddress}`);
 
       // Save deployment info
