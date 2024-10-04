@@ -33,6 +33,16 @@ export class Currency {
     this.ethereumAddress = this.validateAddress(ethereumAddress);
   }
 
+  static fromCurrencyConfig(config: CurrencyConfig): Currency {
+    return new Currency(
+      config.ticker,
+      config.decimals,
+      config.abstract || false,
+      config.starknet_address,
+      config.ethereum_address,
+    );
+  }
+
   private validateAddress(address?: string | bigint): bigint {
     if (address === undefined) {
       return BigInt(0);
@@ -45,26 +55,6 @@ export class Currency {
       }
     }
     return address;
-  }
-
-  static fromCurrencyConfig(config: CurrencyConfig): Currency {
-    return new Currency(
-      config.ticker,
-      config.decimals,
-      config.abstract || false,
-      config.starknet_address,
-      config.ethereum_address,
-    );
-  }
-
-  serialize(): [string, number, boolean, bigint, bigint] {
-    return [
-      this.id,
-      this.decimals,
-      this.isAbstractCurrency,
-      this.starknetAddress,
-      this.ethereumAddress,
-    ];
   }
 
   toObject(): {

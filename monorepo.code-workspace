@@ -44,6 +44,14 @@
       "name": "===== TYPESCRIPT =====",
       "path": "typescript",
     },
+    {
+      "name": "pragma-deployer",
+      "path": "typescript/pragma-deployer",
+    },
+    {
+      "name": "pragma-scripts",
+      "path": "typescript/pragma-scripts",
+    },
   ],
   "settings": {},
 }

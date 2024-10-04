@@ -1,8 +1,8 @@
 // Supported chains
 export type Chain =
-  | "starknet"
-  | "madara_devnet"
+  | "starknet" // starknet
   | "starknet_sepolia"
+  | "madara_devnet"
   | "mainnet" // ethereum mainnet
   | "ropsten"
   | "rinkeby"

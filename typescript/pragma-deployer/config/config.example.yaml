@@ -1,4 +1,4 @@
-# Configuration for the Pragma Oracle
+# Configuration for the Pragma Oracle Cairo contracts
 pragma_oracle:
   pairs:
     - "BTC/USD"
@@ -46,12 +46,12 @@ pragma_oracle:
       sources:
         - "ALENO"
 
-# Configuration for the Pragma Dispatcher
+# Configuration for the Pragma Dispatcher Cairo Contracts
 pragma_dispatcher:
   pragma_oracle_address: "0x1"
   hyperlane_mailbox_address: "0x1"
 
-# Configuration for the Pragma.sol EVM contract
+# Configuration for the Pragma Solidity EVM contract
 pragma:
   data_source_emitters:
     - chain_id: 1

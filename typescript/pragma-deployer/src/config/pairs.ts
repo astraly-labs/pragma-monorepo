@@ -15,10 +15,6 @@ export class Pair {
     this.quoteCurrency = quoteCurrency.toUpperCase();
   }
 
-  serialize(): [string, string, string] {
-    return [this.id, this.baseCurrency, this.quoteCurrency];
-  }
-
   toObject(): {
     id: string;
     baseCurrency: string;

@@ -20,10 +20,6 @@ program
     }
 
     const config = loadConfig<DeploymentConfig>(options.config);
-    if (!config.pragma_dispatcher) {
-      throw new Error("Invalid config: pragma_dispatcher.owner is required");
-    }
-
     try {
       await deploymentManager.deploy(contract, config, options.chain);
     } catch (error) {
