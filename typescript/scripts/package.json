@@ -1,0 +1,21 @@
+{
+  "name": "scripts",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.3",
+    "js-yaml": "^4.1.0"
+  },
+  "scripts": {
+    "update_feed": "bun run src/update_feed.ts"
+  }
+}
