@@ -1,22 +1,15 @@
-// ## CLI
-// - chain
-// - target-chain (from Pragma.sol - must be deployed)
-// - feed_id
-// - private_key
-
-// ## Steps
-// 1. Theoros ? (endpoint selection)
-// 2. Get calldata from Theoros
-// 3. Call `updateDataFeeds` with the calldata
-// 4. Assertions - check that on the destination chain everything is correctly updated
-//    Show gas consumption
-
 import { Command, type OptionValues } from "commander";
 import { ethers } from "ethers";
 import dotenv from "dotenv";
 import fs from "fs";
 
+const PRAGMA_SOL_ABI_PATH = "../../../solidity/out/Pragma.sol/Pragma.json";
+
 dotenv.config();
+const RPC_URL = process.env.RPC_URL;
+if (!RPC_URL) {
+  throw new Error("RPC URL not set in .env file");
+}
 
 interface ChainConfig {
   contract_address: string;
@@ -152,12 +145,12 @@ async function main() {
   // 3. Call `updateDataFeeds` with the calldata
   let abi;
   try {
-    abi = await import("../../../solidity/out/Pragma.sol/Pragma.json");
+    abi = await import(PRAGMA_SOL_ABI_PATH);
   } catch (error) {
     console.error("Failed to import ABI:", error);
     throw new Error("ABI file not found or invalid");
   }
-  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+  const provider = new ethers.JsonRpcProvider(RPC_URL);
   const wallet = new ethers.Wallet(privateKey, provider);
   const contract = new ethers.Contract(
     chainConfig.contract_address,

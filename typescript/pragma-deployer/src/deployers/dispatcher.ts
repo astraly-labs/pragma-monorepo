@@ -50,8 +50,8 @@ export class DispatcherDeployer implements Deployer {
     );
 
     // 3. Save deployment addresses
-    const jsonContent = JSON.stringify(deploymentInfo, null, 2);
-    const directoryPath = path.join("..", "deployments", chain);
+    const jsonContent = JSON.stringify(deploymentInfo, null, 4);
+    const directoryPath = path.join("..", "..", "deployments", chain);
     const filePath = path.join(directoryPath, "dispatcher.json");
     // Create the directory if it doesn't exist
     fs.mkdirSync(directoryPath, { recursive: true });

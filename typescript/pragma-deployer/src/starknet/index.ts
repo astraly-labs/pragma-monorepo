@@ -35,9 +35,9 @@ export function getStarknetRpcUrl(chain: Chain): string {
 
 function getProjectBuildFolder(project: projectName): string {
   if (project === "oracle") {
-    return "../cairo/oracle/target/dev";
+    return "../../cairo/oracle/target/dev";
   } else {
-    return "../cairo/dispatcher/target/dev";
+    return "../../cairo/dispatcher/target/dev";
   }
 }
 

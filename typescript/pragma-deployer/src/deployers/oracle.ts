@@ -51,8 +51,8 @@ export class OracleDeployer implements Deployer {
     deploymentInfo.SummaryStats = summaryStats.address;
 
     // 4. Save deployment addresses
-    const jsonContent = JSON.stringify(deploymentInfo, null, 2);
-    const directoryPath = path.join("..", "deployments", chain);
+    const jsonContent = JSON.stringify(deploymentInfo, null, 4);
+    const directoryPath = path.join("..", "..", "deployments", chain);
     const filePath = path.join(directoryPath, "oracle.json");
     // Create the directory if it doesn't exist
     fs.mkdirSync(directoryPath, { recursive: true });
@@ -99,15 +99,10 @@ export class OracleDeployer implements Deployer {
     publisherRegistryAddress: string,
   ): Promise<Contract> {
     const currencies = currenciesConfig.map(Currency.fromCurrencyConfig);
-    const serializedCurrencies = currencies.map((currency) =>
-      currency.toObject(),
-    );
+    const serializedCurrencies = currencies.map((currency) => currency.toObject());
 
     const pairs = parsePairsFromConfig(config);
     const serializedPairs = pairs.map((pair) => pair.toObject());
-
-    console.log(serializedCurrencies);
-    console.log(serializedPairs);
 
     const pragmaOracle = await deployStarknetContract(
       deployer,
@@ -124,6 +119,7 @@ export class OracleDeployer implements Deployer {
     return pragmaOracle;
   }
 
+  /// Deploys the Summary Stats contract.
   private async deploySummaryStats(
     deployer: Account,
     pragmaOracleAddress: string,

@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 
@@ -12,9 +11,6 @@ import { EVM_CHAINS, type Chain } from "../chains";
 const HYPERLANE_CONTRACT_NAME: string = "Hyperlane";
 const PRAGMA_CONTRACT_NAME: string = "Pragma";
 
-dotenv.config();
-const NETWORK = process.env.NETWORK;
-
 export class PragmaDeployer implements Deployer {
   readonly allowedChains: Chain[] = EVM_CHAINS;
   readonly defaultChain: Chain = "mainnet";
@@ -25,16 +21,10 @@ export class PragmaDeployer implements Deployer {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);
     }
 
-    if (NETWORK === undefined) {
-      throw new Error("⛔ NETWORK in .env must be defined");
-    }
-
-    console.log(`🧩 Deploying Pragma.sol to ${chain}:${NETWORK}...`);
-
+    console.log(`🧩 Deploying Pragma.sol to ${chain}...`);
     const [deployer] = await ethers.getSigners();
 
     console.log("Deployer account:", deployer.address);
-
     // Deploy Hyperlane contract
     const Hyperlane = await ethers.getContractFactory(HYPERLANE_CONTRACT_NAME);
     const hyperlane = await Hyperlane.deploy(
@@ -72,10 +62,13 @@ export class PragmaDeployer implements Deployer {
       Hyperlane: hyperlane.address,
       Pragma: pragma.address,
     };
-
-    const jsonContent = JSON.stringify(deploymentInfo, null, 2);
-    const filePath = path.join("deployments", NETWORK, "pragma.json");
+    const jsonContent = JSON.stringify(deploymentInfo, null, 4);
+    const directoryPath = path.join("..", "..", "deployments", chain);
+    const filePath = path.join(directoryPath, "pragma.json");
+    // Create the directory if it doesn't exist
+    fs.mkdirSync(directoryPath, { recursive: true });
     fs.writeFileSync(filePath, jsonContent);
     console.log(`Deployment info saved to ${filePath}`);
+    console.log("Deployment complete!");
   }
 }

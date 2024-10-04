@@ -8,7 +8,7 @@ program
   .description("CLI to deploy Pragma contracts")
   .arguments("<contract>")
   .requiredOption("--config <config>", "Path to the YAML config file")
-  .option("-c, --chain <chain>", "Chain where the contract will be deployed")
+  .option("--chain <chain>", "Chain where the contract will be deployed")
   .action(async (contract: string, options) => {
     contract = contract.toLocaleLowerCase();
 
