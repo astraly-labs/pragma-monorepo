@@ -18,7 +18,6 @@ bun install
 npm install
 ```
 
-
 # Available scripts
 
 ## update_feed
