@@ -25,7 +25,7 @@ pub struct TheorosStorage {
     validators: ValidatorStorage,
     checkpoints: ValidatorCheckpointStorage,
     cached_events: EventCache,
-    dispatch_events: EventStorage<DispatchEvent>,
+    dispatch_events: EventStorage,
 
 }
 
@@ -69,7 +69,7 @@ impl TheorosStorage {
         &self.checkpoints
     }
 
-    pub fn dispatch_events(&self) -> &EventStorage<DispatchEvent> {
+    pub fn dispatch_events(&self) -> &EventStorage {
         &self.dispatch_events
     }
 

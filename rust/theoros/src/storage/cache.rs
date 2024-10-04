@@ -25,7 +25,7 @@ impl EventCache {
     pub async fn process_cached_events(
         &self,
         checkpoint_storage: &ValidatorCheckpointStorage,
-        event_storage: &EventStorage<DispatchEvent>,
+        event_storage: &EventStorage,
     ) -> Result<()> {
         let cache = self.cache.read().await;
         let mut to_remove = Vec::new();
@@ -33,7 +33,7 @@ impl EventCache {
         for (message_id, dispatch_event) in cache.iter() {
             if checkpoint_storage.contains_message_id(*message_id).await {
                 // Store the event
-                event_storage.add(dispatch_event.clone()).await;
+                event_storage.add(*message_id, dispatch_event.clone()).await;
                 to_remove.push(*message_id);
                 tracing::info!("Processed cached event with message ID: {:?}", message_id);
             }

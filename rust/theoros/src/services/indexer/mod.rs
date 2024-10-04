@@ -142,7 +142,7 @@ impl IndexerService {
                  if self.state.storage.checkpoints().contains_message_id(message_id).await {
                     tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
                     // If found, store the event directly
-                    self.state.storage.dispatch_events().add(dispatch_event).await;
+                    self.state.storage.dispatch_events().add(message_id,dispatch_event).await;
                 } else {
                     tracing::info!("No checkpoint found, caching dispatch event");
                     // If no checkpoint found, add to cache

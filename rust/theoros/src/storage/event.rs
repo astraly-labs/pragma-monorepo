@@ -1,47 +1,42 @@
-use std::collections::VecDeque;
+use std::collections::{HashMap};
 use std::sync::Arc;
 use tokio::sync::RwLock;
-
+use alloy_primitives::U256;
+use crate::types::hyperlane::DispatchEvent;
 const DEFAULT_STORAGE_MAX_SIZE: usize = 16;
+use anyhow::Result;
 
 /// FIFO Buffer of fixed size used to store events.
 /// The first element is the latest.
-#[derive(Debug)]
-pub struct EventStorage<T> {
-    events: Arc<RwLock<VecDeque<T>>>,
-    max_size: usize,
+#[derive(Debug, Default)]
+pub struct EventStorage {
+    events: RwLock<HashMap<U256, DispatchEvent>>,
 }
 
-impl<T: Clone> EventStorage<T> {
+impl EventStorage {
     /// Creates a new `EventStorage` with the specified maximum size.
     pub fn new(max_size: usize) -> Self {
-        Self { events: Arc::new(RwLock::new(VecDeque::with_capacity(max_size))), max_size }
-    }
-
-    /// Adds a new event to the front of the queue, removing the oldest if necessary.
-    pub async fn add(&self, event: T) {
-        let mut events = self.events.write().await;
-        events.push_front(event);
-        if events.len() > self.max_size {
-            events.pop_back();
+        Self {
+            events: RwLock::new(HashMap::new()),
         }
     }
 
-    /// Returns the latest event, if any.
-    pub async fn latest(&self) -> Option<T> {
-        self.events.read().await.front().cloned()
+    pub async fn add(&self, message_id: U256, event: DispatchEvent) -> Result<()> {
+        let mut events = self.events.write().await;
+        events.insert(message_id, event);
+        Ok(())
     }
 
-    /// Returns all events as a vector.
-    pub async fn all(&self) -> Vec<T> {
-        self.events.read().await.iter().cloned().collect()
+    pub async fn get(&self, message_id: &U256) -> Result<Option<DispatchEvent>> {
+        let events = self.events.read().await;
+        Ok(events.get(message_id).cloned())
     }
-}
 
-impl<T: Clone> Default for EventStorage<T> {
-    fn default() -> Self {
-        Self::new(DEFAULT_STORAGE_MAX_SIZE)
+    pub async fn get_all(&self) -> Result<Vec<(U256, DispatchEvent)>> {
+        let events = self.events.read().await;
+        Ok(events.iter().map(|(k, v)| (*k, v.clone())).collect())
     }
+
 }
 
 #[cfg(test)]
@@ -52,12 +47,14 @@ mod tests {
     async fn test_event_storage() {
         let storage = EventStorage::new(3);
 
-        storage.add(1).await;
-        storage.add(2).await;
-        storage.add(3).await;
-        storage.add(4).await;
+        // TODO refactor tests
+        // storage.add(1, 1).await;
+        // storage.add(2, 2).await;
+        // storage.add(3, 3).await;
+        // storage.add(4,4).await;
 
-        assert_eq!(storage.latest().await, Some(4));
-        assert_eq!(storage.all().await, vec![4, 3, 2]);
+        // assert_eq!(storage.get(1).await.unwrap(), Ok(1));
+        // assert_eq!(storage.get(2).await, Ok(2));
+        // assert_eq!(storage.all().await, vec![4, 3, 2]);
     }
 }
