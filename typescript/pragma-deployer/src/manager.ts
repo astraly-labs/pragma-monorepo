@@ -1,6 +1,6 @@
 import type { DeploymentConfig } from "./config";
-import type { Deployer } from "./deployers";
 import {
+  type Deployer,
   OracleDeployer,
   DispatcherDeployer,
   PragmaDeployer,

@@ -1,11 +1,12 @@
 // Supported chains
 export type Chain =
   | "starknet" // starknet
-  | "starknet_sepolia"
-  | "madara_devnet"
+  | "starknetSepolia"
+  | "madaraDevnet"
   | "mainnet" // ethereum mainnet
-  | "ropsten"
-  | "rinkeby"
+  | "hardhat"
+  | "sepolia"
+  | "holesky"
   | "bsc"
   | "bscTestnet"
   | "polygon"
@@ -17,16 +18,15 @@ export type Chain =
   | "optimism"
   | "base";
 
-// Utilities for different type of chains
 export const STARKNET_CHAINS: Chain[] = [
   "starknet",
-  "starknet_sepolia",
-  "madara_devnet",
+  "starknetSepolia",
+  "madaraDevnet",
 ];
 export const EVM_CHAINS: Chain[] = [
   "mainnet",
-  "ropsten",
-  "rinkeby",
+  "sepolia",
+  "holesky",
   "bsc",
   "bscTestnet",
   "polygon",
@@ -37,4 +37,5 @@ export const EVM_CHAINS: Chain[] = [
   "arbitrum",
   "optimism",
   "base",
+  "hardhat",
 ];

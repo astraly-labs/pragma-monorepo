@@ -72,8 +72,4 @@ export class Currency {
       ethereumAddress: `0x${this.ethereumAddress.toString(16)}`,
     };
   }
-
-  toString(): string {
-    return `Currency(${this.id}, ${this.decimals}, ${this.isAbstractCurrency}, ${this.starknetAddress}, ${this.ethereumAddress})`;
-  }
 }

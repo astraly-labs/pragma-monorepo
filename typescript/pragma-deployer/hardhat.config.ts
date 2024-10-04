@@ -1,5 +1,6 @@
 import type { HardhatUserConfig } from "hardhat/config";
 import type { NetworkUserConfig } from "hardhat/types";
+import "hardhat-switch-network";
 import "@nomicfoundation/hardhat-ethers";
 
 import * as dotenv from "dotenv";
@@ -19,9 +20,9 @@ if (!INFURA_PROJECT_ID) {
 const chainIds = {
   goerli: 5,
   hardhat: 31337,
-  kovan: 42,
+  sepolia: 11155111,
   mainnet: 1,
-  rinkeby: 4,
+  holesky: 17000,
   ropsten: 3,
   avalanche: 43114,
   bsc: 56,
@@ -69,17 +70,17 @@ const config: HardhatUserConfig = {
       loggingEnabled: true,
       chainId: chainIds.hardhat,
     },
-    ethereum: getChainConfig(
+    mainnet: getChainConfig(
       "mainnet",
       `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
     ),
-    ropsten: getChainConfig(
-      "ropsten",
-      `https://ropsten.infura.io/v3/${INFURA_PROJECT_ID}`,
+    sepolia: getChainConfig(
+      "sepolia",
+      `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
     ),
-    rinkeby: getChainConfig(
-      "rinkeby",
-      `https://rinkeby.infura.io/v3/${INFURA_PROJECT_ID}`,
+    holesky: getChainConfig(
+      "holesky",
+      `https://holesky.infura.io/v3/${INFURA_PROJECT_ID}`,
     ),
     bsc: getChainConfig("bsc", "https://bsc-dataseed1.defibit.io/"),
     bscTestnet: getChainConfig(
@@ -91,7 +92,6 @@ const config: HardhatUserConfig = {
       "mumbai",
       "https://rpc-mumbai.maticvigil.com",
     ),
-    polygonZkEvm: getChainConfig("polygonZkEvm", "https://zkevm-rpc.com"),
     avalanche: getChainConfig(
       "avalanche",
       "https://api.avax.network/ext/bc/C/rpc",
@@ -102,9 +102,9 @@ const config: HardhatUserConfig = {
     base: getChainConfig("base", "https://mainnet.base.org"),
   },
   paths: {
-    sources: "./src/SOLIDITY",
-    cache: "./cache",
-    artifacts: "./artifacts",
+    sources: "../../solidity/src",
+    cache: "../../solidity/cache",
+    artifacts: "../../solidity/out",
   },
   mocha: {
     timeout: 40000,

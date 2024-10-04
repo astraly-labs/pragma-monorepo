@@ -58,7 +58,7 @@ pragma:
       address: "0x51298007E4e8A48d11B64D9361d6ED64f2B4309D"
     - chain_id: 2
       address: "0x51298007E4e8A48d11B64D9361d6ED64f2B4309D"
-    - chaind_id: 3
+    - chain_id: 3
       address: "0x51298007E4e8A48d11B64D9361d6ED64f2B4309D"
 
   valid_time_period_in_seconds: 3600 # 1 hour

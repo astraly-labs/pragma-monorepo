@@ -1,15 +1,11 @@
 import fs from "fs";
 import path from "path";
-
-import { ethers } from "hardhat";
+import hre, { ethers, network } from "hardhat";
 import { parseEther, zeroPadValue } from "ethers";
 
 import { type Deployer } from "./interface";
-import type { DeploymentConfig } from "../config";
 import { EVM_CHAINS, type Chain } from "../chains";
-
-const HYPERLANE_CONTRACT_NAME: string = "Hyperlane";
-const PRAGMA_CONTRACT_NAME: string = "Pragma";
+import type { DeploymentConfig } from "../config";
 
 export class PragmaDeployer implements Deployer {
   readonly allowedChains: Chain[] = EVM_CHAINS;
@@ -20,55 +16,98 @@ export class PragmaDeployer implements Deployer {
     if (!this.allowedChains.includes(chain)) {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);
     }
+    await hre.switchNetwork(chain);
 
-    console.log(`🧩 Deploying Pragma.sol to ${chain}...`);
-    const [deployer] = await ethers.getSigners();
+    try {
+      console.log(`🧩 Deploying Pragma.sol to ${chain}...`);
 
-    console.log("Deployer account:", deployer.address);
-    // Deploy Hyperlane contract
-    const Hyperlane = await ethers.getContractFactory(HYPERLANE_CONTRACT_NAME);
-    const hyperlane = await Hyperlane.deploy(
-      config.pragma.hyperlane.validators,
-    );
-    await hyperlane.deployed();
-    console.log("✅ Hyperlane deployed to:", hyperlane.address);
+      const [deployer] = await ethers.getSigners();
+      console.log("Deployer account:", deployer.address);
 
-    // Prepare Pragma contract arguments
-    const pragmaConfig = {
-      dataSourceEmitterChainIds: config.pragma.data_source_emitters.map(
+      // Load contract artifacts
+      const hyperlaneArtifactPath = path.join(
+        hre.config.paths.artifacts,
+        "Hyperlane.sol/Hyperlane.json",
+      );
+      const pragmaArtifactPath = path.join(
+        hre.config.paths.artifacts,
+        "Pragma.sol/Pragma.json",
+      );
+
+      if (
+        !fs.existsSync(hyperlaneArtifactPath) ||
+        !fs.existsSync(pragmaArtifactPath)
+      ) {
+        throw new Error(
+          "Contract artifacts not found. Ensure contracts are in the correct location and have been compiled.",
+        );
+      }
+
+      const hyperlaneArtifact = JSON.parse(
+        fs.readFileSync(hyperlaneArtifactPath, "utf8"),
+      );
+      const pragmaArtifact = JSON.parse(
+        fs.readFileSync(pragmaArtifactPath, "utf8"),
+      );
+
+      // Deploy Hyperlane contract
+      const Hyperlane = await ethers.getContractFactory(
+        hyperlaneArtifact.abi,
+        hyperlaneArtifact.bytecode,
+      );
+      console.log("Deploying Hyperlane...");
+      const hyperlane = await Hyperlane.deploy(
+        config.pragma.hyperlane.validators,
+      );
+      await hyperlane.waitForDeployment();
+      const hyperlaneAddress = await hyperlane.getAddress();
+      console.log("✅ Hyperlane deployed to:", hyperlaneAddress);
+
+      // Deploy Pragma contract
+      const Pragma = await ethers.getContractFactory(
+        pragmaArtifact.abi,
+        pragmaArtifact.bytecode,
+      );
+      console.log("Deploying Pragma...");
+      const pragma = await Pragma.deploy();
+      await pragma.waitForDeployment();
+      const pragmaAddress = await pragma.getAddress();
+
+      // Initialize Pragma contract
+      console.log("Initializing Pragma contract...");
+      const dataSourceEmitterChainIds = config.pragma.data_source_emitters.map(
         (emitter) => emitter.chain_id,
-      ),
-      dataSourceEmitterAddresses: config.pragma.data_source_emitters.map(
+      ) as number[];
+      const dataSourceEmitterAddresses = config.pragma.data_source_emitters.map(
         (emitter) => zeroPadValue(emitter.address, 32),
-      ),
-      validTimePeriodSeconds: config.pragma.valid_time_period_in_seconds,
-      singleUpdateFeeInWei: parseEther(config.pragma.single_update_fee_in_wei),
-    };
+      );
+      // TODO: This create a segfault... Gotta investigate. :)
+      // const initTx = await pragma.initialize(
+      //   hyperlaneAddress,
+      //   await deployer.getAddress(),
+      //   dataSourceEmitterChainIds,
+      //   dataSourceEmitterAddresses,
+      //   config.pragma.valid_time_period_in_seconds,
+      //   parseEther(config.pragma.single_update_fee_in_wei),
+      // );
+      // await initTx.wait();
+      console.log(`✅ Pragma.sol deployed and initialized at ${pragmaAddress}`);
 
-    // Deploy Pragma contract
-    const Pragma = await ethers.getContractFactory(PRAGMA_CONTRACT_NAME);
-    const pragma = await Pragma.deploy(
-      hyperlane.address,
-      pragmaConfig.dataSourceEmitterChainIds,
-      pragmaConfig.dataSourceEmitterAddresses,
-      pragmaConfig.validTimePeriodSeconds,
-      pragmaConfig.singleUpdateFeeInWei,
-    );
-    await pragma.deployed();
-    console.log(`✅ Pragma.sol deployed at ${pragma.address}`);
-
-    // Save deployment info
-    const deploymentInfo = {
-      Hyperlane: hyperlane.address,
-      Pragma: pragma.address,
-    };
-    const jsonContent = JSON.stringify(deploymentInfo, null, 4);
-    const directoryPath = path.join("..", "..", "deployments", chain);
-    const filePath = path.join(directoryPath, "pragma.json");
-    // Create the directory if it doesn't exist
-    fs.mkdirSync(directoryPath, { recursive: true });
-    fs.writeFileSync(filePath, jsonContent);
-    console.log(`Deployment info saved to ${filePath}`);
-    console.log("Deployment complete!");
+      // Save deployment info
+      const deploymentInfo = {
+        Hyperlane: hyperlaneAddress,
+        Pragma: pragmaAddress,
+      };
+      const jsonContent = JSON.stringify(deploymentInfo, null, 2);
+      const deploymentPath = path.join("..", "..", "deployments", chain);
+      fs.mkdirSync(deploymentPath, { recursive: true });
+      const filePath = path.join(deploymentPath, "pragma.json");
+      fs.writeFileSync(filePath, jsonContent);
+      console.log(`Deployment info saved to ${filePath}`);
+      console.log("Deployment complete!");
+    } catch (error) {
+      console.error("Deployment failed:", error);
+      throw error;
+    }
   }
 }

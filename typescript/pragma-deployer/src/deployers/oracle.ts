@@ -99,7 +99,9 @@ export class OracleDeployer implements Deployer {
     publisherRegistryAddress: string,
   ): Promise<Contract> {
     const currencies = currenciesConfig.map(Currency.fromCurrencyConfig);
-    const serializedCurrencies = currencies.map((currency) => currency.toObject());
+    const serializedCurrencies = currencies.map((currency) =>
+      currency.toObject(),
+    );
 
     const pairs = parsePairsFromConfig(config);
     const serializedPairs = pairs.map((pair) => pair.toObject());

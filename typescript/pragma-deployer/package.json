@@ -24,6 +24,7 @@
   "devDependencies": {
     "hardhat": "^2.22.11",
     "hardhat-deploy": "^0.9.24",
+    "hardhat-switch-network": "^1.1.1",
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@types/mocha": "^10.0.8",
     "ethers": "^6.13.2",

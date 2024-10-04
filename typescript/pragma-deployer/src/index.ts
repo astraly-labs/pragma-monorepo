@@ -1,6 +1,6 @@
 import { Command } from "commander";
-import deploymentManager from "./manager";
-import { loadConfig, type DeploymentConfig } from "./config";
+import deploymentManager from "./manager.ts";
+import { loadConfig, type DeploymentConfig } from "./config/index.ts";
 
 const program = new Command();
 
