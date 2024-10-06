@@ -29,15 +29,15 @@ const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;
 const METRICS_PORT: u16 = 8080;
 
-const MADARA_RPC_URL: &str = "https://free-rpc.nethermind.io/sepolia-juno";
-const APIBARA_DNA_URL: &str = "https://sepolia.starknet.a5a.ch"; // TODO: Should be Pragma X DNA url
+const MADARA_RPC_URL: &str = "https://madara-pragma-prod.karnot.xyz/";
+const APIBARA_DNA_URL: &str = "https://devnet.pragma.a5a.ch";
 
 const SERVER_HOST: &str = "0.0.0.0";
 const SERVER_PORT: u16 = 3000;
 
 const _PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt = Felt::ZERO;
-const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt = Felt::ZERO;
-const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt = Felt::ZERO;
+const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt = Felt::from_hex_unchecked("0x41c20175af14a0bfebfc9ae2f3bda29230a0bceb551844197d9f46faf76d6da");
+const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt = Felt::from_hex_unchecked("0xb9a75496355e223652c40fe50d45b5f39b86d3cc5c4f7aed44be6c7f6a8b4c");
 
 #[derive(Clone)]
 pub struct AppState {

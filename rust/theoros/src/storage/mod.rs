@@ -9,10 +9,7 @@ pub use validators::*;
 
 use starknet::core::types::Felt;
 
-use crate::{
-    rpc::{HyperlaneCalls, PragmaWrapperCalls, StarknetRpc},
-    types::hyperlane::DispatchEvent,
-};
+use crate::rpc::{HyperlaneCalls, PragmaWrapperCalls, StarknetRpc};
 
 /// Theoros storage that contains:
 ///   * a set of all available data feeds,

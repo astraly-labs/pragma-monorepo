@@ -1,5 +1,5 @@
 use alloy::primitives::keccak256;
-use alloy_primitives::{hex, FixedBytes, U256 as alloy_U256};
+use alloy_primitives::{hex, U256 as alloy_U256};
 use anyhow::{Context, Result};
 use apibara_core::starknet::v1alpha2::FieldElement;
 use bigdecimal::{BigDecimal, ToPrimitive};

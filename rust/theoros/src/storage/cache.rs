@@ -34,7 +34,7 @@ impl EventCache {
                 // Store all updates in event
                 for update in dispatch_event.message.body.updates.iter() {
                     let feed_id = update.feed_id();
-                    event_storage.add(feed_id, update).await;
+                    event_storage.add(feed_id, update).await?;
                 }
 
                 to_remove.push(*message_id);
