@@ -35,9 +35,12 @@ const APIBARA_DNA_URL: &str = "https://devnet.pragma.a5a.ch";
 const SERVER_HOST: &str = "0.0.0.0";
 const SERVER_PORT: u16 = 3000;
 
-const _PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt = Felt::ZERO;
-const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt = Felt::from_hex_unchecked("0x41c20175af14a0bfebfc9ae2f3bda29230a0bceb551844197d9f46faf76d6da");
-const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt = Felt::from_hex_unchecked("0xb9a75496355e223652c40fe50d45b5f39b86d3cc5c4f7aed44be6c7f6a8b4c");
+const PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt =
+    Felt::from_hex_unchecked("0x7bb8410b7ac643c591dfb58af31e19c1d3e66c7568e9a57e1b6f4b1d87ad76a");
+const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt =
+    Felt::from_hex_unchecked("0x41c20175af14a0bfebfc9ae2f3bda29230a0bceb551844197d9f46faf76d6da");
+const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt =
+    Felt::from_hex_unchecked("0xb9a75496355e223652c40fe50d45b5f39b86d3cc5c4f7aed44be6c7f6a8b4c");
 
 #[derive(Clone)]
 pub struct AppState {
@@ -56,11 +59,10 @@ async fn main() -> Result<()> {
     let rpc_client = StarknetRpc::new(rpc_url);
 
     // New storage + initialization
-    // let theoros_storage =
-    //     TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_WRAPPER_CONTRACT_ADDRESS, &HYPERLANE_CORE_CONTRACT_ADDRESS)
-    //         .await?;
-    // TODO: remove & uncomment line above when we can fetch from pragma wrapper + hyperlane
-    let theoros_storage = TheorosStorage::testing_state();
+    let theoros_storage =
+        TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_WRAPPER_CONTRACT_ADDRESS, &HYPERLANE_CORE_CONTRACT_ADDRESS)
+            .await?;
+    // let theoros_storage = TheorosStorage::testing_state();
 
     // Theoros metrics
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;

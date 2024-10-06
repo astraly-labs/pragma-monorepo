@@ -48,7 +48,9 @@ impl TheorosStorage {
             rpc_client.get_announced_storage_locations(hyperlane_address, &initial_validators).await?;
         theoros_storage.validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
-        let supported_data_feeds = rpc_client.get_data_feeds(pragma_wrapper_address).await?;
+        let feed_registry_address = rpc_client.get_pragma_feed_registry_address(pragma_wrapper_address).await?;
+
+        let supported_data_feeds = rpc_client.get_data_feeds(&feed_registry_address).await?;
         theoros_storage.data_feeds = supported_data_feeds.into_iter().collect();
         Ok(theoros_storage)
     }
