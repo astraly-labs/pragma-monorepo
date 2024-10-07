@@ -5,7 +5,7 @@ pragma_oracle:
     - "ETH/USD"
   publishers:
     - name: "PRAGMA"
-      address: "0x04C1D9DA136846AB084AE18CF6CE7A652DF7793B666A16CE46B1BF5850CC739D"
+      address: "0x3bb306a004034dba19e6cf7b161e7a4fef64bc1078419e8ad1876192f0b8cd1"
       sources:
         - "ASCENDEX"
         - "BITSTAMP"
@@ -30,28 +30,17 @@ pragma_oracle:
         - "EKUBO"
         - "DEXSCREENER"
     - name: "PRAGMA_MERKLE"
-      address: "0x064b4dAcea78c6394572f4534400AbB74a872A059b68630fba80895C646AA97f"
+      address: "0x5e9e93c6235f8ae6c2f4f0069bd30753ec21b26fbad80cfbf5da2c1bc573d69"
       sources:
         - "DERIBIT"
-    - name: "FOURLEAF"
-      address: "0x037A10F2808C05F4A328BDAC9A9344358547AE4676EBDDC005E24FF887B188FD"
-      sources:
-        - "FOURLEAF"
-    - name: "AVNU"
-      address: "0x0279FDE026E3E6CCEACB9C263FECE0C8D66A8F59E8448F3DA5A1968976841C62"
-      sources:
-        - "AVNU"
-    - name: "ALENO"
-      address: "0x06C58C048FC1483362D6AB56A542B74ADF5FD5C00706AEDA32EAD142E38B8646"
-      sources:
-        - "ALENO"
 
 # Configuration for the Pragma Dispatcher Cairo Contracts
 pragma_dispatcher:
-  pragma_oracle_address: "0x39986b4fdb2b29e81bcfab5640c614797d75116bca67f0b7c4690c19a3392bc"
+  pragma_oracle_address: "0x753034396b7e59f3579e2beba2f408dd2ed12974e054a1348234bea4b10bd30"
   hyperlane_mailbox_address: "0x41c20175af14a0bfebfc9ae2f3bda29230a0bceb551844197d9f46faf76d6da"
 
 # Configuration for the Pragma Solidity EVM contract
+# TODO: Adapt those values
 pragma:
   data_source_emitters:
     - chain_id: 1
