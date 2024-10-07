@@ -7,9 +7,17 @@ use tokio::sync::RwLock;
 
 /// FIFO Buffer of fixed size used to store events.
 /// The first element is the latest.
+///
+#[derive(Debug, Clone)]
+pub struct DispatchUpdateInfos {
+    pub update: DispatchUpdate,
+    pub emitter_chain_id: u32,
+    pub emitter_address: String,
+    pub nonce: u32,
+}
 #[derive(Debug, Default)]
 pub struct EventStorage {
-    events: RwLock<HashMap<String, DispatchUpdate>>,
+    events: RwLock<HashMap<String, DispatchUpdateInfos>>,
 }
 
 impl EventStorage {
@@ -18,18 +26,18 @@ impl EventStorage {
         Self { events: RwLock::new(HashMap::new()) }
     }
 
-    pub async fn add(&self, feed_id: String, event: &DispatchUpdate) -> Result<()> {
+    pub async fn add(&self, feed_id: String, event: DispatchUpdateInfos) -> Result<()> {
         let mut events = self.events.write().await;
-        events.insert(feed_id, event.clone());
+        events.insert(feed_id, event);
         Ok(())
     }
 
-    pub async fn get(&self, message_id: &String) -> Result<Option<DispatchUpdate>> {
+    pub async fn get(&self, feed_id: &String) -> Result<Option<DispatchUpdateInfos>> {
         let events = self.events.read().await;
-        Ok(events.get(message_id).cloned())
+        Ok(events.get(feed_id).cloned())
     }
 
-    pub async fn get_all(&self) -> Result<Vec<(String, DispatchUpdate)>> {
+    pub async fn get_all(&self) -> Result<Vec<(String, DispatchUpdateInfos)>> {
         let events = self.events.read().await;
         Ok(events.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
     }

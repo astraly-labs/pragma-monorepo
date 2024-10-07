@@ -11,6 +11,8 @@ pub enum GetCalldataError {
     DatabaseConnection,
     #[error("invalid feed id")]
     InvalidFeedId,
+    #[error("failed to retrieve event")]
+    FailedToRetrieveEvent,
 }
 
 impl IntoResponse for GetCalldataError {

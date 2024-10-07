@@ -1,4 +1,4 @@
-use crate::storage::EventStorage;
+use crate::storage::{DispatchUpdateInfos, EventStorage};
 use crate::types::hyperlane::HasFeedId;
 use crate::{storage::ValidatorCheckpointStorage, types::hyperlane::DispatchEvent};
 use alloy::primitives::U256;
@@ -34,7 +34,13 @@ impl EventCache {
                 // Store all updates in event
                 for update in dispatch_event.message.body.updates.iter() {
                     let feed_id = update.feed_id();
-                    event_storage.add(feed_id, update).await?;
+                    let dispatch_update_infos = DispatchUpdateInfos {
+                        update: update.clone(),
+                        emitter_address: dispatch_event.message.header.sender.to_string(),
+                        emitter_chain_id: dispatch_event.message.header.origin,
+                        nonce: dispatch_event.message.header.nonce,
+                    };
+                    event_storage.add(feed_id, dispatch_update_infos).await?;
                 }
 
                 to_remove.push(*message_id);

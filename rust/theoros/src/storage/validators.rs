@@ -58,7 +58,7 @@ impl ValidatorStorage {
 
 /// Contains a mapping between the validators and their latest fetched checkpoint.
 #[derive(Debug, Default)]
-pub struct ValidatorCheckpointStorage(RwLock<HashMap<Felt, SignedCheckpointWithMessageId>>);
+pub struct ValidatorCheckpointStorage(RwLock<HashMap<(Felt, U256), SignedCheckpointWithMessageId>>);
 
 impl ValidatorCheckpointStorage {
     pub fn new() -> Self {
@@ -66,20 +66,25 @@ impl ValidatorCheckpointStorage {
     }
 
     /// Adds or updates the [SignedCheckpointWithMessageId] for the given validator
-    pub async fn add(&self, validator: Felt, checkpoint: SignedCheckpointWithMessageId) -> anyhow::Result<()> {
+    pub async fn add(
+        &self,
+        validator: Felt,
+        message_id: U256,
+        checkpoint: SignedCheckpointWithMessageId,
+    ) -> anyhow::Result<()> {
         let mut all_checkpoints = self.0.write().await;
-        all_checkpoints.insert(validator, checkpoint);
+        all_checkpoints.insert((validator, message_id), checkpoint);
         Ok(())
     }
 
     /// Returns all the checkpoints for each validator
-    pub async fn all(&self) -> HashMap<Felt, SignedCheckpointWithMessageId> {
+    pub async fn all(&self) -> HashMap<(Felt, U256), SignedCheckpointWithMessageId> {
         self.0.read().await.clone()
     }
 
-    /// Returns the checkpoint for the given validator
-    pub async fn get(&self, validator: Felt) -> Option<SignedCheckpointWithMessageId> {
-        self.0.read().await.get(&validator).cloned()
+    /// Returns the checkpoint for the given validator and message Id
+    pub async fn get(&self, validator: Felt, message_id: U256) -> Option<SignedCheckpointWithMessageId> {
+        self.0.read().await.get(&(validator, message_id)).cloned()
     }
 
     // Check the existence of a checkpoint for a given message_id

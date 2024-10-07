@@ -28,7 +28,7 @@ pub struct HyperlaneMessage {
     pub nonce: u32,
     pub timestamp: u64,
     /// Chain ID of the emitter (pragma chain id)
-    pub emitter_chain_id: u16,
+    pub emitter_chain_id: u32,
     /// Address of the emitter (pragma chain mailbox address)
     pub emitter_address: String,
     pub payload: Payload,

@@ -2,6 +2,7 @@ use alloy::primitives::keccak256;
 use alloy_primitives::{hex, U256 as alloy_U256};
 use anyhow::{Context, Result};
 use apibara_core::starknet::v1alpha2::FieldElement;
+use bigdecimal::num_bigint::ToBigInt;
 use bigdecimal::{BigDecimal, ToPrimitive};
 use pragma_feeds::{AssetClass, FeedType};
 use starknet::core::types::U256;
@@ -282,6 +283,35 @@ impl FromStarknetEventData for SpotMedianUpdate {
             price,
             volume,
         })
+    }
+}
+
+impl SpotMedianUpdate {
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // Serialize pair_id (U256 is 32 bytes)
+        bytes.extend_from_slice(&self.pair_id.low().to_be_bytes());
+        bytes.extend_from_slice(&self.pair_id.high().to_be_bytes());
+        // Serialize metadata
+        bytes.extend_from_slice(&self.metadata.timestamp.to_be_bytes());
+        bytes.extend_from_slice(&self.metadata.num_sources_aggregated.to_be_bytes());
+        bytes.extend_from_slice(&self.metadata.decimals.to_be_bytes());
+
+        let scaled_price =
+            (self.price.clone() * BigDecimal::from(10u64.pow(18))).to_bigint().expect("Failed to convert to BigInt");
+        let price_bytes = scaled_price.to_bytes_be().1; // get the bytes in big-endian format
+        let mut padded_price_bytes = vec![0u8; 32]; // Initialize with zeros
+        if price_bytes.len() <= 32 {
+            padded_price_bytes[32 - price_bytes.len()..].copy_from_slice(&price_bytes);
+        } else {
+            panic!("Price too large to fit in 32 bytes");
+        }
+        bytes.extend_from_slice(&padded_price_bytes);
+
+        bytes.extend_from_slice(&self.volume.to_be_bytes());
+
+        bytes
     }
 }
 

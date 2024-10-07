@@ -6,7 +6,8 @@ use utoipa::{IntoParams, ToResponse, ToSchema};
 
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
-use crate::types::pragma::calldata::{HyperlaneMessage, ValidatorSignature};
+use crate::types::hyperlane::DispatchUpdate;
+use crate::types::pragma::calldata::{HyperlaneMessage, Payload, ValidatorSignature};
 use crate::types::pragma::constants::HYPERLANE_VERSION;
 use crate::AppState;
 
@@ -49,28 +50,52 @@ pub async fn get_calldata(
     let feed: Feed = feed_id.parse().map_err(|_| GetCalldataError::InvalidFeedId)?;
 
     let checkpoints = state.storage.checkpoints().all().await;
-    let events = state.storage.dispatch_events().get_all().await;
+    let event = state
+        .storage
+        .dispatch_events()
+        .get(&feed_id)
+        .await
+        .map_err(|_| GetCalldataError::FailedToRetrieveEvent)?
+        .unwrap();
 
     let num_validators = checkpoints.keys().len();
-    let signers = checkpoints
-        .keys()
-        .map(|validator_index| {
-            // SAFE to unwrap because we just checked that the key exists
-            let signed_checkpoint = checkpoints.get(validator_index).unwrap();
-            let validator_index = 0; // TODO: fetch index from storage
-            ValidatorSignature { validator_index, signature: signed_checkpoint.signature }
+    let signers: Vec<ValidatorSignature> = checkpoints
+        .iter()
+        .map(|((validator_index, _), signed_checkpoint)| {
+            ValidatorSignature {
+                validator_index: 0, // TODO: fetch index from storage
+                signature: signed_checkpoint.signature.clone(),
+            }
         })
         .collect();
+
+    let (first_validator, checkpoint_infos) = checkpoints.iter().next().unwrap();
+
+    let update = match event.update {
+        DispatchUpdate::SpotMedian { update, feed_id } => update,
+        _ => unimplemented!("TODO: Implement the other updates"),
+    };
+
+    let payload = Payload {
+        checkpoint_root: checkpoint_infos.value.checkpoint.root.clone(),
+        num_updates: 1,
+        update_data_len: 1,
+        proof_len: todo!(),
+        proof: todo!(),
+        update_data: update.to_bytes(),
+        feed_id,
+        publish_time: update.metadata.timestamp,
+    };
 
     let hyperlane_message = HyperlaneMessage {
         hyperlane_version: HYPERLANE_VERSION,
         signers_len: num_validators as u8,
         signers,
-        nonce: todo!(),
-        timestamp: todo!(),
-        emitter_chain_id: todo!(),
-        emitter_address: todo!(),
-        payload: todo!(),
+        nonce: event.nonce,
+        timestamp: update.metadata.timestamp,
+        emitter_chain_id: event.emitter_chain_id,
+        emitter_address: event.emitter_address,
+        payload,
     };
 
     Ok(Json(GetCalldataResponse::default()))

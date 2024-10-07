@@ -5330,6 +5330,8 @@ dependencies = [
  "futures-util",
  "hyper 0.14.30",
  "lazy_static",
+ "num-bigint",
+ "num-traits",
  "opentelemetry 0.24.0",
  "pragma-feeds",
  "pragma-utils",
