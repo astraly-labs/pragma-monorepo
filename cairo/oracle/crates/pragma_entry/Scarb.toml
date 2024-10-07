@@ -1,0 +1,27 @@
+[package]
+name = "pragma_entry"
+edition = "2024_07"
+version = "0.1.0"
+
+[dependencies]
+alexandria_sorting.workspace = true
+alexandria_storage.workspace = true
+starknet.workspace = true
+
+
+[tool]
+fmt.workspace = true
+
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
+
+[lib]
+name = "pragma_entry"
+
+[dev-dependencies]
+snforge_std.workspace = true
+
+[scripts]
+test = "snforge test --max-n-steps 4294967295"
+test-profiling = "snforge test --max-n-steps 4294967295 --build-profile"

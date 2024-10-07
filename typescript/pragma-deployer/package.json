@@ -1,0 +1,44 @@
+{
+  "name": "pragma-deployer",
+  "description": "Deployer of every Pragma contracts.",
+  "version": "0.0.1",
+  "keywords": [
+    "blockchain",
+    "oracle",
+    "pragma",
+    "starknet",
+    "evm"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/astraly-labs/pragma-monorepo.git"
+  },
+  "license": "MIT",
+  "homepage": "https://www.pragma.build/",
+  "module": "index.ts",
+  "type": "module",
+  "dependencies": {
+    "commander": "12.1.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@openzeppelin/hardhat-upgrades": "^3.4.0",
+    "@types/bun": "latest",
+    "@types/js-yaml": "^4.0.9",
+    "@types/mocha": "^10.0.8",
+    "@types/node": "^22.5.5",
+    "ethers": "^6.13.3",
+    "hardhat": "^2.22.11",
+    "hardhat-deploy": "^0.9.24",
+    "hardhat-switch-network": "^1.1.1",
+    "starknet": "^6.11.0",
+    "ts-node": "^10.9.2"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "deployer": "bun run src/index.ts"
+  }
+}

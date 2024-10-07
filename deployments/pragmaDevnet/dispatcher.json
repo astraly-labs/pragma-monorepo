@@ -1,0 +1,14 @@
+{
+  "FeedsRegistry": "0x18d070bcad4b53eb0c716c13d36e5f0d798e52bd87a2a25f0de477b5902c9ff",
+  "PragmaDispatcher": "0x42d0ccae2cd3647df3bf9379d74efc93851370b12338a5aa6a676e381396b5",
+  "AssetClassRouters": {
+    "Crypto": {
+      "address": "0x19b1c9b9d0ffc97ed7dc678d10806aadf672f5a1f380f4d9538b8804969f211",
+      "feed_type_routers": {
+        "Unique: Spot Median": "0x2e05ee2b6dc0fd5f3fd050cc95e63d87523d360fa0e4632c5640f3b7c3ce2ef",
+        "Unique: Perp Median": "0x74ffa50abf3d87ce02e5ea1cded331dbb76f411208a9bdea59718d264fc24c9",
+        "Unique: Spot Mean": "0x3a6344605b2701d5fbd1a6342243607622e885381ee6e7d1ca4b09ebb3eeadd"
+      }
+    }
+  }
+}

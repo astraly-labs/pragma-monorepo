@@ -1,0 +1,29 @@
+[package]
+name = "pragma_summary_stats"
+edition = "2024_07"
+version = "0.1.0"
+
+[dependencies]
+pragma_entry.workspace = true
+pragma_operations.workspace = true
+pragma_oracle.workspace = true
+starknet.workspace = true
+
+[tool]
+fmt.workspace = true
+
+[[target.starknet-contract]]
+casm = true
+casm-add-pythonic-hints = true
+build-external-contracts = ["pragma_publisher_registry::*", "pragma_oracle::*"]
+
+
+[lib]
+name = "pragma_summary_stats"
+
+[dev-dependencies]
+snforge_std.workspace = true
+
+[scripts]
+test = "snforge test --max-n-steps 4294967295"
+test-profiling = "snforge test --max-n-steps 4294967295 --build-profile"
