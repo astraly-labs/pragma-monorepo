@@ -17,6 +17,6 @@ module.exports = {
     sources: "src",
     artifacts: "out",
     tests: "test",
-    cache: "cache"
+    cache: "cache",
   },
 };
