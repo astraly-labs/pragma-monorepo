@@ -102,6 +102,7 @@ export class PragmaDeployer implements Deployer {
       {
         initializer: "initialize",
         kind: "uups",
+        unsafeAllow: ["constructor"],
       },
     );
     await pragma.waitForDeployment();

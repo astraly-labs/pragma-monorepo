@@ -2,7 +2,7 @@
 export type Chain =
   | "starknet" // starknet
   | "starknetSepolia"
-  | "madaraDevnet"
+  | "pragmaDevnet"
   | "mainnet" // ethereum mainnet
   | "hardhat"
   | "sepolia"
@@ -21,7 +21,7 @@ export type Chain =
 export const STARKNET_CHAINS: Chain[] = [
   "starknet",
   "starknetSepolia",
-  "madaraDevnet",
+  "pragmaDevnet",
 ];
 export const EVM_CHAINS: Chain[] = [
   "mainnet",

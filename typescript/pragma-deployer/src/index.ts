@@ -9,6 +9,7 @@ program
   .arguments("<contract>")
   .requiredOption("--config <config>", "Path to the YAML config file")
   .option("--chain <chain>", "Chain where the contract will be deployed")
+  .option("--unique", "No salt for deterministic deployments")
   .action(async (contract: string, options) => {
     contract = contract.toLocaleLowerCase();
 
@@ -21,6 +22,7 @@ program
 
     const config = loadConfig<DeploymentConfig>(options.config);
     try {
+      console.log(options.unique);
       await deploymentManager.deploy(contract, config, options.chain);
     } catch (error) {
       console.error("Deployment failed:", (error as Error).message);

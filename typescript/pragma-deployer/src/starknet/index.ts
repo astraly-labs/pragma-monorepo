@@ -25,11 +25,10 @@ export function getStarknetRpcUrl(chain: Chain): string {
   }
   if (chain === "starknet") {
     return "https://free-rpc.nethermind.io/mainnet-juno";
-  } else if (chain === "madara_devnet") {
-    return "http://127.0.0.1:9944";
+  } else if (chain === "pragmaDevnet") {
+    return "http://pragma-devnet.karnot.xyz/";
   } else {
-    // sepolia
-    return "https://free-rpc.nethermind.io/sepolia-juno";
+    return "https://free-rpc.nethermind.io/sepolia-juno"; // sepolia
   }
 }
 
