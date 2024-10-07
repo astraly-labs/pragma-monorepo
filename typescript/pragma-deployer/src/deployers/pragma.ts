@@ -32,7 +32,11 @@ export class PragmaDeployer implements Deployer {
 
       // Deploy Pragma contract
       console.log("⏳ Deploying Pragma...");
-      const pragma = await this.deployPragma(config, deployer.address, hyperlaneAddress);
+      const pragma = await this.deployPragma(
+        config,
+        deployer.address,
+        hyperlaneAddress,
+      );
       const pragmaAddress = await pragma.getAddress();
       console.log(`✅ Pragma.sol deployed and initialized at ${pragmaAddress}`);
 
@@ -69,7 +73,11 @@ export class PragmaDeployer implements Deployer {
   }
 
   /// Deploys Pragma.sol
-  private async deployPragma(config: DeploymentConfig, deployerAddress: string, hyperlaneAddress: string): Promise<Contract> {
+  private async deployPragma(
+    config: DeploymentConfig,
+    deployerAddress: string,
+    hyperlaneAddress: string,
+  ): Promise<Contract> {
     const pragmaArtifact = await hre.artifacts.readArtifact("Pragma");
     const Pragma = await ethers.getContractFactory(
       pragmaArtifact.abi,
@@ -92,9 +100,9 @@ export class PragmaDeployer implements Deployer {
         parseEther(config.pragma.single_update_fee_in_wei),
       ],
       {
-        initializer: 'initialize',
-        kind: 'uups',
-      }
+        initializer: "initialize",
+        kind: "uups",
+      },
     );
     await pragma.waitForDeployment();
     return pragma;
