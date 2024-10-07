@@ -1,6 +1,6 @@
 import type { DeploymentConfig } from "./config";
-import type { Deployer } from "./deployers";
 import {
+  type Deployer,
   OracleDeployer,
   DispatcherDeployer,
   PragmaDeployer,
@@ -21,13 +21,14 @@ class DeploymentManager {
     contract: string,
     config: DeploymentConfig,
     chain?: string,
+    deterministic: boolean = false,
   ): Promise<void> {
     const deployer = this.deployers.get(contract);
     if (!deployer) {
       throw new Error(`Unknown contract: ${contract}`);
     }
 
-    await deployer.deploy(config, chain);
+    await deployer.deploy(config, deterministic, chain);
   }
 }
 

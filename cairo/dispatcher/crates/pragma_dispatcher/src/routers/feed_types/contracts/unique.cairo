@@ -117,6 +117,9 @@ pub mod FeedTypeUniqueRouter {
                 _ => panic_with_felt252(errors::INVALID_FEED_TYPE_FOR_CONTRACT)
             };
 
+            // [Effect] Save oracle to storage
+            let pragma_oracle = IPragmaABIDispatcher { contract_address: pragma_oracle_address };
+            self.pragma_oracle.write(pragma_oracle);
             // [Effect] Save feed type to storage
             self.feed_type.write(feed_type);
             // [Effect] Set parameters depending on the variant

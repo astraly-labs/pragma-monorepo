@@ -1,23 +1,15 @@
-// ## CLI
-// - chain
-// - target-chain (from Pragma.sol - must be deployed)
-// - feed_id
-// - private_key
-
-// ## Steps
-// 1. Theoros ? (endpoint selection)
-// 2. Get calldata from Theoros
-// 3. Call `updateDataFeeds` with the calldata
-// 4. Assertions - check that on the destination chain everything is correctly updated
-//    Show gas consumption
-
-
 import { Command, type OptionValues } from "commander";
 import { ethers } from "ethers";
 import dotenv from "dotenv";
-import fs from 'fs';
+import fs from "fs";
+
+const PRAGMA_SOL_ABI_PATH = "../../../solidity/out/Pragma.sol/Pragma.json";
 
 dotenv.config();
+const RPC_URL = process.env.RPC_URL;
+if (!RPC_URL) {
+  throw new Error("RPC URL not set in .env file");
+}
 
 interface ChainConfig {
   contract_address: string;
@@ -26,16 +18,21 @@ interface ChainConfig {
 function getChainConfig(chainName: string): ChainConfig {
   try {
     const filePath = `../../../deployement/${chainName}/pragma.json`;
-    const fileContents = fs.readFileSync(filePath, 'utf8');
+    const fileContents = fs.readFileSync(filePath, "utf8");
     const config = JSON.parse(fileContents);
 
     if (!config.Pragma || !ethers.isAddress(config.Pragma)) {
-      throw new Error(`Invalid or missing Pragma contract address for chain ${chainName}`);
+      throw new Error(
+        `Invalid or missing Pragma contract address for chain ${chainName}`,
+      );
     }
 
     return { contract_address: config.Pragma };
   } catch (error) {
-    console.error(`Error reading configuration file for chain ${chainName}:`, error);
+    console.error(
+      `Error reading configuration file for chain ${chainName}:`,
+      error,
+    );
     throw error;
   }
 }
@@ -46,7 +43,10 @@ function parseCommandLineArguments(): OptionValues {
   program
     .name("update-data-feed")
     .description("CLI to update a Pragma data feed")
-    .requiredOption("--target-chain <chain_name>", "Name of the target chain (e.g., ethereum_mainnet)")
+    .requiredOption(
+      "--target-chain <chain_name>",
+      "Name of the target chain (e.g., ethereum_mainnet)",
+    )
     .requiredOption("--feed-id <feed_id>", "ID of the data feed to update")
     .requiredOption(
       "--private-key <private_key>",
@@ -61,7 +61,7 @@ function parseCommandLineArguments(): OptionValues {
 
   const options = program.opts();
 
-  if (!options.targetChain || typeof options.targetChain !== 'string') {
+  if (!options.targetChain || typeof options.targetChain !== "string") {
     console.error("Error: Target chain name must be a valid string");
     process.exit(1);
   }
@@ -141,18 +141,22 @@ async function main() {
     console.error("Failed to retrieve calldata from Theoros:", error);
     process.exit(1);
   }
-  
+
   // 3. Call `updateDataFeeds` with the calldata
   let abi;
   try {
-    abi = await import("../../../solidity/out/Pragma.sol/Pragma.json");
+    abi = await import(PRAGMA_SOL_ABI_PATH);
   } catch (error) {
     console.error("Failed to import ABI:", error);
     throw new Error("ABI file not found or invalid");
   }
-  const provider = new ethers.JsonRpcProvider(process.env.RPC_URL);
+  const provider = new ethers.JsonRpcProvider(RPC_URL);
   const wallet = new ethers.Wallet(privateKey, provider);
-  const contract = new ethers.Contract(chainConfig.contract_address, abi.abi, wallet);
+  const contract = new ethers.Contract(
+    chainConfig.contract_address,
+    abi.abi,
+    wallet,
+  );
 
   try {
     const tx = await contract.updateDataFeeds(calldata);

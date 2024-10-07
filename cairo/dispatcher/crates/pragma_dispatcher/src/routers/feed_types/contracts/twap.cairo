@@ -124,6 +124,12 @@ pub mod FeedTypeTwapRouter {
                 _ => panic_with_felt252(errors::INVALID_FEED_TYPE_FOR_CONTRACT)
             };
 
+            // [Effect] Save summary stats to storage
+            let summary_stats = ISummaryStatsABIDispatcher {
+                contract_address: summary_stats_address
+            };
+            self.summary_stats.write(summary_stats);
+
             // [Effect] Save feed type to storage
             self.feed_type.write(feed_type);
             // [Effect] Set parameters depending on the variant

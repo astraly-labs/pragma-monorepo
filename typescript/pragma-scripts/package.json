@@ -1,5 +1,5 @@
 {
-  "name": "scripts",
+  "name": "pragma-scripts",
   "module": "index.ts",
   "type": "module",
   "devDependencies": {
