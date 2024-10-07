@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import hre, { ethers, network } from "hardhat";
+import hre, { ethers, network, upgrades } from "hardhat";
 import { parseEther, zeroPadBytes, zeroPadValue } from "ethers";
 
 import { type Deployer } from "./interface";
@@ -69,27 +69,29 @@ export class PragmaDeployer implements Deployer {
         pragmaArtifact.bytecode,
       );
       console.log("Deploying Pragma...");
-      const pragma = await Pragma.deploy();
-      await pragma.waitForDeployment();
-      const pragmaAddress = await pragma.getAddress();
-
-      // Initialize Pragma contract
-      console.log("Initializing Pragma contract...");
       const dataSourceEmitterChainIds = config.pragma.data_source_emitters.map(
         (emitter) => emitter.chain_id,
       );
       const dataSourceEmitterAddresses = config.pragma.data_source_emitters.map(
         (emitter) => zeroPadValue(emitter.address, 32),
       );
-      const initTx = await pragma.initialize(
-        hyperlaneAddress,
-        deployer.address,
-        dataSourceEmitterChainIds,
-        dataSourceEmitterAddresses,
-        config.pragma.valid_time_period_in_seconds,
-        parseEther(config.pragma.single_update_fee_in_wei),
+      const pragma = await upgrades.deployProxy(
+        Pragma, 
+        [
+          hyperlaneAddress,
+          deployer.address,
+          dataSourceEmitterChainIds,
+          dataSourceEmitterAddresses,
+          config.pragma.valid_time_period_in_seconds,
+          parseEther(config.pragma.single_update_fee_in_wei),
+        ], 
+        {
+          initializer: 'initialize',
+          kind: 'uups'
+        }
       );
-      await initTx.wait();
+      await pragma.waitForDeployment();
+      const pragmaAddress = await pragma.getAddress();
       console.log(`✅ Pragma.sol deployed and initialized at ${pragmaAddress}`);
 
       // Save deployment info
