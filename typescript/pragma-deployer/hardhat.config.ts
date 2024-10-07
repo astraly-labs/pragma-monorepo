@@ -4,9 +4,9 @@ import "hardhat-switch-network";
 import "@nomicfoundation/hardhat-ethers";
 import '@openzeppelin/hardhat-upgrades';
 import * as dotenv from "dotenv";
-dotenv.config();
 
 // Load environment variables
+dotenv.config();
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const PRIVATE_KEY: string = process.env.ETH_PRIVATE_KEY || "";
 
@@ -59,7 +59,6 @@ const config: HardhatUserConfig = {
       viaIR: true,
     },
   },
-  // Supported EVM networks
   networks: {
     hardhat: {
       forking: {
@@ -101,9 +100,11 @@ const config: HardhatUserConfig = {
     base: getChainConfig("base", "https://mainnet.base.org"),
   },
   paths: {
-    sources: "../../solidity/src",
-    cache: "../../solidity/cache",
-    artifacts: "../../solidity/out",
+    root: "../../solidity",
+    sources: "src",
+    tests: "test",
+    cache: "cache",
+    artifacts: "out",
   },
   mocha: {
     timeout: 40000,

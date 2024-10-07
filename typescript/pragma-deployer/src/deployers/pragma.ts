@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import hre, { ethers, network, upgrades } from "hardhat";
-import { parseEther, zeroPadBytes, zeroPadValue } from "ethers";
+import hre, { ethers, upgrades } from "hardhat";
+import { Contract, parseEther, zeroPadValue } from "ethers";
 
 import { type Deployer } from "./interface";
 import { EVM_CHAINS, type Chain } from "../chains";
@@ -19,78 +19,20 @@ export class PragmaDeployer implements Deployer {
     await hre.switchNetwork(chain);
 
     try {
-      console.log(`🧩 Deploying Pragma.sol to ${chain}...`);
+      console.log(`🧩 Deploying Pragma to ${chain}...\n`);
 
       const [deployer] = await ethers.getSigners();
       console.log("Deployer account:", deployer.address);
 
-      // Load contract artifacts
-      const hyperlaneArtifactPath = path.join(
-        hre.config.paths.artifacts,
-        "Hyperlane.sol/Hyperlane.json",
-      );
-      const pragmaArtifactPath = path.join(
-        hre.config.paths.artifacts,
-        "Pragma.sol/Pragma.json",
-      );
-
-      if (
-        !fs.existsSync(hyperlaneArtifactPath) ||
-        !fs.existsSync(pragmaArtifactPath)
-      ) {
-        throw new Error(
-          "Contract artifacts not found. Ensure contracts are in the correct location and have been compiled.",
-        );
-      }
-
-      const hyperlaneArtifact = JSON.parse(
-        fs.readFileSync(hyperlaneArtifactPath, "utf8"),
-      );
-      const pragmaArtifact = JSON.parse(
-        fs.readFileSync(pragmaArtifactPath, "utf8"),
-      );
-
       // Deploy Hyperlane contract
-      const Hyperlane = await ethers.getContractFactory(
-        hyperlaneArtifact.abi,
-        hyperlaneArtifact.bytecode,
-      );
-      console.log("Deploying Hyperlane...");
-      const hyperlane = await Hyperlane.deploy(
-        config.pragma.hyperlane.validators,
-      );
-      await hyperlane.waitForDeployment();
+      console.log("⏳ Deploying Hyperlane...");
+      const hyperlane = await this.deployHyperlane(config);
       const hyperlaneAddress = await hyperlane.getAddress();
       console.log("✅ Hyperlane deployed to:", hyperlaneAddress);
 
       // Deploy Pragma contract
-      const Pragma = await ethers.getContractFactory(
-        pragmaArtifact.abi,
-        pragmaArtifact.bytecode,
-      );
-      console.log("Deploying Pragma...");
-      const dataSourceEmitterChainIds = config.pragma.data_source_emitters.map(
-        (emitter) => emitter.chain_id,
-      );
-      const dataSourceEmitterAddresses = config.pragma.data_source_emitters.map(
-        (emitter) => zeroPadValue(emitter.address, 32),
-      );
-      const pragma = await upgrades.deployProxy(
-        Pragma, 
-        [
-          hyperlaneAddress,
-          deployer.address,
-          dataSourceEmitterChainIds,
-          dataSourceEmitterAddresses,
-          config.pragma.valid_time_period_in_seconds,
-          parseEther(config.pragma.single_update_fee_in_wei),
-        ], 
-        {
-          initializer: 'initialize',
-          kind: 'uups'
-        }
-      );
-      await pragma.waitForDeployment();
+      console.log("⏳ Deploying Pragma...");
+      const pragma = await this.deployPragma(config, deployer.address, hyperlaneAddress);
       const pragmaAddress = await pragma.getAddress();
       console.log(`✅ Pragma.sol deployed and initialized at ${pragmaAddress}`);
 
@@ -110,5 +52,51 @@ export class PragmaDeployer implements Deployer {
       console.error("Deployment failed:", error);
       throw error;
     }
+  }
+
+  /// Deploys Hyperlane.sol
+  private async deployHyperlane(config: DeploymentConfig): Promise<Contract> {
+    const hyperlaneArtifact = await hre.artifacts.readArtifact("Hyperlane");
+    const Hyperlane = await ethers.getContractFactory(
+      hyperlaneArtifact.abi,
+      hyperlaneArtifact.bytecode,
+    );
+    const hyperlane = await Hyperlane.deploy(
+      config.pragma.hyperlane.validators,
+    );
+    await hyperlane.waitForDeployment();
+    return hyperlane;
+  }
+
+  /// Deploys Pragma.sol
+  private async deployPragma(config: DeploymentConfig, deployerAddress: string, hyperlaneAddress: string): Promise<Contract> {
+    const pragmaArtifact = await hre.artifacts.readArtifact("Pragma");
+    const Pragma = await ethers.getContractFactory(
+      pragmaArtifact.abi,
+      pragmaArtifact.bytecode,
+    );
+    const dataSourceEmitterChainIds = config.pragma.data_source_emitters.map(
+      (emitter) => emitter.chain_id,
+    );
+    const dataSourceEmitterAddresses = config.pragma.data_source_emitters.map(
+      (emitter) => zeroPadValue(emitter.address, 32),
+    );
+    const pragma = await upgrades.deployProxy(
+      Pragma,
+      [
+        hyperlaneAddress,
+        deployerAddress,
+        dataSourceEmitterChainIds,
+        dataSourceEmitterAddresses,
+        config.pragma.valid_time_period_in_seconds,
+        parseEther(config.pragma.single_update_fee_in_wei),
+      ],
+      {
+        initializer: 'initialize',
+        kind: 'uups',
+      }
+    );
+    await pragma.waitForDeployment();
+    return pragma;
   }
 }
