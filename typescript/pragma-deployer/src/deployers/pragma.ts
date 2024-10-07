@@ -11,7 +11,12 @@ export class PragmaDeployer implements Deployer {
   readonly allowedChains: Chain[] = EVM_CHAINS;
   readonly defaultChain: Chain = "mainnet";
 
-  async deploy(config: DeploymentConfig, chain?: Chain): Promise<void> {
+  async deploy(
+    config: DeploymentConfig,
+    // TODO: Handle deterministic deployments, not mandatory yet.
+    _deterministic: boolean,
+    chain?: Chain,
+  ): Promise<void> {
     if (!chain) chain = this.defaultChain;
     if (!this.allowedChains.includes(chain)) {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);

@@ -5,5 +5,9 @@ import type { DeploymentConfig } from "../config";
 export interface Deployer {
   readonly allowedChains: Chain[];
   readonly defaultChain: Chain;
-  deploy(config: DeploymentConfig, chain?: string): Promise<void>;
+  deploy(
+    config: DeploymentConfig,
+    deterministic: boolean,
+    chain?: string,
+  ): Promise<void>;
 }

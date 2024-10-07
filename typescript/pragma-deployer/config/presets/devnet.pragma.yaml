@@ -48,8 +48,8 @@ pragma_oracle:
 
 # Configuration for the Pragma Dispatcher Cairo Contracts
 pragma_dispatcher:
-  pragma_oracle_address: "0x1"
-  hyperlane_mailbox_address: "0x1"
+  pragma_oracle_address: "0x39986b4fdb2b29e81bcfab5640c614797d75116bca67f0b7c4690c19a3392bc"
+  hyperlane_mailbox_address: "0x41c20175af14a0bfebfc9ae2f3bda29230a0bceb551844197d9f46faf76d6da"
 
 # Configuration for the Pragma Solidity EVM contract
 pragma:

@@ -18,7 +18,11 @@ export class DispatcherDeployer implements Deployer {
   readonly allowedChains: Chain[] = STARKNET_CHAINS;
   readonly defaultChain: Chain = "starknet";
 
-  async deploy(config: DeploymentConfig, chain?: Chain): Promise<void> {
+  async deploy(
+    config: DeploymentConfig,
+    deterministic: boolean,
+    chain?: Chain,
+  ): Promise<void> {
     if (!chain) chain = this.defaultChain;
     if (!this.allowedChains.includes(chain)) {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);
@@ -30,7 +34,11 @@ export class DispatcherDeployer implements Deployer {
     let deploymentInfo: any = {};
 
     // 0. Deploy feeds registry
-    const feedsRegistry = await this.deployFeedsRegistry(deployer, feeds);
+    const feedsRegistry = await this.deployFeedsRegistry(
+      deployer,
+      feeds,
+      deterministic,
+    );
     deploymentInfo.FeedsRegistry = feedsRegistry.address;
 
     // 1. Deploy pragma dispatcher
@@ -38,6 +46,7 @@ export class DispatcherDeployer implements Deployer {
       deployer,
       feedsRegistry.address,
       config,
+      deterministic,
     );
     deploymentInfo.PragmaDispatcher = dispatcher.address;
 
@@ -47,6 +56,7 @@ export class DispatcherDeployer implements Deployer {
       config,
       feeds,
       dispatcher,
+      deterministic,
     );
 
     // 3. Save deployment addresses
@@ -64,12 +74,14 @@ export class DispatcherDeployer implements Deployer {
   private async deployFeedsRegistry(
     deployer: Account,
     feeds: FeedsConfig,
+    deterministic: boolean,
   ): Promise<Contract> {
     let feedsRegistry = await deployStarknetContract(
       deployer,
       "dispatcher",
       `pragma_feeds_registry_PragmaFeedsRegistry`,
       [deployer.address],
+      deterministic,
     );
     for (const feed of feeds.feeds) {
       let tx = await feedsRegistry.invoke("add_feed", [feed.id]);
@@ -85,6 +97,7 @@ export class DispatcherDeployer implements Deployer {
     deployer: Account,
     feedsRegistryAddress: string,
     config: DeploymentConfig,
+    deterministic: boolean,
   ): Promise<Contract> {
     const dispatcher = await deployStarknetContract(
       deployer,
@@ -95,6 +108,7 @@ export class DispatcherDeployer implements Deployer {
         feedsRegistryAddress,
         config.pragma_dispatcher.hyperlane_mailbox_address,
       ],
+      deterministic,
     );
     return dispatcher;
   }
@@ -105,6 +119,7 @@ export class DispatcherDeployer implements Deployer {
     config: DeploymentConfig,
     feeds: FeedsConfig,
     pragmaDispatcher: Contract,
+    deterministic: boolean,
   ): Promise<any> {
     let assetClassRouters: any = {};
     for (const asset_class of feeds.asset_classes_routers) {
@@ -113,6 +128,7 @@ export class DispatcherDeployer implements Deployer {
         config,
         asset_class,
         pragmaDispatcher,
+        deterministic,
       );
     }
     return assetClassRouters;
@@ -123,12 +139,14 @@ export class DispatcherDeployer implements Deployer {
     config: DeploymentConfig,
     asset_class: AssetClassRouter,
     pragmaDispatcher: Contract,
+    deterministic: boolean,
   ): Promise<any> {
     let assetRouter = await deployStarknetContract(
       deployer,
       "dispatcher",
       `pragma_dispatcher_${asset_class.contract}`,
       [deployer.address, asset_class.id],
+      deterministic,
     );
 
     let tx = await pragmaDispatcher.invoke("register_asset_class_router", [
@@ -144,6 +162,7 @@ export class DispatcherDeployer implements Deployer {
         config,
         assetRouter,
         feed_type,
+        deterministic,
       );
     }
 
@@ -158,12 +177,14 @@ export class DispatcherDeployer implements Deployer {
     config: DeploymentConfig,
     asset_class: Contract,
     feed_type: FeedTypeRouter,
+    deterministic: boolean,
   ): Promise<string> {
     const feedRouter = await deployStarknetContract(
       deployer,
       "dispatcher",
       `pragma_dispatcher_${feed_type.contract}`,
       [config.pragma_dispatcher.pragma_oracle_address, feed_type.id],
+      deterministic,
     );
     let tx = await asset_class.invoke("register_feed_type_router", [
       feed_type.id,

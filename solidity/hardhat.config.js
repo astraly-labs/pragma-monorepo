@@ -16,5 +16,7 @@ module.exports = {
   paths: {
     sources: "src",
     artifacts: "out",
+    tests: "test",
+    cache: "cache"
   },
 };

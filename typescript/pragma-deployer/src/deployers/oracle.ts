@@ -16,7 +16,11 @@ import { STARKNET_CHAINS, type Chain } from "../chains";
 export class OracleDeployer implements Deployer {
   readonly allowedChains: Chain[] = STARKNET_CHAINS;
   readonly defaultChain: Chain = "starknet";
-  async deploy(config: DeploymentConfig, chain?: Chain): Promise<void> {
+  async deploy(
+    config: DeploymentConfig,
+    deterministic: boolean,
+    chain?: Chain,
+  ): Promise<void> {
     if (!chain) chain = this.defaultChain;
     if (!this.allowedChains.includes(chain)) {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);
@@ -31,6 +35,7 @@ export class OracleDeployer implements Deployer {
     const publisherRegistry = await this.deployPublisherRegistry(
       deployer,
       config,
+      deterministic,
     );
     deploymentInfo.PublisherRegistry = publisherRegistry.address;
 
@@ -38,6 +43,7 @@ export class OracleDeployer implements Deployer {
     const pragmaOracle = await this.deployPragmaOracle(
       deployer,
       config,
+      deterministic,
       currencies,
       publisherRegistry.address,
     );
@@ -46,6 +52,7 @@ export class OracleDeployer implements Deployer {
     // 3. Deploy Summary stats
     const summaryStats = await this.deploySummaryStats(
       deployer,
+      deterministic,
       pragmaOracle.address,
     );
     deploymentInfo.SummaryStats = summaryStats.address;
@@ -65,12 +72,14 @@ export class OracleDeployer implements Deployer {
   private async deployPublisherRegistry(
     deployer: Account,
     config: DeploymentConfig,
+    deterministic: boolean,
   ): Promise<Contract> {
     let publisherRegistry = await deployStarknetContract(
       deployer,
       "oracle",
       `pragma_publisher_registry_PublisherRegistry`,
       [deployer.address],
+      deterministic,
     );
     console.log("⏳ Registering every publishers and their sources...");
     for (const publisher of config.pragma_oracle.publishers) {
@@ -95,6 +104,7 @@ export class OracleDeployer implements Deployer {
   private async deployPragmaOracle(
     deployer: Account,
     config: DeploymentConfig,
+    deterministic: boolean,
     currenciesConfig: CurrenciesConfig,
     publisherRegistryAddress: string,
   ): Promise<Contract> {
@@ -116,6 +126,7 @@ export class OracleDeployer implements Deployer {
         serializedCurrencies,
         serializedPairs,
       ],
+      deterministic,
     );
 
     return pragmaOracle;
@@ -124,6 +135,7 @@ export class OracleDeployer implements Deployer {
   /// Deploys the Summary Stats contract.
   private async deploySummaryStats(
     deployer: Account,
+    deterministic: boolean,
     pragmaOracleAddress: string,
   ): Promise<Contract> {
     const summaryStats = await deployStarknetContract(
@@ -131,6 +143,7 @@ export class OracleDeployer implements Deployer {
       "oracle",
       "pragma_summary_stats_SummaryStats",
       [pragmaOracleAddress],
+      deterministic,
     );
     return summaryStats;
   }

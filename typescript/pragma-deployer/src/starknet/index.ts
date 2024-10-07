@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 import fs from "fs";
 
-import type { ContractFactoryParams, RawArgs } from "starknet";
+import type { ContractFactoryParams, ContractOptions, RawArgs } from "starknet";
 import {
   Account,
   json,
@@ -9,8 +9,10 @@ import {
   CallData,
   Contract,
   ContractFactory,
+  hash,
 } from "starknet";
 import { STARKNET_CHAINS, type Chain } from "../chains";
+import { CONSTANT_SALT } from "../constants";
 
 dotenv.config();
 const ACCOUNT_ADDRESS = process.env.STARKNET_ACCOUNT_ADDRESS;
@@ -26,7 +28,7 @@ export function getStarknetRpcUrl(chain: Chain): string {
   if (chain === "starknet") {
     return "https://free-rpc.nethermind.io/mainnet-juno";
   } else if (chain === "pragmaDevnet") {
-    return "http://pragma-devnet.karnot.xyz/";
+    return "https://madara-pragma-prod.karnot.xyz/";
   } else {
     return "https://free-rpc.nethermind.io/sepolia-juno"; // sepolia
   }
@@ -72,6 +74,7 @@ export async function deployStarknetContract(
   projectName: projectName,
   contractName: string,
   calldata: RawArgs,
+  deterministic: boolean,
 ): Promise<Contract> {
   console.log(`Deploying contract ${contractName}...`);
 
@@ -79,17 +82,20 @@ export async function deployStarknetContract(
   const casm = getCompiledContractCasm(projectName, contractName);
   const constructorCalldata = CallData.compile(calldata);
   const params: ContractFactoryParams = {
-    compiledContract,
     account: deployer,
+    compiledContract,
     casm,
   };
-
   const contractFactory = new ContractFactory(params);
-  const contract = await contractFactory.deploy(constructorCalldata);
 
-  console.log(
-    `Contract ${contractName} deployed at address:`,
-    contract.address,
+  const deployOptions: ContractOptions = {};
+  if (deterministic) {
+    deployOptions.addressSalt = CONSTANT_SALT;
+  }
+  // TODO: Update this whole logic so we handle correctly errors when contract is already deployed.
+  const contract = await contractFactory.deploy(
+    constructorCalldata,
+    deployOptions,
   );
 
   return contract;
