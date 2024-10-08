@@ -19,7 +19,8 @@
   },
   "scripts": {
     "pragma:update_feed": "bun run src/pragma/update_feed.ts",
-    "dispatcher:add_feed": "bun run src/dispatcher/add_feed.ts",
+    "dispatcher:add_feeds": "bun run src/dispatcher/add_feeds.ts",
+    "dispatcher:remove_feeds": "bun run src/dispatcher/remove_feeds.ts",
     "dispatcher:get_all_feeds": "bun run src/dispatcher/get_all_feeds.ts",
     "dispatcher:dispatch": "bun run src/dispatcher/dispatch.ts"
   }
