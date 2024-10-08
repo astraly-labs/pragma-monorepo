@@ -12,13 +12,15 @@ import { shortString, num, hash } from "starknet";
 function parseCommandLineArguments(): OptionValues {
   const program = new Command();
   program
-    .name("remove-source-for-publisher")
-    .description("CLI to remove a source for a publisher in PublisherRegistry")
+    .name("add-sources-for-publisher")
+    .description(
+      "CLI to add multiple sources for a publisher in PublisherRegistry",
+    )
     .requiredOption(
       "--publisher <name>",
-      "Name of the publisher to remove the source from",
+      "Name of the publisher to add the sources for",
     )
-    .requiredOption("--source <name>", "Name of the source to remove")
+    .requiredOption("--sources <names...>", "Names of the sources to add")
     .requiredOption(
       "--chain <chain_name>",
       "Name of the target chain (e.g., pragmaDevnet)",
@@ -35,7 +37,7 @@ function parseCommandLineArguments(): OptionValues {
   return options;
 }
 
-async function removeSourceForPublisher(
+async function addSourceForPublisher(
   publisherRegistry: Contract,
   account: Deployer,
   publisherName: string,
@@ -43,14 +45,14 @@ async function removeSourceForPublisher(
 ) {
   try {
     console.log(
-      `⏳ Removing source ${sourceName} for publisher ${publisherName}...`,
+      `⏳ Adding source ${sourceName} for publisher ${publisherName}...`,
     );
     const publisherNameFelt = shortString.encodeShortString(publisherName);
     const sourceNameFelt = shortString.encodeShortString(sourceName);
-    const invoke = await publisherRegistry.invoke(
-      "remove_source_for_publisher",
-      [publisherNameFelt, sourceNameFelt],
-    );
+    const invoke = await publisherRegistry.invoke("add_source_for_publisher", [
+      publisherNameFelt,
+      sourceNameFelt,
+    ]);
     await account.waitForTransaction(invoke.transaction_hash);
 
     const receipt = await account.getTransactionReceipt(
@@ -58,13 +60,12 @@ async function removeSourceForPublisher(
     );
     await ensureSuccess(receipt, account.provider);
     console.log(
-      `🧩 Successfully removed source ${sourceName} for publisher ${publisherName}`,
+      `🧩 Successfully added source ${sourceName} for publisher ${publisherName}`,
     );
 
-    // Check for the DeletedSource event
     if ("events" in receipt) {
       const event = receipt.events?.find(
-        (e) => e.keys[0] === num.toHex(hash.starknetKeccak("DeletedSource")),
+        (e) => e.keys[0] === num.toHex(hash.starknetKeccak("SourceAdded")),
       );
       if (event) {
         console.log("Event emitted:", event);
@@ -72,7 +73,7 @@ async function removeSourceForPublisher(
     }
   } catch (error) {
     console.error(
-      `⛔ Error removing source ${sourceName} for publisher ${publisherName}:`,
+      `⛔ Error adding source ${sourceName} for publisher ${publisherName}:`,
       error,
     );
   }
@@ -89,21 +90,23 @@ async function main() {
 
   const account = await buildAccount(options.chain);
   console.log(
-    `👉 Removing source for publisher in contract ${publisherRegistryAddress} on chain ${options.chain}`,
+    `👉 Adding sources for publisher in contract ${publisherRegistryAddress} on chain ${options.chain}`,
   );
 
   const publisherRegistry = await account.loadContract(
     publisherRegistryAddress,
   );
 
-  await removeSourceForPublisher(
-    publisherRegistry,
-    account,
-    options.publisher,
-    options.source,
-  );
+  for (const source of options.sources) {
+    await addSourceForPublisher(
+      publisherRegistry,
+      account,
+      options.publisher,
+      source,
+    );
+  }
 
-  console.log("✅ Source removal process completed!");
+  console.log("✅ Sources addition process completed!");
 }
 
 main().catch((error) => {

@@ -84,12 +84,12 @@ Adds a new publisher to the PublisherRegistry contract.
 bun run oracle/add_publisher.ts --chain <chain_name> --publisher <name> --address <address>
 ```
 
-#### add_source_for_publisher.ts
+#### add_sources_for_publisher.ts
 
-Adds a source for a specific publisher in the PublisherRegistry contract.
+Adds multiple sources for a specific publisher in the PublisherRegistry contract.
 
 ```bash
-bun run oracle/add_source_for_publisher.ts --chain <chain_name> --publisher <name> --source <name>
+bun run oracle/add_sources_for_publisher.ts --chain <chain_name> --publisher <name> --sources <source1> <source2> ...
 ```
 
 #### get_all_publishers.ts
@@ -108,12 +108,12 @@ Removes multiple publishers from the PublisherRegistry contract.
 bun run oracle/remove_publishers.ts --chain <chain_name> --publishers <name1> <name2> ...
 ```
 
-#### remove_source_for_publisher.ts
+#### remove_sources_for_publisher.ts
 
-Removes a source for a specific publisher in the PublisherRegistry contract.
+Removes multiple sources for a specific publisher in the PublisherRegistry contract.
 
 ```bash
-bun run oracle/remove_source_for_publisher.ts --chain <chain_name> --publisher <name> --source <name>
+bun run oracle/remove_sources_for_publisher.ts --chain <chain_name> --publisher <name> --sources <source1> <source2> ...
 ```
 
 ### Pragma Scripts
