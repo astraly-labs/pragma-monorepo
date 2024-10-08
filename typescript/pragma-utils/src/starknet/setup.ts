@@ -10,7 +10,7 @@ export async function buildAccount(chain: StarknetChain): Promise<Deployer> {
 
   const provider = new RpcProvider({ nodeUrl });
   const deployer = loadAccount(provider);
-  logAddresses("📜 Accounts:", { deployer: deployer });
+  console.log("👤 Account:", deployer.address);
   console.log("");
 
   return new Deployer(provider, deployer);

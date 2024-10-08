@@ -54,7 +54,6 @@ function parseCommandLineArguments(): OptionValues {
 
 async function getAllFeeds(pragmaDispatcher: Contract): Promise<FeedWithId[]> {
   try {
-    console.log("⏳ Getting all feeds...");
     const rawFeeds = await pragmaDispatcher.call("get_all_feeds");
     const feeds = decodeFeeds(rawFeeds as bigint[]);
     console.log("\n📜 All feeds:");
