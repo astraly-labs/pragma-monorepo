@@ -10,18 +10,25 @@ export async function buildDeployer(chain: StarknetChain): Promise<Deployer> {
 
   const provider = new RpcProvider({ nodeUrl });
   const deployer = loadAccount(provider);
-  logAddresses("Accounts:", { deployer: deployer });
+  logAddresses("📜 Accounts:", { deployer: deployer });
+  console.log("");
+
   return new Deployer(provider, deployer);
 }
 
 function loadAccount(provider: RpcProvider): Account {
-  if (!process.env.ADDRESS || !process.env.PRIVATE_KEY) {
-    throw new Error("Missing ADDRESS or ACCOUNT_PRIVATE_KEY env var");
+  if (
+    !process.env.STARKNET_ACCOUNT_ADDRESS ||
+    !process.env.STARKNET_PRIVATE_KEY
+  ) {
+    throw new Error(
+      "Missing STARKNET_ACCOUNT_ADDRESS or STARKNET_PRIVATE_KEY env var",
+    );
   }
   const deployer = new Account(
     provider,
-    process.env.ADDRESS,
-    process.env.PRIVATE_KEY,
+    process.env.STARKNET_ACCOUNT_ADDRESS,
+    process.env.STARKNET_PRIVATE_KEY,
   );
   return deployer;
 }

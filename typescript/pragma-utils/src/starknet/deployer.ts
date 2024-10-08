@@ -15,10 +15,11 @@ type projectName = "oracle" | "dispatcher";
 export class BaseDeployer extends Account {
   constructor(
     public provider: RpcProvider,
-    { address, signer }: Account,
+    public account: Account,
     private alreadyDeclared: Record<string, string> = {},
   ) {
-    super(provider, address, signer);
+    super(provider, account.address, account.signer);
+    this.account = account;
   }
 
   async loadContract(contractAddress: string) {
@@ -74,7 +75,7 @@ export class BaseDeployer extends Account {
       0,
     );
     const { abi } = payload.contract as CompiledContract;
-    const contract = new Contract(abi, contractAddress, this.provider);
+    const contract = new Contract(abi, contractAddress, this.account);
     const calls = this.buildUDCContractPayload({
       classHash,
       salt,

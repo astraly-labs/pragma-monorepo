@@ -34,7 +34,6 @@ export class DispatcherDeployer implements ContractDeployer {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);
     }
 
-    console.log(`🧩 Deploying Dispatcher to ${chain}...`);
     let feeds = loadConfig<FeedsConfig>(FEEDS_CONFIG_FILE);
     let deployer = await buildDeployer(chain);
     let deploymentInfo: any = {};
@@ -82,6 +81,7 @@ export class DispatcherDeployer implements ContractDeployer {
     feeds: FeedsConfig,
     deterministic: boolean,
   ): Promise<Contract> {
+    console.log(`⏳ Deploying Pragma Feeds Registry...`);
     const [feedsRegistry, calls] = await deployer.deferContract(
       "dispatcher",
       "pragma_feeds_registry_PragmaFeedsRegistry",
@@ -90,13 +90,18 @@ export class DispatcherDeployer implements ContractDeployer {
     );
     let response = await deployer.execute([...calls]);
     await deployer.waitForTransaction(response.transaction_hash);
+    console.log(
+      `🧩 Pragma Feeds Registry deployed at ${feedsRegistry.address}`,
+    );
 
+    console.log("⏳ Registering all feed ids in the config...");
     for (const feed of feeds.feeds) {
       let tx = await feedsRegistry.invoke("add_feed", [feed.id]);
       await deployer.waitForTransaction(tx.transaction_hash);
-      console.log("Registered", feed.name);
+      console.log("\tRegistered", feed.name);
     }
-    console.log("✅ Deployed the Pragma Feeds Registry");
+    console.log("🧩 All feeds registered!");
+    console.log("✅ Pragma Feeds Registry deployment complete!\n");
     return feedsRegistry;
   }
 
@@ -107,6 +112,7 @@ export class DispatcherDeployer implements ContractDeployer {
     config: DeploymentConfig,
     deterministic: boolean,
   ): Promise<Contract> {
+    console.log(`⏳ Deploying Pragma Dispatcher...`);
     const [dispatcher, calls] = await deployer.deferContract(
       "dispatcher",
       "pragma_dispatcher_PragmaDispatcher",
@@ -120,6 +126,8 @@ export class DispatcherDeployer implements ContractDeployer {
     );
     let response = await deployer.execute([...calls]);
     await deployer.waitForTransaction(response.transaction_hash);
+    console.log(`🧩 Pragma Dispatcher deployed at ${dispatcher.address}`);
+    console.log("✅ Pragma Dispatcher deployment complete!\n");
     return dispatcher;
   }
 
@@ -151,6 +159,7 @@ export class DispatcherDeployer implements ContractDeployer {
     pragmaDispatcher: Contract,
     deterministic: boolean,
   ): Promise<any> {
+    console.log(`⏳ Deploying & registering ${asset_class.contract} router...`);
     const [assetRouter, calls] = await deployer.deferContract(
       "dispatcher",
       `pragma_dispatcher_${asset_class.contract}`,
@@ -162,7 +171,13 @@ export class DispatcherDeployer implements ContractDeployer {
     );
     let response = await deployer.execute([...calls]);
     await deployer.waitForTransaction(response.transaction_hash);
+    console.log(
+      `🧩 ${asset_class.contract} router deployed at ${assetRouter.address}`,
+    );
 
+    console.log(
+      `⏳ Registering all feed types router of ${asset_class.contract}...`,
+    );
     let tx = await pragmaDispatcher.invoke("register_asset_class_router", [
       asset_class.id,
       assetRouter.address,
@@ -178,8 +193,10 @@ export class DispatcherDeployer implements ContractDeployer {
         feed_type,
         deterministic,
       );
+      console.log("\tRegistered", feed_type.name);
     }
 
+    console.log(`✅ ${asset_class.contract} router deployment complete!`);
     return {
       address: assetRouter.address,
       feed_type_routers: feedTypeRouters,

@@ -33,7 +33,6 @@ export class OracleDeployer implements ContractDeployer {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);
     }
 
-    console.log(`🧩 Deploying Oracle to ${chain}...`);
     let currencies = loadConfig<CurrenciesConfig>(CURRENCIES_CONFIG_FILE);
     let deployer = await buildDeployer(chain);
     let deploymentInfo: any = {};
@@ -81,6 +80,7 @@ export class OracleDeployer implements ContractDeployer {
     config: DeploymentConfig,
     deterministic: boolean,
   ): Promise<Contract> {
+    console.log(`⏳ Deploying Pragma Publisher Registry...`);
     const [publisherRegistry, calls] = await deployer.deferContract(
       "oracle",
       "pragma_publisher_registry_PublisherRegistry",
@@ -89,23 +89,32 @@ export class OracleDeployer implements ContractDeployer {
     );
     let response = await deployer.execute([...calls]);
     await deployer.waitForTransaction(response.transaction_hash);
+    console.log(
+      `🧩 Publisher Registry deployed at ${publisherRegistry.address}`,
+    );
 
     console.log("⏳ Registering every publishers and their sources...");
     for (const publisher of config.pragma_oracle.publishers) {
       // Register the publisher
+      console.log("\t ⏳ Registering", publisher.name, "...");
       let tx = await publisherRegistry.invoke("add_publisher", [
         publisher.name,
         publisher.address,
       ]);
       await deployer.waitForTransaction(tx.transaction_hash);
       // Register sources for the publisher
-      tx = await publisherRegistry.invoke("add_sources_for_publisher", [
-        publisher.name,
-        publisher.sources,
-      ]);
-      await deployer.waitForTransaction(tx.transaction_hash);
+      for (const source of publisher.sources) {
+        tx = await publisherRegistry.invoke("add_source_for_publisher", [
+          publisher.name,
+          source,
+        ]);
+        await deployer.waitForTransaction(tx.transaction_hash);
+        console.log("\t\t Added source", source);
+      }
+      console.log("\t ⌛ Registered", publisher.name);
     }
-    console.log("✅ Done!");
+    console.log("🧩 All publishers registered!");
+    console.log("✅ Pragma Publisher Registry deployment complete!\n");
     return publisherRegistry;
   }
 
@@ -117,6 +126,7 @@ export class OracleDeployer implements ContractDeployer {
     currenciesConfig: CurrenciesConfig,
     publisherRegistryAddress: string,
   ): Promise<Contract> {
+    console.log(`⏳ Deploying Pragma Oracle...`);
     const currencies = currenciesConfig.map(Currency.fromCurrencyConfig);
     const serializedCurrencies = currencies.map((currency) =>
       currency.toObject(),
@@ -138,7 +148,8 @@ export class OracleDeployer implements ContractDeployer {
     );
     let response = await deployer.execute([...calls]);
     await deployer.waitForTransaction(response.transaction_hash);
-
+    console.log(`🧩 Pragma Oracle deployed at ${pragmaOracle.address}`);
+    console.log("✅ Pragma Oracle deployment complete!\n");
     return pragmaOracle;
   }
 
@@ -148,6 +159,7 @@ export class OracleDeployer implements ContractDeployer {
     deterministic: boolean,
     pragmaOracleAddress: string,
   ): Promise<Contract> {
+    console.log(`⏳ Deploying Pragma Summary Stats...`);
     const [summaryStats, calls] = await deployer.deferContract(
       "oracle",
       "pragma_summary_stats_SummaryStats",
@@ -156,6 +168,8 @@ export class OracleDeployer implements ContractDeployer {
     );
     let response = await deployer.execute([...calls]);
     await deployer.waitForTransaction(response.transaction_hash);
+    console.log(`🧩 Pragma Summary Stats deployed at ${summaryStats.address}`);
+    console.log("✅ Pragma Summary Stats deployment complete!\n");
     return summaryStats;
   }
 }
