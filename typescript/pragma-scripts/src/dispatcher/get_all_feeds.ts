@@ -1,35 +1,13 @@
-import fs from "fs";
 import { Command, type OptionValues } from "commander";
-import { shortString, type Contract } from "starknet";
+import { type Contract } from "starknet";
 import {
   buildAccount,
   decodeFeeds,
-  Deployer,
   feedWithIdToString,
+  getDeployedAddress,
   STARKNET_CHAINS,
-  type Feed,
   type FeedWithId,
 } from "pragma-utils";
-
-function getDeployedAddress(chainName: string): string {
-  try {
-    const filePath = `../../deployments/${chainName}/dispatcher.json`;
-    const fileContents = fs.readFileSync(filePath, "utf8");
-    const config = JSON.parse(fileContents);
-    if (!config.FeedsRegistry) {
-      throw new Error(
-        `Invalid or missing Pragma Dispatcher contract address for chain ${chainName}`,
-      );
-    }
-    return config.FeedsRegistry;
-  } catch (error) {
-    console.error(
-      `Error reading configuration file for chain ${chainName}:`,
-      error,
-    );
-    throw error;
-  }
-}
 
 function parseCommandLineArguments(): OptionValues {
   const program = new Command();
@@ -67,12 +45,14 @@ async function getAllFeeds(pragmaDispatcher: Contract): Promise<FeedWithId[]> {
   }
 }
 
-shortString.decodeShortString;
-
 async function main() {
   const options = parseCommandLineArguments();
 
-  const publisherRegistryAddress = getDeployedAddress(options.chain);
+  const publisherRegistryAddress = getDeployedAddress(
+    options.chain,
+    "dispatcher",
+    "FeedsRegistry",
+  );
   const account = await buildAccount(options.chain);
   console.log(
     `👉 Getting all feeds for contract ${publisherRegistryAddress} on chain ${options.chain}`,

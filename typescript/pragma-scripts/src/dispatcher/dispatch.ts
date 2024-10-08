@@ -1,28 +1,11 @@
-import fs from "fs";
 import { Command, type OptionValues } from "commander";
 import type { Contract } from "starknet";
-import { buildAccount, Deployer, STARKNET_CHAINS } from "pragma-utils";
-import { shortString } from "starknet";
-
-function getDeployedAddress(chainName: string): string {
-  try {
-    const filePath = `../../deployments/${chainName}/dispatcher.json`;
-    const fileContents = fs.readFileSync(filePath, "utf8");
-    const config = JSON.parse(fileContents);
-    if (!config.PragmaDispatcher) {
-      throw new Error(
-        `Invalid or missing Pragma Dispatcher contract address for chain ${chainName}`,
-      );
-    }
-    return config.PragmaDispatcher;
-  } catch (error) {
-    console.error(
-      `Error reading configuration file for chain ${chainName}:`,
-      error,
-    );
-    throw error;
-  }
-}
+import {
+  buildAccount,
+  Deployer,
+  getDeployedAddress,
+  STARKNET_CHAINS,
+} from "pragma-utils";
 
 function parseCommandLineArguments(): OptionValues {
   const program = new Command();
@@ -67,7 +50,11 @@ async function dispatchFeeds(pragmaDispatcher: Contract, feedIds: string[]) {
 async function main() {
   const options = parseCommandLineArguments();
 
-  const pragmaDispatcherAddress = getDeployedAddress(options.chain);
+  const pragmaDispatcherAddress = getDeployedAddress(
+    options.chain,
+    "dispatcher",
+    "PragmaDispatcher",
+  );
   const feedIds = options.feedIds;
   const account = await buildAccount(options.chain);
   console.log(
