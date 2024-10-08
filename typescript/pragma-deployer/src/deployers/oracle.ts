@@ -1,25 +1,32 @@
 import path from "path";
 import fs from "fs";
-import type { Account, Contract } from "starknet";
-import { buildStarknetAccount, deployStarknetContract } from "../starknet";
+
+import { CallData, type Account, type Contract } from "starknet";
+import {
+  buildDeployer,
+  Deployer,
+  STARKNET_CHAINS,
+  type Chain,
+  type StarknetChain,
+} from "pragma-utils";
+
 import {
   type CurrenciesConfig,
   loadConfig,
   type DeploymentConfig,
   parsePairsFromConfig,
 } from "../config";
-import { type Deployer } from "./interface";
+import { type ContractDeployer } from "./interface";
 import { CURRENCIES_CONFIG_FILE } from "../constants";
 import { Currency } from "../config/currencies";
-import { STARKNET_CHAINS, type Chain } from "../chains";
 
-export class OracleDeployer implements Deployer {
+export class OracleDeployer implements ContractDeployer {
   readonly allowedChains: Chain[] = STARKNET_CHAINS;
-  readonly defaultChain: Chain = "starknet";
+  readonly defaultChain: StarknetChain = "starknet";
   async deploy(
     config: DeploymentConfig,
     deterministic: boolean,
-    chain?: Chain,
+    chain?: StarknetChain,
   ): Promise<void> {
     if (!chain) chain = this.defaultChain;
     if (!this.allowedChains.includes(chain)) {
@@ -28,7 +35,7 @@ export class OracleDeployer implements Deployer {
 
     console.log(`🧩 Deploying Oracle to ${chain}...`);
     let currencies = loadConfig<CurrenciesConfig>(CURRENCIES_CONFIG_FILE);
-    let deployer = await buildStarknetAccount(chain);
+    let deployer = await buildDeployer(chain);
     let deploymentInfo: any = {};
 
     // 0. Deploy pragma publisher registry
@@ -70,17 +77,19 @@ export class OracleDeployer implements Deployer {
 
   /// Deploys the Pragma Publisher Registry & register all publishers with their sources.
   private async deployPublisherRegistry(
-    deployer: Account,
+    deployer: Deployer,
     config: DeploymentConfig,
     deterministic: boolean,
   ): Promise<Contract> {
-    let publisherRegistry = await deployStarknetContract(
-      deployer,
+    const [publisherRegistry, calls] = await deployer.deferContract(
       "oracle",
-      `pragma_publisher_registry_PublisherRegistry`,
-      [deployer.address],
+      "pragma_publisher_registry_PublisherRegistry",
+      CallData.compile({ deployer: deployer.address }),
       deterministic,
     );
+    let response = await deployer.execute([...calls]);
+    await deployer.waitForTransaction(response.transaction_hash);
+
     console.log("⏳ Registering every publishers and their sources...");
     for (const publisher of config.pragma_oracle.publishers) {
       // Register the publisher
@@ -102,7 +111,7 @@ export class OracleDeployer implements Deployer {
 
   /// Deploys the Pragma Oracle with the currencies & pairs from the config.
   private async deployPragmaOracle(
-    deployer: Account,
+    deployer: Deployer,
     config: DeploymentConfig,
     deterministic: boolean,
     currenciesConfig: CurrenciesConfig,
@@ -116,35 +125,37 @@ export class OracleDeployer implements Deployer {
     const pairs = parsePairsFromConfig(config);
     const serializedPairs = pairs.map((pair) => pair.toObject());
 
-    const pragmaOracle = await deployStarknetContract(
-      deployer,
+    const [pragmaOracle, calls] = await deployer.deferContract(
       "oracle",
-      `pragma_oracle_Oracle`,
-      [
-        deployer.address, // admin
+      "pragma_oracle_Oracle",
+      CallData.compile({
+        deployer: deployer.address,
         publisherRegistryAddress,
-        serializedCurrencies,
-        serializedPairs,
-      ],
+        currencies: serializedCurrencies,
+        pairs: serializedPairs,
+      }),
       deterministic,
     );
+    let response = await deployer.execute([...calls]);
+    await deployer.waitForTransaction(response.transaction_hash);
 
     return pragmaOracle;
   }
 
   /// Deploys the Summary Stats contract.
   private async deploySummaryStats(
-    deployer: Account,
+    deployer: Deployer,
     deterministic: boolean,
     pragmaOracleAddress: string,
   ): Promise<Contract> {
-    const summaryStats = await deployStarknetContract(
-      deployer,
+    const [summaryStats, calls] = await deployer.deferContract(
       "oracle",
       "pragma_summary_stats_SummaryStats",
-      [pragmaOracleAddress],
+      CallData.compile({ pragmaOracleAddress }),
       deterministic,
     );
+    let response = await deployer.execute([...calls]);
+    await deployer.waitForTransaction(response.transaction_hash);
     return summaryStats;
   }
 }

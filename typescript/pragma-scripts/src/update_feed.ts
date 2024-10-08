@@ -41,13 +41,13 @@ function parseCommandLineArguments(): OptionValues {
   const program = new Command();
 
   program
-    .name("update-data-feed")
-    .description("CLI to update a Pragma data feed")
+    .name("update-feed")
+    .description("CLI to update a Pragma feed")
     .requiredOption(
       "--target-chain <chain_name>",
       "Name of the target chain (e.g., ethereum_mainnet)",
     )
-    .requiredOption("--feed-id <feed_id>", "ID of the data feed to update")
+    .requiredOption("--feed-id <feed_id>", "ID of the feed to update")
     .requiredOption(
       "--private-key <private_key>",
       "Private key to sign the transaction",
@@ -128,7 +128,7 @@ async function main() {
   const theorosEndpoint = options.theorosEndpoint;
 
   console.log(
-    `Updating data feed ${feedId} for contract ${chainConfig.contract_address} on chain ${options.targetChain}`,
+    `Updating feed ${feedId} for contract ${chainConfig.contract_address} on chain ${options.targetChain}`,
   );
   console.log(`Using Theoros endpoint: ${theorosEndpoint}`);
 
@@ -167,7 +167,7 @@ async function main() {
     console.log("Transaction confirmed in block:", receipt.blockNumber);
     console.log("Gas used:", receipt.gasUsed.toString());
   } catch (error) {
-    console.error("Error updating data feed:", error);
+    console.error("Error updating feed:", error);
     process.exit(1);
   }
 }

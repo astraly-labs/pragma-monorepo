@@ -13,9 +13,11 @@
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.3",
-    "js-yaml": "^4.1.0"
+    "js-yaml": "^4.1.0",
+    "starknet": "^6.11.0"
   },
   "scripts": {
-    "update_feed": "bun run src/update_feed.ts"
+    "update_feed": "bun run src/update_feed.ts",
+    "add_feed": "bun run src/add_feed.ts"
   }
 }
