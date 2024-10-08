@@ -1,24 +1,20 @@
 import fs from "fs";
 import { Command, type OptionValues } from "commander";
-import type { Account, Contract } from "starknet";
-import {
-  buildAccount,
-  Deployer,
-  ensureSuccess,
-  STARKNET_CHAINS,
-} from "pragma-utils";
+import type { Contract } from "starknet";
+import { buildAccount, Deployer, STARKNET_CHAINS } from "pragma-utils";
+import { shortString } from "starknet";
 
 function getDeployedAddress(chainName: string): string {
   try {
     const filePath = `../../deployments/${chainName}/dispatcher.json`;
     const fileContents = fs.readFileSync(filePath, "utf8");
     const config = JSON.parse(fileContents);
-    if (!config.FeedsRegistry) {
+    if (!config.PragmaDispatcher) {
       throw new Error(
         `Invalid or missing Pragma Dispatcher contract address for chain ${chainName}`,
       );
     }
-    return config.FeedsRegistry;
+    return config.PragmaDispatcher;
   } catch (error) {
     console.error(
       `Error reading configuration file for chain ${chainName}:`,
@@ -31,11 +27,11 @@ function getDeployedAddress(chainName: string): string {
 function parseCommandLineArguments(): OptionValues {
   const program = new Command();
   program
-    .name("add-feeds")
-    .description("CLI to update multiple Pragma data feeds")
+    .name("dispatch-feeds")
+    .description("CLI to dispatch multiple Pragma data feeds")
     .requiredOption(
       "--feed-ids <feed_ids...>",
-      "IDs of the data feeds to update",
+      "IDs of the data feeds to dispatch",
     )
     .requiredOption(
       "--chain <chain_name>",
@@ -53,41 +49,34 @@ function parseCommandLineArguments(): OptionValues {
   return options;
 }
 
-async function addFeed(
-  pragmaDispatcher: Contract,
-  account: Deployer,
-  feedId: string,
-) {
+async function dispatchFeeds(pragmaDispatcher: Contract, feedIds: string[]) {
   try {
-    console.log(`\t ⏳ Adding feed ${feedId}...`);
-    const invoke = await pragmaDispatcher.invoke("add_feed", [feedId]);
-    await account.waitForTransaction(invoke.transaction_hash);
+    console.log(`⏳ Dispatching feeds: ${feedIds.join(", ")}...`);
+    const result = await pragmaDispatcher.call("dispatch", [feedIds]);
 
-    const receipt = await account.getTransactionReceipt(
-      invoke.transaction_hash,
-    );
-    await ensureSuccess(receipt, account.provider);
-    console.log(`\t 🧩 Successfully added feed ${feedId}`);
+    console.log("\n🧩 Successfully called dispatch method");
+    console.log("📨 Hyperlane Message ID:", result.toString());
+
+    return result;
   } catch (error) {
-    console.error(`Error adding feed ${feedId}:`, error);
+    console.error(`Error calling dispatch method:`, error);
+    throw error;
   }
-  console.log("✅ All feeds added!");
 }
 
 async function main() {
   const options = parseCommandLineArguments();
 
-  const publisherRegistryAddress = getDeployedAddress(options.chain);
+  const pragmaDispatcherAddress = getDeployedAddress(options.chain);
   const feedIds = options.feedIds;
   const account = await buildAccount(options.chain);
   console.log(
-    `👉 Adding feeds for contract ${publisherRegistryAddress} on chain ${options.chain}`,
+    `👉 Calling dispatch for feeds on contract ${pragmaDispatcherAddress} on chain ${options.chain}`,
   );
 
-  const pragmaDispatcher = await account.loadContract(publisherRegistryAddress);
-  for (const feedId of feedIds) {
-    await addFeed(pragmaDispatcher, account, feedId);
-  }
+  const pragmaDispatcher = await account.loadContract(pragmaDispatcherAddress);
+  const hyperlaneMessageId = await dispatchFeeds(pragmaDispatcher, feedIds);
+  console.log("\n✅ Dispatch call completed!");
 }
 
 main().catch((error) => {

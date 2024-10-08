@@ -18,8 +18,9 @@
     "pragma-utils": "file:../pragma-utils"
   },
   "scripts": {
-    "update_feed": "bun run src/pragmaSol/update_feed.ts",
-    "add_feed": "bun run src/dispatcher/add_feed.ts",
-    "get_all_feeds": "bun run src/dispatcher/get_all_feeds.ts"
+    "pragma:update_feed": "bun run src/pragmaSol/update_feed.ts",
+    "dispatcher:add_feed": "bun run src/dispatcher/add_feed.ts",
+    "dispatcher:get_all_feeds": "bun run src/dispatcher/get_all_feeds.ts",
+    "dispatcher:dispatch": "bun run src/dispatcher/dispatch.ts"
   }
 }

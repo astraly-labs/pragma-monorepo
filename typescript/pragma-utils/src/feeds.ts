@@ -77,11 +77,11 @@ export function feedToString(feed: Feed): string {
 // toString method for FeedWithId
 export function feedWithIdToString(feedWithId: FeedWithId): string {
   return `FeedWithId {
-      feedId: ${feedWithId.feedId},
-      assetClass: ${AssetClass[feedWithId.assetClass]},
-      feedType: ${feedTypeToString(feedWithId.feedType)},
-      pairId: ${shortString.decodeShortString(feedWithId.pairId.toString())}
-    }`;
+    feedId: ${feedWithId.feedId},
+    assetClass: ${AssetClass[feedWithId.assetClass]},
+    feedType: ${feedTypeToString(feedWithId.feedType)},
+    pairId: ${shortString.decodeShortString(feedWithId.pairId.toString())}
+  }`;
 }
 
 // Utility function to decode FeedType
