@@ -18,10 +18,17 @@
     "pragma-utils": "file:../pragma-utils"
   },
   "scripts": {
-    "pragma:update_feed": "bun run src/pragma/update_feed.ts",
+    "oracle:add_currency": "bun run src/oracle/add_currency.ts",
+    "oracle:add_pairs": "bun run src/oracle/add_pairs.ts",
+    "oracle:add_publisher": "bun run src/oracle/add_publisher.ts",
+    "oracle:add_source_for_publisher": "bun run src/oracle/add_source_for_publisher.ts",
+    "oracle:get_all_publishers": "bun run src/oracle/get_all_publishers.ts",
+    "oracle:remove_publisher": "bun run src/oracle/remove_publisher.ts",
+    "oracle:remove_source_for_publisher": "bun run src/oracle/remove_source_for_publisher.ts",
     "dispatcher:add_feeds": "bun run src/dispatcher/add_feeds.ts",
     "dispatcher:remove_feeds": "bun run src/dispatcher/remove_feeds.ts",
     "dispatcher:get_all_feeds": "bun run src/dispatcher/get_all_feeds.ts",
-    "dispatcher:dispatch": "bun run src/dispatcher/dispatch.ts"
+    "dispatcher:dispatch": "bun run src/dispatcher/dispatch.ts",
+    "pragma:update_feed": "bun run src/pragma/update_feed.ts"
   }
 }

@@ -2,6 +2,7 @@ import { Command, type OptionValues } from "commander";
 import { ethers } from "ethers";
 import dotenv from "dotenv";
 import fs from "fs";
+import { getDeployedAddress } from "pragma-utils";
 
 const PRAGMA_SOL_ABI_PATH = "../../../solidity/out/Pragma.sol/Pragma.json";
 
@@ -122,13 +123,13 @@ async function getCalldataFromTheoros(
 async function main() {
   const options = parseCommandLineArguments();
 
-  const chainConfig = getChainConfig(options.targetChain);
+  const pragmaAddress = getDeployedAddress(options.chain, "pragma", "Pragma");
   const feedId = options.feedId;
   const privateKey = options.privateKey;
   const theorosEndpoint = options.theorosEndpoint;
 
   console.log(
-    `Updating feed ${feedId} for contract ${chainConfig.contract_address} on chain ${options.targetChain}`,
+    `Updating feed ${feedId} for contract ${pragmaAddress} on chain ${options.targetChain}`,
   );
   console.log(`Using Theoros endpoint: ${theorosEndpoint}`);
 
@@ -152,11 +153,7 @@ async function main() {
   }
   const provider = new ethers.JsonRpcProvider(RPC_URL);
   const wallet = new ethers.Wallet(privateKey, provider);
-  const contract = new ethers.Contract(
-    chainConfig.contract_address,
-    abi.abi,
-    wallet,
-  );
+  const contract = new ethers.Contract(pragmaAddress, abi.abi, wallet);
 
   try {
     const tx = await contract.updateDataFeeds(calldata);
