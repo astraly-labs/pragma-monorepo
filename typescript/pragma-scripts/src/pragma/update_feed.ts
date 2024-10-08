@@ -45,14 +45,10 @@ function parseCommandLineArguments(): OptionValues {
     .name("update-feed")
     .description("CLI to update a Pragma feed")
     .requiredOption(
-      "--target-chain <chain_name>",
+      "--chain <chain_name>",
       "Name of the target chain (e.g., ethereum_mainnet)",
     )
     .requiredOption("--feed-id <feed_id>", "ID of the feed to update")
-    .requiredOption(
-      "--private-key <private_key>",
-      "Private key to sign the transaction",
-    )
     .option(
       "--theoros-endpoint <url>",
       "Theoros endpoint URL",
@@ -62,18 +58,13 @@ function parseCommandLineArguments(): OptionValues {
 
   const options = program.opts();
 
-  if (!options.targetChain || typeof options.targetChain !== "string") {
-    console.error("Error: Target chain name must be a valid string");
+  if (!options.chain || typeof options.chain !== "string") {
+    console.error("Error: Chain name must be a valid string");
     process.exit(1);
   }
 
   if (!Number.isInteger(Number(options.feedId))) {
     console.error("Error: Feed ID must be an integer");
-    process.exit(1);
-  }
-
-  if (!ethers.isHexString(options.privateKey)) {
-    console.error("Error: Private key must be a valid hexadecimal string");
     process.exit(1);
   }
 
@@ -123,13 +114,19 @@ async function getCalldataFromTheoros(
 async function main() {
   const options = parseCommandLineArguments();
 
-  const pragmaAddress = getDeployedAddress(options.chain, "pragma", "Pragma");
+  const chain = options.chain;
   const feedId = options.feedId;
-  const privateKey = options.privateKey;
   const theorosEndpoint = options.theorosEndpoint;
 
+  const pragmaAddress = getDeployedAddress(chain, "pragma", "Pragma");
+
+  const privateKey = process.env.ETH_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error("Missing ETH_PRIVATE_KEY env var");
+  }
+
   console.log(
-    `Updating feed ${feedId} for contract ${pragmaAddress} on chain ${options.targetChain}`,
+    `Updating feed ${feedId} for contract ${pragmaAddress} on chain ${chain}`,
   );
   console.log(`Using Theoros endpoint: ${theorosEndpoint}`);
 
