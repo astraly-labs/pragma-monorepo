@@ -1,5 +1,5 @@
 import { Account, RpcProvider } from "starknet";
-import { Deployer, logAddresses, type StarknetChain } from "..";
+import { Deployer, type StarknetChain } from "..";
 import { STARKNET_RPC_URLS } from "./rpcs";
 
 export async function buildAccount(chain: StarknetChain): Promise<Deployer> {
