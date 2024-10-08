@@ -18,6 +18,7 @@
     "pragma-utils": "file:../pragma-utils"
   },
   "scripts": {
+    "generate_feed_id": "bun run src/generate_feed_id.ts",
     "oracle:add_currency": "bun run src/oracle/add_currency.ts",
     "oracle:add_pairs": "bun run src/oracle/add_pairs.ts",
     "oracle:add_publisher": "bun run src/oracle/add_publisher.ts",

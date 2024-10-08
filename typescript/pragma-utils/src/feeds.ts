@@ -1,4 +1,15 @@
-import { shortString } from "starknet";
+import { shortString, num } from "starknet";
+
+// Constants for feed ID generation
+const ASSET_CLASS_SHIFT = BigInt(
+  "0x10000000000000000000000000000000000000000000000000000000000",
+); // shift of 29 bytes
+const FEED_TYPE_SHIFT = BigInt(
+  "0x1000000000000000000000000000000000000000000000000000000",
+); // shift of 27 bytes
+const MAX_PAIR_ID = BigInt(
+  "0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+); // 27 bytes
 
 export enum AssetClass {
   Crypto = 0,
@@ -34,16 +45,8 @@ export type FeedWithId = Feed & { feedId: bigint };
 
 // Utility function to convert FeedId (bigint) to Feed
 export function feedFromId(id: bigint): Feed {
-  const ASSET_CLASS_SHIFT = BigInt(
-    "0x10000000000000000000000000000000000000000000000000000000000",
-  );
-  const FEED_TYPE_SHIFT = BigInt(
-    "0x1000000000000000000000000000000000000000000000000000000",
-  );
-  const FEED_TYPE_MASK = BigInt("0xFFFF");
-
   const assetClassFelt = id / ASSET_CLASS_SHIFT;
-  const feedTypeFelt = (id / FEED_TYPE_SHIFT) & FEED_TYPE_MASK;
+  const feedTypeFelt = (id / FEED_TYPE_SHIFT) & BigInt(0xffff);
   const pairId =
     id - assetClassFelt * ASSET_CLASS_SHIFT - feedTypeFelt * FEED_TYPE_SHIFT;
 
@@ -70,7 +73,7 @@ export function feedToString(feed: Feed): string {
   return `Feed {
       assetClass: ${AssetClass[feed.assetClass]},
       feedType: ${feedTypeToString(feed.feedType)},
-      pairId: ${shortString.decodeShortString(feed.pairId.toString())}
+      pairId: ${shortString.decodeShortString(feed.pairId.toString(16))}
     }`;
 }
 
@@ -80,7 +83,7 @@ export function feedWithIdToString(feedWithId: FeedWithId): string {
     feedId: ${feedWithId.feedId},
     assetClass: ${AssetClass[feedWithId.assetClass]},
     feedType: ${feedTypeToString(feedWithId.feedType)},
-    pairId: ${shortString.decodeShortString(feedWithId.pairId.toString())}
+    pairId: ${shortString.decodeShortString(feedWithId.pairId.toString(16))}
   }`;
 }
 
@@ -106,4 +109,44 @@ export function decodeFeedType(id: number): FeedType {
 
 export function decodeFeeds(feedIds: bigint[]): FeedWithId[] {
   return feedIds.map((id) => ({ feedId: id, ...feedFromId(id) }));
+}
+
+// New function to convert FeedType to its numeric representation
+function feedTypeToNumber(feedType: FeedType): number {
+  let mainType: number;
+  let variant: number;
+
+  switch (feedType.type) {
+    case "Unique":
+      mainType = 0;
+      variant = feedType.variant;
+      break;
+    case "Twap":
+      mainType = 1;
+      variant = feedType.variant;
+      break;
+    case "RealizedVolatility":
+      mainType = 2;
+      variant = feedType.variant;
+      break;
+  }
+
+  return (mainType << 8) | variant;
+}
+
+export function generateFeedId(
+  assetClass: AssetClass,
+  feedType: FeedType,
+  pairId: string,
+): string {
+  const assetClassBits = BigInt(assetClass) * ASSET_CLASS_SHIFT;
+  const feedTypeBits = BigInt(feedTypeToNumber(feedType)) * FEED_TYPE_SHIFT;
+  const pairIdBits = BigInt(shortString.encodeShortString(pairId));
+
+  if (pairIdBits > MAX_PAIR_ID) {
+    throw new Error("Pair ID is too long");
+  }
+
+  const feedId = assetClassBits | feedTypeBits | pairIdBits;
+  return num.toHex(feedId);
 }
