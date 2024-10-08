@@ -22,6 +22,14 @@ Copy the `env.example` as `.env` and fill the variables.
 
 ## Available Scripts
 
+#### generate_feed_id.ts
+
+Allows you to generate a Feed ID from feed values:
+
+```bash
+bun run generate_feed_id --asset-class Crypto --feed-type Unique --feed-variant SpotMedian --pair-id EKUBO/USD
+```
+
 ### Dispatcher Scripts
 
 Located in the `dispatcher/` directory.
@@ -31,7 +39,7 @@ Located in the `dispatcher/` directory.
 Adds multiple data feeds to the Pragma Dispatcher contract.
 
 ```bash
-bun run dispatcher/add_feeds.ts --chain <chain_name> --feed-ids <feed_id1> <feed_id2> ...
+bun run dispatcher:add_feeds --chain <chain_name> --feed-ids <feed_id1> <feed_id2> ...
 ```
 
 #### dispatch.ts
@@ -39,7 +47,7 @@ bun run dispatcher/add_feeds.ts --chain <chain_name> --feed-ids <feed_id1> <feed
 Dispatches multiple data feeds.
 
 ```bash
-bun run dispatcher/dispatch.ts --chain <chain_name> --feed-ids <feed_id1> <feed_id2> ...
+bun run dispatcher:dispatch --chain <chain_name> --feed-ids <feed_id1> <feed_id2> ...
 ```
 
 #### get_all_feeds.ts
@@ -47,7 +55,7 @@ bun run dispatcher/dispatch.ts --chain <chain_name> --feed-ids <feed_id1> <feed_
 Retrieves all registered feeds from the Pragma Dispatcher contract.
 
 ```bash
-bun run dispatcher/get_all_feeds.ts --chain <chain_name>
+bun run dispatcher:get_all_feeds --chain <chain_name>
 ```
 
 #### remove_feeds.ts
@@ -55,7 +63,7 @@ bun run dispatcher/get_all_feeds.ts --chain <chain_name>
 Removes multiple data feeds from the Pragma Dispatcher contract.
 
 ```bash
-bun run dispatcher/remove_feeds.ts --chain <chain_name> --feed-ids <feed_id1> <feed_id2> ...
+bun run dispatcher:remove_feeds --chain <chain_name> --feed-ids <feed_id1> <feed_id2> ...
 ```
 
 ### Oracle Scripts
@@ -67,7 +75,7 @@ Located in the `oracle/` directory.
 Adds a new currency to the Pragma Oracle contract.
 
 ```bash
-bun run oracle/add_currency.ts --chain <chain_name> --id <currency_id> --decimals <decimals> --is_abstract --starknet_address <address> --ethereum_address <address>
+bun run oracle:add_currency --chain <chain_name> --id <currency_id> --decimals <decimals> --is_abstract --starknet_address <address> --ethereum_address <address>
 ```
 
 #### add_pairs.ts
@@ -75,7 +83,7 @@ bun run oracle/add_currency.ts --chain <chain_name> --id <currency_id> --decimal
 Adds multiple trading pairs to the Pragma Oracle contract.
 
 ```bash
-bun run oracle/add_pairs.ts --chain <chain_name> --pair-ids <pair_id1> <pair_id2> ...
+bun run oracle:add_pairs --chain <chain_name> --pair-ids <pair_id1> <pair_id2> ...
 ```
 
 #### add_publisher.ts
@@ -83,7 +91,7 @@ bun run oracle/add_pairs.ts --chain <chain_name> --pair-ids <pair_id1> <pair_id2
 Adds a new publisher to the PublisherRegistry contract.
 
 ```bash
-bun run oracle/add_publisher.ts --chain <chain_name> --publisher <name> --address <address>
+bun run oracle:add_publisher --chain <chain_name> --publisher <name> --address <address>
 ```
 
 #### add_sources_for_publisher.ts
@@ -91,7 +99,7 @@ bun run oracle/add_publisher.ts --chain <chain_name> --publisher <name> --addres
 Adds multiple sources for a specific publisher in the PublisherRegistry contract.
 
 ```bash
-bun run oracle/add_sources_for_publisher.ts --chain <chain_name> --publisher <name> --sources <source1> <source2> ...
+bun run oracle:add_sources_for_publisher --chain <chain_name> --publisher <name> --sources <source1> <source2> ...
 ```
 
 #### get_all_publishers.ts
@@ -99,7 +107,7 @@ bun run oracle/add_sources_for_publisher.ts --chain <chain_name> --publisher <na
 Retrieves all registered publishers and their sources from the PublisherRegistry contract.
 
 ```bash
-bun run oracle/get_all_publishers.ts --chain <chain_name>
+bun run oracle:get_all_publishers --chain <chain_name>
 ```
 
 #### remove_publishers.ts
@@ -107,7 +115,7 @@ bun run oracle/get_all_publishers.ts --chain <chain_name>
 Removes multiple publishers from the PublisherRegistry contract.
 
 ```bash
-bun run oracle/remove_publishers.ts --chain <chain_name> --publishers <name1> <name2> ...
+bun run oracle:remove_publishers --chain <chain_name> --publishers <name1> <name2> ...
 ```
 
 #### remove_sources_for_publisher.ts
@@ -115,7 +123,7 @@ bun run oracle/remove_publishers.ts --chain <chain_name> --publishers <name1> <n
 Removes multiple sources for a specific publisher in the PublisherRegistry contract.
 
 ```bash
-bun run oracle/remove_sources_for_publisher.ts --chain <chain_name> --publisher <name> --sources <source1> <source2> ...
+bun run oracle:remove_sources_for_publisher --chain <chain_name> --publisher <name> --sources <source1> <source2> ...
 ```
 
 ### Pragma Scripts
@@ -127,7 +135,7 @@ Located in the `pragma/` directory.
 Updates a data feed on a specific chain.
 
 ```bash
-bun run pragma/update_feed.ts --chain <chain_name> --feed-id <feed_id>
+bun run pragma:update_feed --chain <chain_name> --feed-id <feed_id>
 ```
 
 ## Note
