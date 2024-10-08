@@ -1,10 +1,12 @@
 import fs from "fs";
 import { Command, type OptionValues } from "commander";
-import { ethers } from "ethers";
-import { buildStarknetAccount } from "./utils";
-import { STARKNET_CHAINS } from "./types/chains";
-import { getContract } from "./utils/starknet";
 import type { Account, Contract } from "starknet";
+import {
+  buildAccount,
+  Deployer,
+  ensureSuccess,
+  STARKNET_CHAINS,
+} from "pragma-utils";
 
 function getDeployedAddress(chainName: string): string {
   try {
@@ -53,7 +55,7 @@ function parseCommandLineArguments(): OptionValues {
 
 async function addFeed(
   pragmaDispatcher: Contract,
-  account: Account,
+  account: Deployer,
   feedId: string,
 ) {
   try {
@@ -64,9 +66,7 @@ async function addFeed(
     const receipt = await account.getTransactionReceipt(
       invoke.transaction_hash,
     );
-    if (receipt.isError() || receipt.isRejected() || receipt.isReverted()) {
-      console.error(`Error adding feed ${feedId}:`, receipt.value);
-    }
+    await ensureSuccess(receipt, account.provider);
     console.log(`Successfully added feed ${feedId}`);
   } catch (error) {
     console.error(`Error adding feed ${feedId}:`, error);
@@ -78,18 +78,12 @@ async function main() {
 
   const publisherRegistryAddress = getDeployedAddress(options.chain);
   const feedIds = options.feedIds;
-  const account = await buildStarknetAccount(options.chain);
+  const account = await buildAccount(options.chain);
   console.log(
-    `Adding feeds for contract ${publisherRegistryAddress} on chain ${options.chain}`,
+    `👉 Adding feeds for contract ${publisherRegistryAddress} on chain ${options.chain}`,
   );
 
-  const pragmaDispatcher = getContract(
-    "dispatcher",
-    "pragma_feeds_registry_PragmaFeedsRegistry",
-    publisherRegistryAddress,
-    account,
-  );
-
+  const pragmaDispatcher = await account.loadContract(publisherRegistryAddress);
   for (const feedId of feedIds) {
     await addFeed(pragmaDispatcher, account, feedId);
   }

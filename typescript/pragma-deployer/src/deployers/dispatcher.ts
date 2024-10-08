@@ -3,7 +3,7 @@ import path from "path";
 
 import { CallData, type Contract } from "starknet";
 import {
-  buildDeployer,
+  buildAccount,
   Deployer,
   STARKNET_CHAINS,
   type Chain,
@@ -35,7 +35,7 @@ export class DispatcherDeployer implements ContractDeployer {
     }
 
     let feeds = loadConfig<FeedsConfig>(FEEDS_CONFIG_FILE);
-    let deployer = await buildDeployer(chain);
+    let deployer = await buildAccount(chain);
     let deploymentInfo: any = {};
 
     // 0. Deploy feeds registry

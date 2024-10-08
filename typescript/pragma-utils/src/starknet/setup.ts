@@ -2,7 +2,7 @@ import { Account, RpcProvider } from "starknet";
 import { Deployer, logAddresses, type StarknetChain } from "..";
 import { STARKNET_RPC_URLS } from "./rpcs";
 
-export async function buildDeployer(chain: StarknetChain): Promise<Deployer> {
+export async function buildAccount(chain: StarknetChain): Promise<Deployer> {
   const nodeUrl = STARKNET_RPC_URLS[chain];
   console.log("");
   console.log("⛓️‍💥 Chain:", chain);

@@ -24,7 +24,7 @@ export class BaseDeployer extends Account {
 
   async loadContract(contractAddress: string) {
     const { abi } = await this.getClassAt(contractAddress);
-    return new Contract(abi, contractAddress, this.provider);
+    return new Contract(abi, contractAddress, this.account);
   }
 
   async declareCached(projectName: projectName, contractName: string) {

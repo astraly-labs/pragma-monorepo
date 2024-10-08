@@ -3,7 +3,7 @@ import fs from "fs";
 
 import { CallData, type Account, type Contract } from "starknet";
 import {
-  buildDeployer,
+  buildAccount,
   Deployer,
   STARKNET_CHAINS,
   type Chain,
@@ -34,7 +34,7 @@ export class OracleDeployer implements ContractDeployer {
     }
 
     let currencies = loadConfig<CurrenciesConfig>(CURRENCIES_CONFIG_FILE);
-    let deployer = await buildDeployer(chain);
+    let deployer = await buildAccount(chain);
     let deploymentInfo: any = {};
 
     // 0. Deploy pragma publisher registry
