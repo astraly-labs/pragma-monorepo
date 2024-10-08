@@ -2,6 +2,7 @@ import { Command, type OptionValues } from "commander";
 import { ethers } from "ethers";
 import dotenv from "dotenv";
 import fs from "fs";
+import { getDeployedAddress } from "pragma-utils";
 
 const PRAGMA_SOL_ABI_PATH = "../../../solidity/out/Pragma.sol/Pragma.json";
 
@@ -11,47 +12,17 @@ if (!RPC_URL) {
   throw new Error("RPC URL not set in .env file");
 }
 
-interface ChainConfig {
-  contract_address: string;
-}
-
-function getChainConfig(chainName: string): ChainConfig {
-  try {
-    const filePath = `../../../deployement/${chainName}/pragma.json`;
-    const fileContents = fs.readFileSync(filePath, "utf8");
-    const config = JSON.parse(fileContents);
-
-    if (!config.Pragma || !ethers.isAddress(config.Pragma)) {
-      throw new Error(
-        `Invalid or missing Pragma contract address for chain ${chainName}`,
-      );
-    }
-
-    return { contract_address: config.Pragma };
-  } catch (error) {
-    console.error(
-      `Error reading configuration file for chain ${chainName}:`,
-      error,
-    );
-    throw error;
-  }
-}
-
 function parseCommandLineArguments(): OptionValues {
   const program = new Command();
 
   program
-    .name("update-data-feed")
-    .description("CLI to update a Pragma data feed")
+    .name("update-feed")
+    .description("CLI to update a Pragma feed")
     .requiredOption(
-      "--target-chain <chain_name>",
+      "--chain <chain_name>",
       "Name of the target chain (e.g., ethereum_mainnet)",
     )
-    .requiredOption("--feed-id <feed_id>", "ID of the data feed to update")
-    .requiredOption(
-      "--private-key <private_key>",
-      "Private key to sign the transaction",
-    )
+    .requiredOption("--feed-id <feed_id>", "ID of the feed to update")
     .option(
       "--theoros-endpoint <url>",
       "Theoros endpoint URL",
@@ -61,18 +32,13 @@ function parseCommandLineArguments(): OptionValues {
 
   const options = program.opts();
 
-  if (!options.targetChain || typeof options.targetChain !== "string") {
-    console.error("Error: Target chain name must be a valid string");
+  if (!options.chain || typeof options.chain !== "string") {
+    console.error("Error: Chain name must be a valid string");
     process.exit(1);
   }
 
   if (!Number.isInteger(Number(options.feedId))) {
     console.error("Error: Feed ID must be an integer");
-    process.exit(1);
-  }
-
-  if (!ethers.isHexString(options.privateKey)) {
-    console.error("Error: Private key must be a valid hexadecimal string");
     process.exit(1);
   }
 
@@ -122,13 +88,19 @@ async function getCalldataFromTheoros(
 async function main() {
   const options = parseCommandLineArguments();
 
-  const chainConfig = getChainConfig(options.targetChain);
+  const chain = options.chain;
   const feedId = options.feedId;
-  const privateKey = options.privateKey;
   const theorosEndpoint = options.theorosEndpoint;
 
+  const pragmaAddress = getDeployedAddress(chain, "pragma", "Pragma");
+
+  const privateKey = process.env.ETH_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error("Missing ETH_PRIVATE_KEY env var");
+  }
+
   console.log(
-    `Updating data feed ${feedId} for contract ${chainConfig.contract_address} on chain ${options.targetChain}`,
+    `Updating feed ${feedId} for contract ${pragmaAddress} on chain ${chain}`,
   );
   console.log(`Using Theoros endpoint: ${theorosEndpoint}`);
 
@@ -152,11 +124,7 @@ async function main() {
   }
   const provider = new ethers.JsonRpcProvider(RPC_URL);
   const wallet = new ethers.Wallet(privateKey, provider);
-  const contract = new ethers.Contract(
-    chainConfig.contract_address,
-    abi.abi,
-    wallet,
-  );
+  const contract = new ethers.Contract(pragmaAddress, abi.abi, wallet);
 
   try {
     const tx = await contract.updateDataFeeds(calldata);
@@ -167,7 +135,7 @@ async function main() {
     console.log("Transaction confirmed in block:", receipt.blockNumber);
     console.log("Gas used:", receipt.gasUsed.toString());
   } catch (error) {
-    console.error("Error updating data feed:", error);
+    console.error("Error updating feed:", error);
     process.exit(1);
   }
 }

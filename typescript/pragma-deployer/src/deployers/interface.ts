@@ -1,8 +1,8 @@
-import type { Chain } from "../chains";
+import type { Chain } from "pragma-utils";
 import type { DeploymentConfig } from "../config";
 
 /// Main interface called when deploying a contract
-export interface Deployer {
+export interface ContractDeployer {
   readonly allowedChains: Chain[];
   readonly defaultChain: Chain;
   deploy(

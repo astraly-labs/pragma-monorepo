@@ -1,21 +1,22 @@
 import fs from "fs";
 import path from "path";
+
 import hre, { ethers, upgrades } from "hardhat";
 import { Contract, parseEther, zeroPadValue } from "ethers";
+import { EVM_CHAINS, type Chain, type EvmChain } from "pragma-utils";
 
-import { type Deployer } from "./interface";
-import { EVM_CHAINS, type Chain } from "../chains";
+import { type ContractDeployer } from "./interface";
 import type { DeploymentConfig } from "../config";
 
-export class PragmaDeployer implements Deployer {
+export class PragmaDeployer implements ContractDeployer {
   readonly allowedChains: Chain[] = EVM_CHAINS;
-  readonly defaultChain: Chain = "mainnet";
+  readonly defaultChain: EvmChain = "mainnet";
 
   async deploy(
     config: DeploymentConfig,
     // TODO: Handle deterministic deployments, not mandatory yet.
     _deterministic: boolean,
-    chain?: Chain,
+    chain?: EvmChain,
   ): Promise<void> {
     if (!chain) chain = this.defaultChain;
     if (!this.allowedChains.includes(chain)) {

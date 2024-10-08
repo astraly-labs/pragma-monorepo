@@ -1,15 +1,15 @@
 import type { DeploymentConfig } from "./config";
 import {
-  type Deployer,
+  type ContractDeployer,
   OracleDeployer,
   DispatcherDeployer,
   PragmaDeployer,
 } from "./deployers";
 
 class DeploymentManager {
-  private deployers: Map<string, Deployer> = new Map();
+  private deployers: Map<string, ContractDeployer> = new Map();
 
-  registerDeployer(name: string, deployer: Deployer): void {
+  registerDeployer(name: string, deployer: ContractDeployer): void {
     this.deployers.set(name, deployer);
   }
 
