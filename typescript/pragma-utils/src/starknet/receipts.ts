@@ -31,9 +31,34 @@ export async function ensureSuccess(
       TransactionFinalityStatus.ACCEPTED_ON_L2,
     ],
   });
-  if (tx.execution_status != TransactionExecutionStatus.SUCCEEDED) {
-    throw new Error(`Transaction ${receipt.transaction_hash} REVERTED`);
+
+  if (tx.execution_status !== TransactionExecutionStatus.SUCCEEDED) {
+    let errorMessage = `Transaction ${receipt.transaction_hash} REVERTED`;
+
+    // Extract revert reason if available
+    if ("revert_reason" in tx && tx.revert_reason) {
+      errorMessage += `\nRevert reason: ${tx.revert_reason}`;
+    }
+
+    // Check for transaction_failure_reason
+    if ("transaction_failure_reason" in tx && tx.transaction_failure_reason) {
+      errorMessage += `\nFailure reason: ${JSON.stringify(tx.transaction_failure_reason)}`;
+    }
+
+    // Check for events that might contain error information
+    if ("events" in tx && tx.events && tx.events.length > 0) {
+      const errorEvent = tx.events.find(
+        (event) => event.keys.includes("Error") || event.keys.includes("error"),
+      );
+      if (errorEvent) {
+        errorMessage += `\nError event: ${JSON.stringify(errorEvent)}`;
+      }
+    }
+
+    console.error(errorMessage);
+    throw new Error(errorMessage);
   }
+
   return receipt as RPC.Receipt;
 }
 
