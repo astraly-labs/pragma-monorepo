@@ -36,7 +36,7 @@ const SERVER_HOST: &str = "0.0.0.0";
 const SERVER_PORT: u16 = 3000;
 
 const PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt =
-    Felt::from_hex_unchecked("0x7bb8410b7ac643c591dfb58af31e19c1d3e66c7568e9a57e1b6f4b1d87ad76a");
+    Felt::from_hex_unchecked("0x42d0ccae2cd3647df3bf9379d74efc93851370b12338a5aa6a676e381396b5");
 const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt =
     Felt::from_hex_unchecked("0x41c20175af14a0bfebfc9ae2f3bda29230a0bceb551844197d9f46faf76d6da");
 const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt =
