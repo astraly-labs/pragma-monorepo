@@ -138,6 +138,12 @@ Updates a data feed on a specific chain.
 bun run pragma:update_feed --chain <chain_name> --feed-id <feed_id>
 ```
 
+You can also add a theoros endpoint; by default is `"https://theoros.pragma.build/"`:
+
+```bash
+bun run pragma:update_feed --chain <chain_name> --feed-id <feed_id> --theoros-endpoint YOUR_URL
+```
+
 ## Note
 
 For all scripts, replace `<chain_name>` with the target chain (e.g., pragmaDevnet) and provide the required parameters as shown in the usage examples.

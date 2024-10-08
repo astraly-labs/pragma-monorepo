@@ -31,10 +31,7 @@ function parseCommandLineArguments(): OptionValues {
   return options;
 }
 
-async function getAllPublishersAndSources(
-  publisherRegistry: Contract,
-  account: Deployer,
-) {
+async function getAllPublishersAndSources(publisherRegistry: Contract) {
   try {
     console.log("⏳ Fetching all publishers...");
     const publishersFelt = (await publisherRegistry.call(
@@ -89,7 +86,7 @@ async function main() {
     publisherRegistryAddress,
   );
 
-  await getAllPublishersAndSources(publisherRegistry, account);
+  await getAllPublishersAndSources(publisherRegistry);
 
   console.log("✅ Fetching process completed!");
 }

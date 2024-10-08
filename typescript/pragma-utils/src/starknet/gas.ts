@@ -7,6 +7,7 @@ import {
   shortString,
 } from "starknet";
 import { ensureAccepted, ensureSuccess } from ".";
+import { shortenHex } from "../strings";
 
 const ethUsd = 4000n;
 const strkUsd = 2n;
@@ -288,8 +289,4 @@ export function newProfiler(provider: RpcProvider) {
       });
     },
   };
-}
-
-function shortenHex(hex: string) {
-  return `${hex.slice(0, 6)}...${hex.slice(-4)}`;
 }

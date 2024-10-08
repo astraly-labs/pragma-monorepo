@@ -12,32 +12,6 @@ if (!RPC_URL) {
   throw new Error("RPC URL not set in .env file");
 }
 
-interface ChainConfig {
-  contract_address: string;
-}
-
-function getChainConfig(chainName: string): ChainConfig {
-  try {
-    const filePath = `../../../deployement/${chainName}/pragma.json`;
-    const fileContents = fs.readFileSync(filePath, "utf8");
-    const config = JSON.parse(fileContents);
-
-    if (!config.Pragma || !ethers.isAddress(config.Pragma)) {
-      throw new Error(
-        `Invalid or missing Pragma contract address for chain ${chainName}`,
-      );
-    }
-
-    return { contract_address: config.Pragma };
-  } catch (error) {
-    console.error(
-      `Error reading configuration file for chain ${chainName}:`,
-      error,
-    );
-    throw error;
-  }
-}
-
 function parseCommandLineArguments(): OptionValues {
   const program = new Command();
 
