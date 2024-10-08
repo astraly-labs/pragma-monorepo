@@ -83,7 +83,7 @@ export function feedWithIdToString(feedWithId: FeedWithId): string {
     feedId: ${feedWithId.feedId},
     assetClass: ${AssetClass[feedWithId.assetClass]},
     feedType: ${feedTypeToString(feedWithId.feedType)},
-    pairId: ${shortString.decodeShortString(feedWithId.pairId.toString(16))}
+    pairId: ${shortString.decodeShortString(feedWithId.pairId.toString())}
   }`;
 }
 
