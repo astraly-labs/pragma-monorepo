@@ -37,7 +37,7 @@ async function dispatchFeeds(pragmaDispatcher: Contract, feedIds: string[]) {
     console.log(`⏳ Dispatching feeds: ${feedIds.join(", ")}...`);
     const result = await pragmaDispatcher.call("dispatch", [feedIds]);
 
-    console.log("\n🧩 Successfully called dispatch method");
+    console.log("\n🧩 Successfully called dispatch method!");
     console.log("📨 Hyperlane Message ID:", result.toString());
 
     return result;
