@@ -18,6 +18,8 @@ bun install
 npm install
 ```
 
+Copy the `env.example` as `.env` and fill the variables.
+
 ## Available Scripts
 
 ### Dispatcher Scripts
@@ -125,7 +127,7 @@ Located in the `pragma/` directory.
 Updates a data feed on a specific chain.
 
 ```bash
-bun run pragma/update_feed.ts --target-chain <chain_name> --feed-id <feed_id> --private-key <private_key>
+bun run pragma/update_feed.ts --chain <chain_name> --feed-id <feed_id>
 ```
 
 ## Note
