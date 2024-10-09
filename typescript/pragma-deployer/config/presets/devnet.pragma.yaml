@@ -3,9 +3,12 @@ pragma_oracle:
   pairs:
     - "BTC/USD"
     - "ETH/USD"
+    - "USDT/USD"
+    - "USDC/USD"
+    - "DAI/USD"
   publishers:
     - name: "PRAGMA"
-      address: "0x3bb306a004034dba19e6cf7b161e7a4fef64bc1078419e8ad1876192f0b8cd1"
+      address: "0x6b09c5cca7e5ef944dc3be7514cc1ae5a6e267f0f1f2b5520e90dc00aecf6e1"
       sources:
         - "ASCENDEX"
         - "BITSTAMP"
@@ -29,15 +32,11 @@ pragma_oracle:
         - "GATEIO"
         - "EKUBO"
         - "DEXSCREENER"
-    - name: "PRAGMA_MERKLE"
-      address: "0x5e9e93c6235f8ae6c2f4f0069bd30753ec21b26fbad80cfbf5da2c1bc573d69"
-      sources:
-        - "DERIBIT"
 
 # Configuration for the Pragma Dispatcher Cairo Contracts
 pragma_dispatcher:
-  pragma_oracle_address: "0x753034396b7e59f3579e2beba2f408dd2ed12974e054a1348234bea4b10bd30"
-  hyperlane_mailbox_address: "0x41c20175af14a0bfebfc9ae2f3bda29230a0bceb551844197d9f46faf76d6da"
+  pragma_oracle_address: "0x56c94b626e02c82bfe871b06181bdc56adcd78f4ce722fe3f7ae6845795d8a8"
+  hyperlane_mailbox_address: "0x6a2f7a45b29fc7c9854a6fe5228bdff5311884c804cb6b46553ba4cde235f1e"
 
 # Configuration for the Pragma Solidity EVM contract
 # TODO: Adapt those values
