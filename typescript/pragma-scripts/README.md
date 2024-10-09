@@ -10,7 +10,7 @@ You'll need either [NPM](https://www.npmjs.com/) or [Bun](https://bun.sh/).
 
 ### Installation
 
-Install dependencies:
+1. Install dependencies:
 
 ```bash
 bun install
@@ -18,9 +18,29 @@ bun install
 npm install
 ```
 
-Copy the `env.example` as `.env` and fill the variables.
+2. Copy the `env.example` as `.env` and fill the variables:
+
+```bash
+cp .env.example .env
+```
 
 ## Available Scripts
+
+Every scripts below can be run using either:
+
+- [npm](https://nodejs.org/en),
+- [bun](https://bun.sh/),
+- [deno](https://deno.com/).
+
+For example:
+
+```bash
+npm run generate_feed_id -- --asset-class (...)
+# or
+bun run generate_feed_id --asset-class (...)
+# or
+deno task generate_feed_id --asset-class (...)
+```
 
 #### generate_feed_id.ts
 
