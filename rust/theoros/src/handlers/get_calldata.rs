@@ -45,7 +45,10 @@ pub async fn get_calldata(
 ) -> Result<Json<GetCalldataResponse>, GetCalldataError> {
     tracing::info!("Received get calldata request for feed: {feed_id}");
 
-    // TODO: check that feed_id exists
+    let stored_feed_ids = state.storage.data_feeds();
+    if !stored_feed_ids.contains(&feed_id) {
+        return Err(GetCalldataError::FeedNotFound(feed_id));
+    };
 
     let feed: Feed = feed_id.parse().map_err(|_| GetCalldataError::InvalidFeedId)?;
 
@@ -61,7 +64,7 @@ pub async fn get_calldata(
     let num_validators = checkpoints.keys().len();
     let signers: Vec<ValidatorSignature> = checkpoints
         .iter()
-        .map(|((validator_index, _), signed_checkpoint)| {
+        .map(|((_, _), signed_checkpoint)| {
             ValidatorSignature {
                 validator_index: 0, // TODO: fetch index from storage
                 signature: signed_checkpoint.signature.clone(),

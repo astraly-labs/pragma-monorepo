@@ -13,6 +13,8 @@ pub enum GetCalldataError {
     InvalidFeedId,
     #[error("failed to retrieve event")]
     FailedToRetrieveEvent,
+    #[error("Feed with ID '{0}' not found")]
+    FeedNotFound(String),
 }
 
 impl IntoResponse for GetCalldataError {
