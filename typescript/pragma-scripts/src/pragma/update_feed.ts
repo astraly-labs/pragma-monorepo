@@ -1,7 +1,6 @@
 import { Command, type OptionValues } from "commander";
 import { ethers } from "ethers";
 import dotenv from "dotenv";
-import fs from "fs";
 import { getDeployedAddress } from "pragma-utils";
 
 const PRAGMA_SOL_ABI_PATH = "../../../solidity/out/Pragma.sol/Pragma.json";
