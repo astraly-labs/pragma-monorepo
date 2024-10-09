@@ -1,9 +1,12 @@
 import axios, { type AxiosInstance } from "axios";
-import { type CalldataResponse } from "./types";
 
 export interface TheorosSDKConfig {
   baseUrl?: string;
   timeout?: number;
+}
+
+export interface CalldataResponse {
+  calldata: number[];
 }
 
 export class TheorosSDK {

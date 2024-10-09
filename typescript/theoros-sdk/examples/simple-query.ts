@@ -1,4 +1,4 @@
-import { TheorosSDK, AssetClass, UniqueVariant } from "@pragma/theoros-sdk";
+import { TheorosSDK } from "@pragma/theoros-sdk";
 
 (async () => {
   const sdk = new TheorosSDK({
