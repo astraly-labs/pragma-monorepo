@@ -6,7 +6,10 @@ use anyhow::bail;
 use starknet::core::types::Felt;
 use tokio::sync::RwLock;
 
-use crate::types::hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent};
+use crate::types::{
+    hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent},
+    pragma::calldata::ValidatorSignature,
+};
 
 // TODO: make this code generic
 
@@ -97,5 +100,30 @@ impl ValidatorCheckpointStorage {
             }
         }
         false
+    }
+
+    pub async fn match_validators_with_signatures(
+        &self,
+        validators: &[Felt],
+    ) -> anyhow::Result<Vec<ValidatorSignature>> {
+        let checkpoints = self.0.read().await;
+
+        let validator_indices: HashMap<_, _> = validators.iter().enumerate().map(|(i, v)| (*v, i as u8)).collect();
+
+        // Convert checkpoints into signatures with correct indices
+        let signers: anyhow::Result<Vec<_>> = checkpoints
+            .iter()
+            .map(|((validator, _), signed_checkpoint)| {
+                validator_indices
+                    .get(validator)
+                    .map(|&index| ValidatorSignature {
+                        validator_index: index,
+                        signature: signed_checkpoint.signature.clone(),
+                    })
+                    .ok_or_else(|| anyhow::anyhow!("Validator not found: {}", validator))
+            })
+            .collect();
+
+        signers
     }
 }

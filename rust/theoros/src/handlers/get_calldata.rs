@@ -1,3 +1,4 @@
+use anyhow::anyhow;
 use axum::extract::{Query, State};
 use axum::Json;
 use pragma_feeds::{Feed, FeedType};
@@ -6,11 +7,14 @@ use utoipa::{IntoParams, ToResponse, ToSchema};
 
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
-use crate::types::hyperlane::DispatchUpdate;
+use crate::hyperlane::calls::HyperlaneClient;
+use crate::storage::ValidatorCheckpointStorage;
+use crate::types::hyperlane::{DispatchUpdate, SignedCheckpointWithMessageId};
 use crate::types::pragma::calldata::{HyperlaneMessage, Payload, ValidatorSignature};
 use crate::types::pragma::constants::HYPERLANE_VERSION;
 use crate::AppState;
 
+use ethers::types::Address;
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
 pub struct GetCalldataQuery {}
 
@@ -60,17 +64,22 @@ pub async fn get_calldata(
         .await
         .map_err(|_| GetCalldataError::FailedToRetrieveEvent)?
         .unwrap();
+    let hyperlane_contract_address: Address = "0x8bA20dB35218bEF1c33Ae6bd129a07f157c71B2D".parse::<Address>().unwrap(); // TODO: store the evm compatible contract address somewhere
 
     let num_validators = checkpoints.keys().len();
-    let signers: Vec<ValidatorSignature> = checkpoints
-        .iter()
-        .map(|((_, _), signed_checkpoint)| {
-            ValidatorSignature {
-                validator_index: 0, // TODO: fetch index from storage
-                signature: signed_checkpoint.signature.clone(),
-            }
-        })
-        .collect();
+
+    let client = HyperlaneClient::new(hyperlane_contract_address)
+        .await
+        .map_err(|_| GetCalldataError::FailedToCreateHyperlaneClient)?;
+
+    let validators = client.get_validators().await.map_err(|_| GetCalldataError::FailedToFetchOnchainValidators)?;
+
+    let signers = state
+        .storage
+        .checkpoints()
+        .match_validators_with_signatures(&validators)
+        .await
+        .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
     let (first_validator, checkpoint_infos) = checkpoints.iter().next().unwrap();
 

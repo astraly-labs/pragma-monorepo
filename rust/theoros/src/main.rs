@@ -1,6 +1,7 @@
 mod errors;
 mod extractors;
 mod handlers;
+mod hyperlane;
 mod rpc;
 mod services;
 mod storage;

@@ -31,7 +31,7 @@ diesel = { version = "2.2.3", features = [
   "serde_json",
 ] }
 env_logger = "0.11.5"
-alloy = { version = "0.3", features = ["full"] }
+alloy = { version = "0.4.1", features = ["full"] }
 eyre = "0.6.12"
 futures = { version = "0.3.30", features = ["std"] }
 futures-util = "0.3.30"
@@ -76,6 +76,8 @@ rusoto_core = "0.48.0"
 lazy_static = "1.5.0"
 num-bigint = "0.4"
 num-traits = "0.2"
+ethers = { version = "2.0.11", features = ["abigen"] }
+
 
 
 # Apibara DNA (indexing)
