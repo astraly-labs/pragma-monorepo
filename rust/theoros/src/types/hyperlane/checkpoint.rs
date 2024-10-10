@@ -8,7 +8,7 @@ use super::SignedType;
 pub type SignedCheckpointWithMessageId = SignedType<CheckpointWithMessageId>;
 
 /// A Hyperlane (checkpoint, messageId) tuple
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct CheckpointWithMessageId {
     /// existing Hyperlane checkpoint struct
     pub checkpoint: Checkpoint,
@@ -17,14 +17,14 @@ pub struct CheckpointWithMessageId {
 }
 
 /// An Hyperlane checkpoint
-#[derive(Copy, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Checkpoint {
     /// The merkle tree hook address
     pub merkle_tree_hook_address: U256,
     /// The mailbox / merkle tree hook domain
     pub mailbox_domain: u32,
     /// The checkpointed root
-    pub root: U256,
+    pub root: String,
     /// The index of the checkpoint
     pub index: u32,
 }

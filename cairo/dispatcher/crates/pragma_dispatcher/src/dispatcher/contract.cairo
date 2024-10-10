@@ -154,7 +154,7 @@ pub mod PragmaDispatcher {
         /// of feed ids.
         ///
         /// The updates are dispatched through a Message, which format is:
-        ///   - [u16] number of feeds updated,
+        ///   - [u8] number of feeds updated,
         ///   - [X bytes] update per message. The number of bytes sent depends
         ///     for each type of asset_class->feed_type.
         ///     Check the Pragma documentation for more information.
@@ -176,11 +176,11 @@ pub mod PragmaDispatcher {
 
             // [Effect] Add the number of feeds to update to the message
             let mut update_message = BytesTrait::new_empty();
-            let nb_feeds_to_update: u16 = match feed_ids.len().try_into() {
+            let nb_feeds_to_update: u8 = match feed_ids.len().try_into() {
                 Option::Some(v) => v,
                 Option::None(()) => panic_with_felt252(errors::TOO_MUCH_UPDATES)
             };
-            update_message.append_u16(nb_feeds_to_update);
+            update_message.append_u8(nb_feeds_to_update);
 
             // [Effect] For each feed, add the update to the message
             for feed_id in feed_ids {

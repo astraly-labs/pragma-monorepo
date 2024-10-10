@@ -39,7 +39,11 @@ impl HyperlaneService {
 
                 if let Some(checkpoint_value) = value {
                     tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
-                    self.state.storage.checkpoints().add(validator, checkpoint_value).await?;
+                    self.state
+                        .storage
+                        .checkpoints()
+                        .add(validator, checkpoint_value.value.message_id, checkpoint_value)
+                        .await?;
                 } else {
                     tracing::error!("No checkpoint value found");
                 }

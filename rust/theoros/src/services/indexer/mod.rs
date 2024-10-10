@@ -13,7 +13,8 @@ use tokio::task::JoinSet;
 use pragma_utils::{conversions::apibara::felt_as_apibara_field, services::Service};
 
 use crate::{
-    types::hyperlane::{DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
+    storage::DispatchUpdateInfos,
+    types::hyperlane::{DispatchEvent, FromStarknetEventData, HasFeedId, ValidatorAnnouncementEvent},
     AppState, HYPERLANE_CORE_CONTRACT_ADDRESS,
 };
 
@@ -89,7 +90,14 @@ impl IndexerService {
 
         loop {
             match stream.try_next().await {
-                Ok(Some(response)) => self.process_batch(response).await?,
+                Ok(Some(response)) => {
+                    self.process_batch(response).await?;
+                    self.state
+                        .storage
+                        .cached_event()
+                        .process_cached_events(&self.state.storage.checkpoints(), &self.state.storage.dispatch_events())
+                        .await?;
+                }
                 Ok(None) => continue,
                 Err(e) => bail!("Error while streaming indexed batch: {}", e),
             }
@@ -129,7 +137,29 @@ impl IndexerService {
                 tracing::info!("Received a DispatchEvent");
                 let dispatch_event = DispatchEvent::from_starknet_event_data(event.data.into_iter())
                     .context("Failed to parse DispatchEvent")?;
-                self.state.storage.dispatch_events().add(dispatch_event).await;
+
+                tracing::info!("Checking checkpoint storage for correspondence");
+                let message_id = dispatch_event.format_message();
+
+                for update in dispatch_event.message.body.updates.iter() {
+                    let feed_id = update.feed_id();
+                    let dispatch_update_infos = DispatchUpdateInfos {
+                        update: update.clone(),
+                        emitter_address: dispatch_event.message.header.sender.to_string(),
+                        emitter_chain_id: dispatch_event.message.header.origin,
+                        nonce: dispatch_event.message.header.nonce,
+                    };
+                    // Check if there's a corresponding checkpoint
+                    if self.state.storage.checkpoints().contains_message_id(message_id).await {
+                        tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
+                        // If found, store the event directly
+                        self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos).await?;
+                    } else {
+                        tracing::info!("No checkpoint found, caching dispatch event");
+                        // If no checkpoint found, add to cache
+                        self.state.storage.cached_event().add_event(message_id, &dispatch_event).await;
+                    }
+                }
             }
             selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {
                 tracing::info!("Received a ValidatorAnnouncementEvent");

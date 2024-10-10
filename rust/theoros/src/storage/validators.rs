@@ -1,11 +1,15 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
+use alloy_primitives::U256;
 use anyhow::bail;
 use starknet::core::types::Felt;
 use tokio::sync::RwLock;
 
-use crate::types::hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent};
+use crate::types::{
+    hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent},
+    pragma::calldata::ValidatorSignature,
+};
 
 // TODO: make this code generic
 
@@ -57,7 +61,7 @@ impl ValidatorStorage {
 
 /// Contains a mapping between the validators and their latest fetched checkpoint.
 #[derive(Debug, Default)]
-pub struct ValidatorCheckpointStorage(RwLock<HashMap<Felt, SignedCheckpointWithMessageId>>);
+pub struct ValidatorCheckpointStorage(RwLock<HashMap<(Felt, U256), SignedCheckpointWithMessageId>>);
 
 impl ValidatorCheckpointStorage {
     pub fn new() -> Self {
@@ -65,19 +69,61 @@ impl ValidatorCheckpointStorage {
     }
 
     /// Adds or updates the [SignedCheckpointWithMessageId] for the given validator
-    pub async fn add(&self, validator: Felt, checkpoint: SignedCheckpointWithMessageId) -> anyhow::Result<()> {
+    pub async fn add(
+        &self,
+        validator: Felt,
+        message_id: U256,
+        checkpoint: SignedCheckpointWithMessageId,
+    ) -> anyhow::Result<()> {
         let mut all_checkpoints = self.0.write().await;
-        all_checkpoints.insert(validator, checkpoint);
+        all_checkpoints.insert((validator, message_id), checkpoint);
         Ok(())
     }
 
     /// Returns all the checkpoints for each validator
-    pub async fn all(&self) -> HashMap<Felt, SignedCheckpointWithMessageId> {
+    pub async fn all(&self) -> HashMap<(Felt, U256), SignedCheckpointWithMessageId> {
         self.0.read().await.clone()
     }
 
-    /// Returns the checkpoint for the given validator
-    pub async fn get(&self, validator: Felt) -> Option<SignedCheckpointWithMessageId> {
-        self.0.read().await.get(&validator).cloned()
+    /// Returns the checkpoint for the given validator and message Id
+    pub async fn get(&self, validator: Felt, message_id: U256) -> Option<SignedCheckpointWithMessageId> {
+        self.0.read().await.get(&(validator, message_id)).cloned()
+    }
+
+    // Check the existence of a checkpoint for a given message_id
+    pub async fn contains_message_id(&self, message_id: U256) -> bool {
+        let all_checkpoints = self.0.read().await;
+
+        for checkpoint in all_checkpoints.values() {
+            if checkpoint.value.message_id == message_id {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub async fn match_validators_with_signatures(
+        &self,
+        validators: &[Felt],
+    ) -> anyhow::Result<Vec<ValidatorSignature>> {
+        let checkpoints = self.0.read().await;
+
+        let validator_indices: HashMap<_, _> = validators.iter().enumerate().map(|(i, v)| (*v, i as u8)).collect();
+
+        // Convert checkpoints into signatures with correct indices
+        let signers: anyhow::Result<Vec<_>> = checkpoints
+            .iter()
+            .map(|((validator, _), signed_checkpoint)| {
+                validator_indices
+                    .get(validator)
+                    .map(|&index| ValidatorSignature {
+                        validator_index: index,
+                        signature: signed_checkpoint.signature.clone(),
+                    })
+                    .ok_or_else(|| anyhow::anyhow!("Validator not found: {}", validator))
+            })
+            .collect();
+
+        signers
     }
 }

@@ -1,6 +1,9 @@
+use alloy::primitives::keccak256;
+use alloy_primitives::{hex, U256 as alloy_U256};
 use anyhow::{Context, Result};
 use apibara_core::starknet::v1alpha2::FieldElement;
-use bigdecimal::BigDecimal;
+use bigdecimal::num_bigint::ToBigInt;
+use bigdecimal::{BigDecimal, ToPrimitive};
 use pragma_feeds::{AssetClass, FeedType};
 use starknet::core::types::U256;
 
@@ -66,6 +69,51 @@ impl FromStarknetEventData for DispatchEvent {
 
         let dispatch = Self { sender, destination_domain, recipient_address, message };
         Ok(dispatch)
+    }
+}
+
+impl DispatchEvent {
+    pub fn format_message(&self) -> alloy_U256 {
+        let mut input = Vec::new();
+
+        // Formatting header part
+        input.push(self.message.header.version);
+        input.extend_from_slice(&self.message.header.nonce.to_be_bytes());
+        input.extend_from_slice(&self.message.header.origin.to_be_bytes());
+        input.extend_from_slice(&self.message.header.sender.low().to_be_bytes());
+        input.extend_from_slice(&self.message.header.sender.high().to_be_bytes());
+        input.extend_from_slice(&self.message.header.destination.to_be_bytes());
+        input.extend_from_slice(&self.message.header.recipient.low().to_be_bytes());
+        input.extend_from_slice(&self.message.header.recipient.high().to_be_bytes());
+
+        // Formatting body part
+        input.extend_from_slice(&self.message.body.nb_updated.to_be_bytes());
+
+        for update in &self.message.body.updates {
+            match update {
+                DispatchUpdate::SpotMedian { feed_id: _, update: spot_update } => {
+                    // Append pair_id (U256 split into high and low parts)
+                    input.extend_from_slice(&spot_update.pair_id.low().to_be_bytes());
+                    input.extend_from_slice(&spot_update.pair_id.high().to_be_bytes());
+
+                    // Scale price by 10^decimals and convert to u128
+                    let scaled_price = (spot_update.price.clone()
+                        * BigDecimal::from(10u32.pow(spot_update.metadata.decimals)))
+                    .to_u128()
+                    .unwrap_or(0);
+
+                    // Append scaled price, volume, decimals, timestamp, and num_sources_aggregated
+                    input.extend_from_slice(&scaled_price.to_be_bytes());
+                    input.extend_from_slice(&spot_update.volume.to_be_bytes());
+                    input.extend_from_slice(&spot_update.metadata.decimals.to_be_bytes());
+                    input.extend_from_slice(&spot_update.metadata.timestamp.to_be_bytes());
+                    input.extend_from_slice(&spot_update.metadata.num_sources_aggregated.to_be_bytes());
+                }
+            }
+        }
+
+        let hash = keccak256(&input);
+        alloy_U256::from_be_bytes(<[u8; 32]>::try_from(hash.as_slice()).expect("Hash should be 32 bytes"))
     }
 }
 
@@ -138,29 +186,65 @@ impl FromStarknetEventData for DispatchMessageBody {
     }
 }
 
+pub trait HasFeedId {
+    fn feed_id(&self) -> String;
+}
+
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub enum DispatchUpdate {
-    SpotMedian(SpotMedianUpdate),
+    SpotMedian { update: SpotMedianUpdate, feed_id: String },
+}
+
+impl HasFeedId for DispatchUpdate {
+    fn feed_id(&self) -> String {
+        match self {
+            DispatchUpdate::SpotMedian { feed_id, update: _ } => feed_id.clone(),
+        }
+    }
 }
 
 impl FromStarknetEventData for DispatchUpdate {
     fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
         // Asset class is always Crypto for now.
-        #[allow(unused)]
-        let asset_class =
-            AssetClass::try_from(u8::from_field_bytes(data.next().context("Missing asset class")?.to_bytes()))?;
+        let raw_asset_class = u8::from_field_bytes(data.next().context("Missing asset class")?.to_bytes());
+        let asset_class = AssetClass::try_from(raw_asset_class)?;
 
-        let feed_type =
-            FeedType::try_from(u16::from_field_bytes(data.next().context("Missing data type")?.to_bytes()))?;
+        let raw_feed_type = u16::from_field_bytes(data.next().context("Missing data type")?.to_bytes());
+        let feed_type = FeedType::try_from(raw_feed_type)?;
+
+        let pair_id_low = u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes());
+        let pair_id_high = u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes());
+
+        // Create the feed ID string
+        let feed_id = build_feed_id(raw_asset_class, raw_feed_type, pair_id_high, pair_id_low);
+
+        let pair_id = U256::from_words(
+            u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes()),
+            u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes()),
+        );
 
         let update = match feed_type {
-            FeedType::SpotMedian => DispatchUpdate::SpotMedian(SpotMedianUpdate::from_starknet_event_data(&mut data)?),
+            FeedType::SpotMedian => {
+                let mut res = SpotMedianUpdate::from_starknet_event_data(&mut data)?;
+                res.pair_id = pair_id;
+                DispatchUpdate::SpotMedian { update: res, feed_id }
+            }
             _ => unimplemented!("TODO: Implement the other updates"),
         };
 
         Ok(update)
     }
+}
+
+fn build_feed_id(raw_asset_class: u8, raw_feed_type: u16, pair_id_high: u128, pair_id_low: u128) -> String {
+    let mut bytes: Vec<u8> = Vec::with_capacity(35);
+    bytes.push(raw_asset_class);
+    bytes.extend_from_slice(&raw_feed_type.to_be_bytes());
+    bytes.extend_from_slice(&pair_id_high.to_be_bytes());
+    bytes.extend_from_slice(&pair_id_low.to_be_bytes());
+    let feed_id = format!("0x{}", hex::encode(&bytes));
+    feed_id
 }
 
 #[derive(Debug, Clone)]
@@ -181,11 +265,6 @@ pub struct SpotMedianUpdate {
 
 impl FromStarknetEventData for SpotMedianUpdate {
     fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let pair_id = U256::from_words(
-            u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes()),
-            u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes()),
-        );
-
         let price_felt = data.next().context("Missing price")?;
         let volume = u128::from_field_bytes(data.next().context("Missing volume")?.to_bytes());
         let decimals = u32::from_field_bytes(data.next().context("Missing decimals")?.to_bytes());
@@ -197,7 +276,42 @@ impl FromStarknetEventData for SpotMedianUpdate {
         let num_sources_aggregated =
             u32::from_field_bytes(data.next().context("Missing sources aggregated")?.to_bytes());
 
-        Ok(Self { pair_id, metadata: MetadataUpdate { decimals, timestamp, num_sources_aggregated }, price, volume })
+        // We set 0 for the pair_id, will be filled at the upper level
+        Ok(Self {
+            pair_id: U256::from(0_u8),
+            metadata: MetadataUpdate { decimals, timestamp, num_sources_aggregated },
+            price,
+            volume,
+        })
+    }
+}
+
+impl SpotMedianUpdate {
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // Serialize pair_id (U256 is 32 bytes)
+        bytes.extend_from_slice(&self.pair_id.low().to_be_bytes());
+        bytes.extend_from_slice(&self.pair_id.high().to_be_bytes());
+        // Serialize metadata
+        bytes.extend_from_slice(&self.metadata.timestamp.to_be_bytes());
+        bytes.extend_from_slice(&self.metadata.num_sources_aggregated.to_be_bytes());
+        bytes.extend_from_slice(&self.metadata.decimals.to_be_bytes());
+
+        let scaled_price =
+            (self.price.clone() * BigDecimal::from(10u64.pow(18))).to_bigint().expect("Failed to convert to BigInt");
+        let price_bytes = scaled_price.to_bytes_be().1; // get the bytes in big-endian format
+        let mut padded_price_bytes = vec![0u8; 32]; // Initialize with zeros
+        if price_bytes.len() <= 32 {
+            padded_price_bytes[32 - price_bytes.len()..].copy_from_slice(&price_bytes);
+        } else {
+            panic!("Price too large to fit in 32 bytes");
+        }
+        bytes.extend_from_slice(&padded_price_bytes);
+
+        bytes.extend_from_slice(&self.volume.to_be_bytes());
+
+        bytes
     }
 }
 
@@ -257,7 +371,7 @@ mod tests {
         assert_eq!(body.updates.len(), 1);
 
         match &body.updates[0] {
-            DispatchUpdate::SpotMedian(update) => {
+            DispatchUpdate::SpotMedian { feed_id: _, update } => {
                 assert_eq!(update.pair_id, U256::from(9_u32));
                 assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
                 assert_eq!(update.volume, 0_u128);

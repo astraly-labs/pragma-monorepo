@@ -1,29 +1,28 @@
+pub mod cache;
 pub mod event;
 pub mod validators;
 
+use crate::storage::cache::EventCache;
 pub use event::*;
-pub use validators::*;
-
 use std::collections::HashSet;
+pub use validators::*;
 
 use starknet::core::types::Felt;
 
-use crate::{
-    rpc::{HyperlaneCalls, PragmaWrapperCalls, StarknetRpc},
-    types::hyperlane::DispatchEvent,
-};
+use crate::rpc::{HyperlaneCalls, PragmaWrapperCalls, StarknetRpc};
 
 /// Theoros storage that contains:
 ///   * a set of all available data feeds,
-///   * an events storage containing the most recents [DispatchEvent] events indexed,
 ///   * a mapping of all the validators and their fetchers.
 ///   * a mapping of all the validators and their latest fetched checkpoints.
+///   * an events storage containing the most recents [DispatchEvent] events indexed,
 #[derive(Default)]
 pub struct TheorosStorage {
     data_feeds: HashSet<String>,
     validators: ValidatorStorage,
     checkpoints: ValidatorCheckpointStorage,
-    dispatch_events: EventStorage<DispatchEvent>,
+    cached_events: EventCache,
+    dispatch_events: EventStorage,
 }
 
 impl TheorosStorage {
@@ -49,7 +48,9 @@ impl TheorosStorage {
             rpc_client.get_announced_storage_locations(hyperlane_address, &initial_validators).await?;
         theoros_storage.validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
-        let supported_data_feeds = rpc_client.get_data_feeds(pragma_wrapper_address).await?;
+        let feed_registry_address = rpc_client.get_pragma_feed_registry_address(pragma_wrapper_address).await?;
+
+        let supported_data_feeds = rpc_client.get_data_feeds(&feed_registry_address).await?;
         theoros_storage.data_feeds = supported_data_feeds.into_iter().collect();
         Ok(theoros_storage)
     }
@@ -66,7 +67,11 @@ impl TheorosStorage {
         &self.checkpoints
     }
 
-    pub fn dispatch_events(&self) -> &EventStorage<DispatchEvent> {
+    pub fn dispatch_events(&self) -> &EventStorage {
         &self.dispatch_events
+    }
+
+    pub fn cached_event(&self) -> &EventCache {
+        &self.cached_events
     }
 }
