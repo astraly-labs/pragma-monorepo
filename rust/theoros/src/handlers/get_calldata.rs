@@ -10,7 +10,7 @@ use crate::extractors::PathExtractor;
 use crate::hyperlane::calls::HyperlaneClient;
 use crate::storage::ValidatorCheckpointStorage;
 use crate::types::hyperlane::{DispatchUpdate, SignedCheckpointWithMessageId};
-use crate::types::pragma::calldata::{HyperlaneMessage, Payload, ValidatorSignature};
+use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload, ValidatorSignature};
 use crate::types::pragma::constants::HYPERLANE_VERSION;
 use crate::AppState;
 
@@ -20,7 +20,7 @@ pub struct GetCalldataQuery {}
 
 #[derive(Debug, Default, Serialize, Deserialize, ToResponse, ToSchema)]
 pub struct GetCalldataResponse {
-    pub calldata: Vec<String>,
+    pub calldata: Vec<u8>,
 }
 
 #[utoipa::path(
@@ -109,6 +109,7 @@ pub async fn get_calldata(
         emitter_address: event.emitter_address,
         payload,
     };
+    let response  = GetCalldataResponse {calldata: hyperlane_message.as_bytes()};
 
-    Ok(Json(GetCalldataResponse::default()))
+    Ok(Json(response))
 }

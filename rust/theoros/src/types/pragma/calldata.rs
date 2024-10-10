@@ -1,6 +1,6 @@
 use alloy::signers::Signature;
 
-trait AsCalldata {
+pub trait AsCalldata {
     fn as_bytes(&self) -> Vec<u8>;
 }
 
