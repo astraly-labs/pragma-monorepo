@@ -24,9 +24,7 @@ pragma_oracle:
         - "STARKNET"
         - "PROPELLER"
         - "KUCOIN"
-        - "BINANCE"
         - "HUOBI"
-        - "BYBIT"
         - "INDEXCOOP"
         - "MEXC"
         - "GATEIO"
@@ -36,7 +34,7 @@ pragma_oracle:
 # Configuration for the Pragma Dispatcher Cairo Contracts
 pragma_dispatcher:
   pragma_oracle_address: "0x56c94b626e02c82bfe871b06181bdc56adcd78f4ce722fe3f7ae6845795d8a8"
-  hyperlane_mailbox_address: "0x6a2f7a45b29fc7c9854a6fe5228bdff5311884c804cb6b46553ba4cde235f1e"
+  hyperlane_mailbox_address: "0x5bfb1a565a1fa2eb33c5d8e587a7aeb5e6846d3aadf9fecb529ace1e3457096"
 
 # Configuration for the Pragma Solidity EVM contract
 # TODO: Adapt those values
