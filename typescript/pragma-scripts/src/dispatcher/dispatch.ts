@@ -3,6 +3,7 @@ import type { Contract } from "starknet";
 import {
   buildAccount,
   Deployer,
+  ensureSuccess,
   getDeployedAddress,
   STARKNET_CHAINS,
 } from "pragma-utils";
@@ -32,15 +33,21 @@ function parseCommandLineArguments(): OptionValues {
   return options;
 }
 
-async function dispatchFeeds(pragmaDispatcher: Contract, feedIds: string[]) {
+async function dispatchFeeds(
+  pragmaDispatcher: Contract,
+  account: Deployer,
+  feedIds: string[],
+) {
   try {
     console.log(`⏳ Dispatching feeds: ${feedIds.join(", ")}...`);
-    const result = await pragmaDispatcher.call("dispatch", [feedIds]);
+    const invoke = await pragmaDispatcher.invoke("dispatch", [feedIds]);
+    await account.waitForTransaction(invoke.transaction_hash);
 
+    const receipt = await account.getTransactionReceipt(
+      invoke.transaction_hash,
+    );
+    await ensureSuccess(receipt, account.provider);
     console.log("\n🧩 Successfully called dispatch method!");
-    console.log("📨 Hyperlane Message ID:", result.toString());
-
-    return result;
   } catch (error) {
     console.error(`Error calling dispatch method:`, error);
     throw error;
@@ -62,7 +69,7 @@ async function main() {
   );
 
   const pragmaDispatcher = await account.loadContract(pragmaDispatcherAddress);
-  const hyperlaneMessageId = await dispatchFeeds(pragmaDispatcher, feedIds);
+  await dispatchFeeds(pragmaDispatcher, account, feedIds);
   console.log("\n✅ Dispatch call completed!");
 }
 
