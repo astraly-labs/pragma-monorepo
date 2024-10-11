@@ -10,7 +10,7 @@ import "./HyperlaneTestUtils.t.sol";
 import {DataFeedType} from "../../src/interfaces/IPragma.sol";
 
 abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
-    uint16 constant SOURCE_EMITTER_CHAIN_ID = 0x1;
+    uint32 constant SOURCE_EMITTER_CHAIN_ID = 0x1;
     bytes32 constant SOURCE_EMITTER_ADDRESS = 0x03dA250675D8c2BB7cef7E1b7FDFe17aA4D5752Ed82A9333e4F9a12b22E521aa;
 
     uint256 constant SINGLE_UPDATE_FEE_IN_WEI = 1;
@@ -19,7 +19,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
     uint64 constant MOCK_TIMESTAMP_VALUE = 0;
 
     function setUpPragma(address hyperlane) public returns (address) {
-        uint16[] memory emitterChainIds = new uint16[](1);
+        uint32[] memory emitterChainIds = new uint32[](1);
         bytes32[] memory emitterAddresses = new bytes32[](1);
 
         emitterChainIds[0] = SOURCE_EMITTER_CHAIN_ID;
@@ -55,7 +55,7 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
     struct MerkleUpdateConfig {
         uint8 depth;
         uint8 numSigners;
-        uint16 source_chain_id;
+        uint32 source_chain_id;
         bytes32 source_emitter_address;
         bool brokenSignature;
     }
