@@ -31,7 +31,6 @@ lazy_static::lazy_static! {
 pub struct IndexerService {
     state: AppState,
     uri: Uri,
-    apibara_api_key: String,
     stream_config: Configuration<Filter>,
 }
 
@@ -49,7 +48,7 @@ impl Service for IndexerService {
 }
 
 impl IndexerService {
-    pub fn new(state: AppState, apibara_uri: &str, apibara_api_key: String) -> Result<Self> {
+    pub fn new(state: AppState, apibara_uri: &str) -> Result<Self> {
         let uri = Uri::from_str(apibara_uri)?;
 
         let stream_config = Configuration::<Filter>::default()
@@ -70,7 +69,7 @@ impl IndexerService {
                     .build()
             });
 
-        let indexer_service = Self { state, uri, apibara_api_key, stream_config };
+        let indexer_service = Self { state, uri, stream_config };
         Ok(indexer_service)
     }
 
@@ -80,7 +79,6 @@ impl IndexerService {
         config_client.send(self.stream_config.clone()).await.context("Sending indexing stream configuration")?;
 
         let mut stream = ClientBuilder::default()
-            .with_bearer_token(Some(self.apibara_api_key.clone()))
             .connect(self.uri.clone())
             .await
             .map_err(|e| anyhow!("Error while connecting to Apibara DNA: {}", e))?

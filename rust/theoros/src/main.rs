@@ -36,12 +36,15 @@ const APIBARA_DNA_URL: &str = "https://devnet.pragma.a5a.ch";
 const SERVER_HOST: &str = "0.0.0.0";
 const SERVER_PORT: u16 = 3000;
 
-const PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt =
-    Felt::from_hex_unchecked("0x42d0ccae2cd3647df3bf9379d74efc93851370b12338a5aa6a676e381396b5");
+const PRAGMA_DISPATCHER_CONTRACT_ADDRESS: Felt =
+    Felt::from_hex_unchecked("0x04d997c57f63d509f483927ce74135a4e12de834144d9e90044ac03f6024267e");
 const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt =
-    Felt::from_hex_unchecked("0x41c20175af14a0bfebfc9ae2f3bda29230a0bceb551844197d9f46faf76d6da");
+    Felt::from_hex_unchecked("0x05bfb1a565a1fa2eb33c5d8e587a7aeb5e6846d3aadf9fecb529ace1e3457096");
 const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt =
-    Felt::from_hex_unchecked("0xb9a75496355e223652c40fe50d45b5f39b86d3cc5c4f7aed44be6c7f6a8b4c");
+    Felt::from_hex_unchecked("0x01520c48d7aced426c41e8b71587add7fb64c9945115d3ea677a49f45ddf81e3");
+
+const HYPERLANE_VALIDATOR_ANNOUNCE: Felt = 
+    Felt::from_hex_unchecked("0x0022245997c5f4f5e6eb13764be91de00b4299147ce7f516dbad925c7aeb69d3");
 
 #[derive(Clone)]
 pub struct AppState {
@@ -61,9 +64,9 @@ async fn main() -> Result<()> {
 
     // New storage + initialization
     let theoros_storage =
-        TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_WRAPPER_CONTRACT_ADDRESS, &HYPERLANE_CORE_CONTRACT_ADDRESS)
+        TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_DISPATCHER_CONTRACT_ADDRESS, &HYPERLANE_VALIDATOR_ANNOUNCE)
             .await?;
-    // let theoros_storage = TheorosStorage::testing_state();
+    let theoros_storage = TheorosStorage::testing_state();
 
     // Theoros metrics
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
@@ -74,8 +77,7 @@ async fn main() -> Result<()> {
         metrics_registry: metrics_service.registry(),
     };
 
-    let apibara_api_key = std::env::var("APIBARA_API_KEY").context("APIBARA_API_KEY not found.")?;
-    let indexer_service = IndexerService::new(state.clone(), APIBARA_DNA_URL, apibara_api_key)?;
+    let indexer_service = IndexerService::new(state.clone(), APIBARA_DNA_URL)?;
 
     let api_service = ApiService::new(state.clone(), SERVER_HOST, SERVER_PORT);
 
