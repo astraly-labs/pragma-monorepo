@@ -18,11 +18,17 @@ export type Chain =
   | "optimism"
   | "base";
 
+export type StarknetChain = Extract<
+  Chain,
+  "starknet" | "starknetSepolia" | "pragmaDevnet"
+>;
 export const STARKNET_CHAINS: Chain[] = [
   "starknet",
   "starknetSepolia",
   "pragmaDevnet",
 ];
+
+export type EvmChain = Exclude<Chain, StarknetChain>;
 export const EVM_CHAINS: Chain[] = [
   "mainnet",
   "sepolia",

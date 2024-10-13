@@ -26,7 +26,7 @@ pub trait IPragmaDispatcher<TContractState> {
 
     /// Dispatch updates through the Hyperlane mailbox for the specifieds
     /// [Span<FeedId>] and return the ID of the message dispatched.
-    fn dispatch(self: @TContractState, feed_ids: Span<FeedId>) -> HyperlaneMessageId;
+    fn dispatch(ref self: TContractState, feed_ids: Span<FeedId>) -> HyperlaneMessageId;
 }
 
 #[starknet::interface]
@@ -44,5 +44,5 @@ pub trait IPragmaFeedsRegistryWrapper<TContractState> {
 #[starknet::interface]
 pub trait IHyperlaneMailboxWrapper<TContractState> {
     /// Calls dispatch from the Hyperlane Mailbox contract.
-    fn call_dispatch(self: @TContractState, message_body: Bytes) -> HyperlaneMessageId;
+    fn call_dispatch(ref self: TContractState, message_body: Bytes) -> HyperlaneMessageId;
 }

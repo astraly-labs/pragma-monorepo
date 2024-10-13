@@ -170,7 +170,7 @@ pub mod PragmaDispatcher {
         ///     This is done in the [add_feed_update_to_message] function.
         ///
         ///  3. Send the updates using the [dispatch] Hyperlane function.
-        fn dispatch(self: @ContractState, feed_ids: Span<FeedId>) -> HyperlaneMessageId {
+        fn dispatch(ref self: ContractState, feed_ids: Span<FeedId>) -> HyperlaneMessageId {
             // [Check] Assert that all feeds id are registered in the Registry
             self.assert_all_feeds_exists(feed_ids.clone());
 
@@ -271,7 +271,7 @@ pub mod PragmaDispatcher {
 
     impl HyperlaneMailboxWrapper of IHyperlaneMailboxWrapper<ContractState> {
         /// Calls dispatch from the Hyperlane Mailbox contract.
-        fn call_dispatch(self: @ContractState, message_body: Bytes) -> HyperlaneMessageId {
+        fn call_dispatch(ref self: ContractState, message_body: Bytes) -> HyperlaneMessageId {
             self
                 .hyperlane_mailbox
                 .read()

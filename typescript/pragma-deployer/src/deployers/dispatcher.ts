@@ -1,8 +1,16 @@
 import fs from "fs";
 import path from "path";
 
-import { type Deployer } from "./interface";
-import { deployStarknetContract, buildStarknetAccount } from "../starknet";
+import { CallData, type Contract } from "starknet";
+import {
+  buildAccount,
+  Deployer,
+  STARKNET_CHAINS,
+  type Chain,
+  type StarknetChain,
+} from "pragma-utils";
+
+import { type ContractDeployer } from "./interface";
 import {
   loadConfig,
   type AssetClassRouter,
@@ -11,26 +19,23 @@ import {
   type FeedTypeRouter,
 } from "../config";
 import { FEEDS_CONFIG_FILE } from "../constants";
-import type { Account, Contract } from "starknet";
-import { STARKNET_CHAINS, type Chain } from "../chains";
 
-export class DispatcherDeployer implements Deployer {
+export class DispatcherDeployer implements ContractDeployer {
   readonly allowedChains: Chain[] = STARKNET_CHAINS;
-  readonly defaultChain: Chain = "starknet";
+  readonly defaultChain: StarknetChain = "starknet";
 
   async deploy(
     config: DeploymentConfig,
     deterministic: boolean,
-    chain?: Chain,
+    chain?: StarknetChain,
   ): Promise<void> {
     if (!chain) chain = this.defaultChain;
     if (!this.allowedChains.includes(chain)) {
       throw new Error(`⛔ Deployment to ${chain} is not supported.`);
     }
 
-    console.log(`🧩 Deploying Dispatcher to ${chain}...`);
     let feeds = loadConfig<FeedsConfig>(FEEDS_CONFIG_FILE);
-    let deployer = await buildStarknetAccount(chain);
+    let deployer = await buildAccount(chain);
     let deploymentInfo: any = {};
 
     // 0. Deploy feeds registry
@@ -72,50 +77,63 @@ export class DispatcherDeployer implements Deployer {
 
   /// Deploys the Pragma Feeds Registry and register all supported feeds.
   private async deployFeedsRegistry(
-    deployer: Account,
+    deployer: Deployer,
     feeds: FeedsConfig,
     deterministic: boolean,
   ): Promise<Contract> {
-    let feedsRegistry = await deployStarknetContract(
-      deployer,
+    console.log(`⏳ Deploying Pragma Feeds Registry...`);
+    const [feedsRegistry, calls] = await deployer.deferContract(
       "dispatcher",
-      `pragma_feeds_registry_PragmaFeedsRegistry`,
-      [deployer.address],
+      "pragma_feeds_registry_PragmaFeedsRegistry",
+      CallData.compile({ deployer: deployer.address }),
       deterministic,
     );
+    let response = await deployer.execute([...calls]);
+    await deployer.waitForTransaction(response.transaction_hash);
+    console.log(
+      `🧩 Pragma Feeds Registry deployed at ${feedsRegistry.address}`,
+    );
+
+    console.log("⏳ Registering all feed ids in the config...");
     for (const feed of feeds.feeds) {
       let tx = await feedsRegistry.invoke("add_feed", [feed.id]);
       await deployer.waitForTransaction(tx.transaction_hash);
-      console.log("Registered", feed.name);
+      console.log("\tRegistered", feed.name);
     }
-    console.log("✅ Deployed the Pragma Feeds Registry");
+    console.log("🧩 All feeds registered!");
+    console.log("✅ Pragma Feeds Registry deployment complete!\n");
     return feedsRegistry;
   }
 
   /// Deploys the Pragma Dispatcher contract.
   private async deployDispatcher(
-    deployer: Account,
+    deployer: Deployer,
     feedsRegistryAddress: string,
     config: DeploymentConfig,
     deterministic: boolean,
   ): Promise<Contract> {
-    const dispatcher = await deployStarknetContract(
-      deployer,
+    console.log(`⏳ Deploying Pragma Dispatcher...`);
+    const [dispatcher, calls] = await deployer.deferContract(
       "dispatcher",
-      `pragma_dispatcher_PragmaDispatcher`,
-      [
-        deployer.address,
+      "pragma_dispatcher_PragmaDispatcher",
+      CallData.compile({
+        deployer: deployer.address,
         feedsRegistryAddress,
-        config.pragma_dispatcher.hyperlane_mailbox_address,
-      ],
+        hyperlaneMailboxAddress:
+          config.pragma_dispatcher.hyperlane_mailbox_address,
+      }),
       deterministic,
     );
+    let response = await deployer.execute([...calls]);
+    await deployer.waitForTransaction(response.transaction_hash);
+    console.log(`🧩 Pragma Dispatcher deployed at ${dispatcher.address}`);
+    console.log("✅ Pragma Dispatcher deployment complete!\n");
     return dispatcher;
   }
 
   /// Deploys all supported routers.
   private async deployAllRouters(
-    deployer: Account,
+    deployer: Deployer,
     config: DeploymentConfig,
     feeds: FeedsConfig,
     pragmaDispatcher: Contract,
@@ -135,20 +153,31 @@ export class DispatcherDeployer implements Deployer {
   }
 
   private async deployNewAssetClass(
-    deployer: Account,
+    deployer: Deployer,
     config: DeploymentConfig,
     asset_class: AssetClassRouter,
     pragmaDispatcher: Contract,
     deterministic: boolean,
   ): Promise<any> {
-    let assetRouter = await deployStarknetContract(
-      deployer,
+    console.log(`⏳ Deploying & registering ${asset_class.contract} router...`);
+    const [assetRouter, calls] = await deployer.deferContract(
       "dispatcher",
       `pragma_dispatcher_${asset_class.contract}`,
-      [deployer.address, asset_class.id],
+      CallData.compile({
+        deployer: deployer.address,
+        assetClassId: asset_class.id,
+      }),
       deterministic,
     );
+    let response = await deployer.execute([...calls]);
+    await deployer.waitForTransaction(response.transaction_hash);
+    console.log(
+      `🧩 ${asset_class.contract} router deployed at ${assetRouter.address}`,
+    );
 
+    console.log(
+      `⏳ Registering all feed types router of ${asset_class.contract}...`,
+    );
     let tx = await pragmaDispatcher.invoke("register_asset_class_router", [
       asset_class.id,
       assetRouter.address,
@@ -164,8 +193,10 @@ export class DispatcherDeployer implements Deployer {
         feed_type,
         deterministic,
       );
+      console.log("\tRegistered", feed_type.name);
     }
 
+    console.log(`✅ ${asset_class.contract} router deployment complete!`);
     return {
       address: assetRouter.address,
       feed_type_routers: feedTypeRouters,
@@ -173,19 +204,24 @@ export class DispatcherDeployer implements Deployer {
   }
 
   private async deployNewFeedType(
-    deployer: Account,
+    deployer: Deployer,
     config: DeploymentConfig,
     asset_class: Contract,
     feed_type: FeedTypeRouter,
     deterministic: boolean,
   ): Promise<string> {
-    const feedRouter = await deployStarknetContract(
-      deployer,
+    const [feedRouter, calls] = await deployer.deferContract(
       "dispatcher",
       `pragma_dispatcher_${feed_type.contract}`,
-      [config.pragma_dispatcher.pragma_oracle_address, feed_type.id],
+      CallData.compile({
+        pragmaOracleAddress: config.pragma_dispatcher.pragma_oracle_address,
+        feedTypeId: feed_type.id,
+      }),
       deterministic,
     );
+    let response = await deployer.execute([...calls]);
+    await deployer.waitForTransaction(response.transaction_hash);
+
     let tx = await asset_class.invoke("register_feed_type_router", [
       feed_type.id,
       feedRouter.address,
