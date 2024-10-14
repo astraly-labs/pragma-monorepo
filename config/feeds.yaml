@@ -3,6 +3,12 @@ feeds:
   - name: "BTC/USD: Spot Median"
     id: "0x4254432f555344"
 
+  - name: "BTC/EUR: Spot Median"
+    id: "0x4254432f455552"
+
+  - name: "WBTC/BTC: Spot Median"
+    id: "0x574254432f425443"
+
   - name: "ETH/USD: Spot Median"
     id: "0x4554482f555344"
 
