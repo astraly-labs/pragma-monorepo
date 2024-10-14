@@ -1,10 +1,49 @@
 # Contains the supported Feeds by Pragma.
 feeds:
   - name: "BTC/USD: Spot Median"
-    id: "18669995996566340"
+    id: "0x4254432f555344"
 
   - name: "ETH/USD: Spot Median"
-    id: "19514442401534788"
+    id: "0x4554482f555344"
+
+  - name: "SOL/USD: Spot Median"
+    id: "0x534f4c2f555344"
+
+  - name: "USDT/USD: Spot Median"
+    id: "0x555344542f555344"
+
+  - name: "DAI/USD: Spot Median"
+    id: "0x4441492f555344"
+
+  - name: "USDC/USD: Spot Median"
+    id: "0x555344432f555344"
+
+  - name: "STRK/USD: Spot Median"
+    id: "0x5354524b2f555344"
+
+  - name: "LUSD/USD: Spot Median"
+    id: "0x4c5553442f555344"
+
+  - name: "WBTC/USD: Spot Median"
+    id: "0x574254432f555344"
+
+  - name: "WSTETH/USD: Spot Median"
+    id: "0x5753544554482f555344"
+
+  - name: "STETH/USD: Spot Median"
+    id: "0x53544554482f555344"
+
+  - name: "NSTR/USD: Spot Median"
+    id: "0x4e5354522f555344"
+
+  - name: "LORDS/USD: Spot Median"
+    id: "0x4c4f5244532f555344"
+
+  - name: "ZEND/USD: Spot Median"
+    id: "0x5a454e442f555344"
+
+  - name: "EKUBO/USD: Spot Median"
+    id: "0x454b55424f2f555344"
 
 # Contract Routers
 asset_classes_routers:
