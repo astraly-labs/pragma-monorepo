@@ -2,10 +2,22 @@
 pragma_oracle:
   pairs:
     - "BTC/USD"
+    - "BTC/EUR"
     - "ETH/USD"
+    - "WBTC/USD"
+    - "WBTC/BTC"
     - "USDT/USD"
     - "USDC/USD"
     - "DAI/USD"
+    - "SOL/USD"
+    - "STRK/USD"
+    - "LUSD/USD"
+    - "WSTETH/USD"
+    - "STETH/USD"
+    - "NSTR/USD"
+    - "LORDS/USD"
+    - "ZEND/USD"
+    - "EKUBO/USD"
   publishers:
     - name: "PRAGMA"
       address: "0x6b09c5cca7e5ef944dc3be7514cc1ae5a6e267f0f1f2b5520e90dc00aecf6e1"
