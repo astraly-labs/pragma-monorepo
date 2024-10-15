@@ -29,7 +29,7 @@ abstract contract PragmaDecoder {
     mapping(bytes32 => Perp) public perpFeeds;
 
     // TODO: set valid data sources
-    function isValidDataSource(uint16 chainId, bytes32 emitterAddress) public view returns (bool) {
+    function isValidDataSource(uint32 chainId, bytes32 emitterAddress) public view returns (bool) {
         return _isValidDataSource[keccak256(abi.encodePacked(chainId, emitterAddress))];
     }
 

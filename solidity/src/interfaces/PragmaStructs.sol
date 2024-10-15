@@ -29,7 +29,7 @@ struct HyMsg {
     uint8 version;
     uint64 timestamp;
     uint32 nonce;
-    uint16 emitterChainId;
+    uint32 emitterChainId;
     bytes32 emitterAddress;
     bytes payload;
     Signature[] signatures;

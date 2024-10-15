@@ -234,8 +234,8 @@ contract PragmaUpgradeableTest is Test {
         assertEq(PragmaUpgraded(address(pragma_)).version(), "2.0.0");
     }
 
-    function _getChainIds() internal pure returns (uint16[] memory) {
-        uint16[] memory chainIds = new uint16[](2);
+    function _getChainIds() internal pure returns (uint32[] memory) {
+        uint32[] memory chainIds = new uint32[](2);
         chainIds[0] = 1;
         chainIds[1] = 2;
         return chainIds;

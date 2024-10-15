@@ -8,7 +8,7 @@ import "forge-std/Test.sol";
 
 abstract contract HyperlaneTestUtils is Test {
     uint256[] currentSigners;
-    uint16 constant CHAIN_ID = 2; // Ethereum
+    uint32 constant CHAIN_ID = 2; // Ethereum
     address hyperlaneAddr;
 
     function setUpHyperlane(uint8 numValidators, address[] memory initSigners) public returns (address) {
@@ -26,7 +26,7 @@ abstract contract HyperlaneTestUtils is Test {
     function generateUpdateData(
         uint32 nonce,
         uint64 timestamp,
-        uint16 emitterChainId,
+        uint32 emitterChainId,
         bytes32 emitterAddress,
         bytes memory payload,
         uint8 numSigners
@@ -71,7 +71,7 @@ abstract contract HyperlaneTestUtils is Test {
 contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
     uint32 constant TEST_NONCE = 1234;
     uint64 constant TEST_UPDATE_TIMESTAMP = 112;
-    uint16 constant TEST_EMITTER_CHAIN_ID = 7;
+    uint32 constant TEST_EMITTER_CHAIN_ID = 7;
     bytes32 constant TEST_EMITTER_ADDR = 0x0000000000000000000000000000000000000000000000000000000000000bad;
     bytes constant TEST_PAYLOAD = hex"deadbeaf";
     uint8 constant TEST_NUM_SIGNERS = 5;
@@ -98,11 +98,12 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
 
     function testGenerateUpdateDataWorks() public {
         address[] memory validators = new address[](5);
-        validators[0] = address(0x00df5d84a8877f990291daacbc5596d2fbc31a0335);
-        validators[1] = address(0x00381ae5e8dd55310922fb238ac7564c7edc2269b3);
-        validators[2] = address(0x0075579685c2dc4e12932e38472b4540616dc8ed95);
-        validators[3] = address(0x00ed8df2d3a15d50f220f3d2bfeb263bf79d7a6c68);
-        validators[4] = address(0x002791ba31fadd992776502d750ba2ba0e08f78f01);
+
+        validators[0] = address(0x00d306a72ff3eb2325e4550e147f259ca0b180002d);
+        validators[1] = address(0x00cd62004e68d7f5262f1af91b666a53881cc01a9b);
+        validators[2] = address(0x00d84a911b9e9015045c595b8415a28d972440c20a);
+        validators[3] = address(0x0021d2edddde8aa132fadd1edf635748fa28283ed6);
+        validators[4] = address(0x00e6202a1de5ea4a46eaa00546d97a6407471e19dc);
 
         // Set up the Hyperlane contract with the provided validators
         IHyperlane hyperlane = IHyperlane(setUpHyperlane(uint8(validators.length), validators));
@@ -133,7 +134,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
             // Rest of the message
             uint32(1234), // nonce
             uint64(block.timestamp), // timestamp
-            uint16(5), // emitterChainId
+            uint32(5), // emitterChainId
             bytes32(uint256(6)), // emitterAddress
             bytes("Hello, Hyperlane!") // payload
         );
@@ -167,7 +168,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
 
         // Verify hash
         bytes memory body = abi.encodePacked(
-            uint32(1234), uint64(block.timestamp), uint16(5), bytes32(uint256(6)), bytes("Hello, Hyperlane!")
+            uint32(1234), uint64(block.timestamp), uint32(5), bytes32(uint256(6)), bytes("Hello, Hyperlane!")
         );
         bytes32 expectedHash = keccak256(abi.encodePacked(keccak256(body)));
         assertEq(parsedMsg.hash, expectedHash, "Incorrect hash");

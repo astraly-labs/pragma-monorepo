@@ -28,7 +28,7 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
     function initialize(
         address _hyperlane,
         address initial_owner,
-        uint16[] memory _dataSourceEmitterChainIds,
+        uint32[] memory _dataSourceEmitterChainIds,
         bytes32[] memory _dataSourceEmitterAddresses,
         uint256 _validTimePeriodSeconds,
         uint256 _singleUpdateFeeInWei
@@ -150,9 +150,9 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         return validTimePeriodSeconds;
     }
 
-    function withdraw_funds(uint256 amount) external onlyOwner {
+    function withdrawFunds(uint256 amount) external onlyOwner {
         require(amount <= address(this).balance, "Insufficient balance");
-        (bool success, ) = owner().call{value: amount}("");
+        (bool success,) = owner().call{value: amount}("");
         require(success, "Transfer failed");
     }
 

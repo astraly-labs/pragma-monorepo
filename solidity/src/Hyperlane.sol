@@ -89,6 +89,7 @@ contract Hyperlane is IHyperlane {
         // Hash the body
         bytes memory body = encodedHyMsg.slice(index, encodedHyMsg.length - index);
         hyMsg.hash = keccak256(abi.encodePacked(keccak256(body)));
+
         // Parse the rest of the message
         hyMsg.nonce = encodedHyMsg.toUint32(index);
         index += 4;
@@ -96,8 +97,8 @@ contract Hyperlane is IHyperlane {
         hyMsg.timestamp = encodedHyMsg.toUint64(index);
         index += 8;
 
-        hyMsg.emitterChainId = encodedHyMsg.toUint16(index);
-        index += 2;
+        hyMsg.emitterChainId = encodedHyMsg.toUint32(index);
+        index += 4;
 
         hyMsg.emitterAddress = encodedHyMsg.toBytes32(index);
         index += 32;

@@ -28,7 +28,7 @@ contract PragmaUpgraded is Initializable, UUPSUpgradeable, OwnableUpgradeable, I
     function initialize(
         address _hyperlane,
         address initial_owner,
-        uint16[] memory _dataSourceEmitterChainIds,
+        uint32[] memory _dataSourceEmitterChainIds,
         bytes32[] memory _dataSourceEmitterAddresses,
         uint256 _validTimePeriodSeconds,
         uint256 _singleUpdateFeeInWei
