@@ -24,7 +24,7 @@ impl ValidatorStorage {
     }
 
     /// Fills the [HashMap] with the initial state fetched from the RPC.
-    pub async fn fill_with_initial_state(&self, validators: Vec<Felt>, locations: Vec<String>) -> anyhow::Result<()> {
+    pub async fn fill_with_initial_state(&self, validators: Vec<Felt>, locations: Vec<Vec<String>>) -> anyhow::Result<()> {
         if validators.len() != locations.len() {
             bail!("⛔ Validators and locations vectors must have the same length");
         }
@@ -32,7 +32,8 @@ impl ValidatorStorage {
         let mut all_storages = self.0.write().await;
 
         for (validator, location) in validators.into_iter().zip(locations.into_iter()) {
-            let storage = CheckpointStorage::from_str(&location)?;
+            // TODO: in this case, we use the last storage registered for the operation
+            let storage = CheckpointStorage::from_str(&location[location.len() -1])?;
             all_storages.insert(validator, storage);
         }
 

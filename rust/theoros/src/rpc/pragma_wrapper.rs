@@ -25,7 +25,8 @@ impl PragmaWrapperCalls for StarknetRpc {
             calldata: vec![],
         };
 
-        let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
+        let mut response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
+        response.insert(0, Felt::from(1)); // to fit the format given in the function
         Ok(felt_vec_to_vec_string(&response)?)
     }
 

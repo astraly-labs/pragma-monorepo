@@ -4,7 +4,7 @@ use starknet::{
     providers::Provider,
 };
 
-use pragma_utils::conversions::starknet::felt_vec_to_vec_string;
+use pragma_utils::conversions::starknet::process_nested_felt_array;
 
 use super::StarknetRpc;
 
@@ -17,7 +17,7 @@ pub trait HyperlaneCalls {
         &self,
         hyperlane_core_address: &Felt,
         validators: &[Felt],
-    ) -> anyhow::Result<Vec<String>>;
+    ) -> anyhow::Result<Vec<Vec<String>>>;
 
     /// Retrieves all the announced validators as a [Vec<Felt>] from the hyperlane
     /// core contract.
@@ -36,7 +36,7 @@ impl HyperlaneCalls for StarknetRpc {
         &self,
         hyperlane_core_address: &Felt,
         validators: &[Felt],
-    ) -> anyhow::Result<Vec<String>> {
+    ) -> anyhow::Result<Vec<Vec<String>>> {
         let mut calldata = vec![Felt::from(validators.len())];
         calldata.extend(validators);
 
@@ -47,8 +47,8 @@ impl HyperlaneCalls for StarknetRpc {
         };
 
         let mut response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
-        response.remove(0);
-        let storage_locations = felt_vec_to_vec_string(&response)?;
+
+        let storage_locations = process_nested_felt_array(&response)?;
 
         Ok(storage_locations)
     }
