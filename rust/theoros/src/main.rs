@@ -43,7 +43,7 @@ const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt =
 const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt =
     Felt::from_hex_unchecked("0x01520c48d7aced426c41e8b71587add7fb64c9945115d3ea677a49f45ddf81e3");
 
-const HYPERLANE_VALIDATOR_ANNOUNCE: Felt = 
+const HYPERLANE_VALIDATOR_ANNOUNCE: Felt =
     Felt::from_hex_unchecked("0x0022245997c5f4f5e6eb13764be91de00b4299147ce7f516dbad925c7aeb69d3");
 
 #[derive(Clone)]
@@ -66,7 +66,7 @@ async fn main() -> Result<()> {
     let theoros_storage =
         TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_DISPATCHER_CONTRACT_ADDRESS, &HYPERLANE_VALIDATOR_ANNOUNCE)
             .await?;
-    let theoros_storage = TheorosStorage::testing_state();
+    // let theoros_storage = TheorosStorage::testing_state();
 
     // Theoros metrics
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;

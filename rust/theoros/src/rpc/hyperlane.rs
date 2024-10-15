@@ -66,7 +66,7 @@ impl HyperlaneCalls for StarknetRpc {
     async fn get_latest_checkpoint(&self, merkle_tree_hook_address: &Felt) -> anyhow::Result<Vec<Felt>> {
         let call = FunctionCall {
             contract_address: *merkle_tree_hook_address,
-            entry_point_selector: selector!("get_latest_checkpoint"),
+            entry_point_selector: selector!("latest_checkpoint"),
             calldata: vec![],
         };
         let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;

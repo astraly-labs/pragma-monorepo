@@ -57,7 +57,6 @@ pub fn felt_vec_to_vec_string(felts: &[Felt]) -> Result<Vec<String>> {
     Ok(result)
 }
 
-
 pub fn process_nested_felt_array(felts: &[Felt]) -> Result<Vec<Vec<String>>> {
     let mut result = Vec::new();
     let mut i = 0;
@@ -105,7 +104,6 @@ pub fn process_nested_felt_array(felts: &[Felt]) -> Result<Vec<Vec<String>>> {
     Ok(result)
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -125,7 +123,7 @@ mod tests {
     }
 
     #[test]
-    fn test_felt_vec_to_vec_string () {
+    fn test_felt_vec_to_vec_string() {
         let input: Vec<Felt> = vec![
             felt_dec!("2"), // Count of sub arrays
             felt_dec!("3"), // Count of elements in the first array
@@ -148,7 +146,7 @@ mod tests {
     #[test]
     fn test_process_nested_felt_array() {
         let mut input: Vec<Felt> = vec![
-            felt_dec!("1"), 
+            felt_dec!("1"),
             felt_dec!("2"), // Count of sub arrays
             felt_dec!("3"), // Count of elements in the first array
             felt_dec!("180946006308525359965345158532346553211983108462325076142963585023296502126"),
@@ -167,7 +165,7 @@ mod tests {
         assert_eq!(result[0][1], "file:///var/folders/kr/z3l_6qyn3znb6gbnddtvgsn40000gn/T/.tmpdY51LU/checkpoint");
 
         input = vec![
-            felt_dec!("2"), 
+            felt_dec!("2"),
             felt_dec!("2"), // Count of sub arrays
             felt_dec!("3"), // Count of elements in the first array
             felt_dec!("180946006308525359965345158532346553211983108462325076142963585023296502126"),
@@ -195,7 +193,5 @@ mod tests {
         assert_eq!(result[0][1], "file:///var/folders/kr/z3l_6qyn3znb6gbnddtvgsn40000gn/T/.tmpdY51LU/checkpoint");
         assert_eq!(result[1][0], "file:///var/folders/kr/z3l_6qyn3znb6gbnddtvgsn40000gn/T/.tmpdY51LU/checkpoint");
         assert_eq!(result[1][1], "file:///var/folders/kr/z3l_6qyn3znb6gbnddtvgsn40000gn/T/.tmpdY51LU/checkpoint");
-
-        
     }
 }

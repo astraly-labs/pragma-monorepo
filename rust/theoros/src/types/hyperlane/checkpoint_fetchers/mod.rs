@@ -5,8 +5,8 @@ pub mod s3;
 // Source:
 // https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/3e90734310fb1ca9a607ce3d334015fa7aaa9208/rust/hyperlane-base/src/settings/checkpoint_syncer.rs#L14
 
-use std::{env, path::PathBuf};
 use std::fmt::Debug;
+use std::{env, path::PathBuf};
 
 use anyhow::{anyhow, bail, Context, Error, Result};
 use async_trait::async_trait;
@@ -16,9 +16,8 @@ use ya_gcp::{AuthFlow, ServiceAccountAuth};
 
 use crate::types::hyperlane::{
     gcs::{GcsStorageClientBuilder, GCS_SERVICE_ACCOUNT_KEY, GCS_USER_SECRET},
-    s3::S3Storage,
     local::LocalStorage,
-
+    s3::S3Storage,
 };
 
 use super::SignedCheckpointWithMessageId;

@@ -39,7 +39,7 @@ impl TheorosStorage {
     pub async fn from_rpc_state(
         rpc_client: &StarknetRpc,
         pragma_wrapper_address: &Felt,
-        validator_announce: &Felt
+        validator_announce: &Felt,
     ) -> anyhow::Result<Self> {
         let mut theoros_storage = TheorosStorage::default();
 
@@ -49,8 +49,6 @@ impl TheorosStorage {
             rpc_client.get_announced_storage_locations(validator_announce, &initial_validators).await?;
 
         theoros_storage.validators.fill_with_initial_state(initial_validators, initial_locations).await?;
-
-        
 
         let feed_registry_address = rpc_client.get_pragma_feed_registry_address(pragma_wrapper_address).await?;
 

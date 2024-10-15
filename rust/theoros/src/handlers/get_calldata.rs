@@ -109,7 +109,7 @@ pub async fn get_calldata(
         emitter_address: event.emitter_address,
         payload,
     };
-    let response  = GetCalldataResponse {calldata: hyperlane_message.as_bytes()};
+    let response = GetCalldataResponse { calldata: hyperlane_message.as_bytes() };
 
     Ok(Json(response))
 }
