@@ -56,6 +56,10 @@
       "name": "pragma-utils",
       "path": "typescript/pragma-utils",
     },
+    {
+      "name": "theoros-sdk",
+      "path": "typescript/theoros-sdk",
+    },
   ],
   "settings": {},
 }

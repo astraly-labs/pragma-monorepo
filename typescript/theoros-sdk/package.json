@@ -1,0 +1,32 @@
+{
+  "name": "@pragma/theoros-sdk",
+  "description": "The official SDK for Pragma Theoros",
+  "version": "1.0.0",
+  "keywords": [
+    "Pragma",
+    "Theoros",
+    "SDK",
+    "Typescript"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=16"
+  },
+  "homepage": "https://www.pragma.build/",
+  "repository": "https://github.com/astraly-labs/pragma-monorepo",
+  "license": "MIT",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.7"
+  },
+  "scripts": {
+    "build": "tsc",
+    "publish": "npm publish"
+  }
+}
