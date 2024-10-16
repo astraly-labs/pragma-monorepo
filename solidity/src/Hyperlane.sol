@@ -106,3 +106,4 @@ contract Hyperlane is IHyperlane {
         hyMsg.payload = encodedHyMsg.slice(index, encodedHyMsg.length - index);
     }
 }
+

@@ -4,7 +4,7 @@ use starknet::{
     providers::Provider,
 };
 
-use pragma_utils::conversions::starknet::felt_vec_to_vec_string;
+use pragma_utils::conversions::starknet::process_nested_felt_array;
 
 use super::StarknetRpc;
 
@@ -17,7 +17,7 @@ pub trait HyperlaneCalls {
         &self,
         hyperlane_core_address: &Felt,
         validators: &[Felt],
-    ) -> anyhow::Result<Vec<String>>;
+    ) -> anyhow::Result<Vec<Vec<String>>>;
 
     /// Retrieves all the announced validators as a [Vec<Felt>] from the hyperlane
     /// core contract.
@@ -36,7 +36,7 @@ impl HyperlaneCalls for StarknetRpc {
         &self,
         hyperlane_core_address: &Felt,
         validators: &[Felt],
-    ) -> anyhow::Result<Vec<String>> {
+    ) -> anyhow::Result<Vec<Vec<String>>> {
         let mut calldata = vec![Felt::from(validators.len())];
         calldata.extend(validators);
 
@@ -46,8 +46,10 @@ impl HyperlaneCalls for StarknetRpc {
             calldata,
         };
 
-        let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
-        let storage_locations = felt_vec_to_vec_string(&response)?;
+        let mut response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
+
+        let storage_locations = process_nested_felt_array(&response)?;
+
         Ok(storage_locations)
     }
 
@@ -64,7 +66,7 @@ impl HyperlaneCalls for StarknetRpc {
     async fn get_latest_checkpoint(&self, merkle_tree_hook_address: &Felt) -> anyhow::Result<Vec<Felt>> {
         let call = FunctionCall {
             contract_address: *merkle_tree_hook_address,
-            entry_point_selector: selector!("get_latest_checkpoint"),
+            entry_point_selector: selector!("latest_checkpoint"),
             calldata: vec![],
         };
         let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;

@@ -39,7 +39,11 @@ impl HyperlaneService {
 
                 if let Some(checkpoint_value) = value {
                     tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
-                    self.state.storage.checkpoints().add(validator, checkpoint_value).await?;
+                    self.state
+                        .storage
+                        .checkpoints()
+                        .add(validator, checkpoint_value.value.message_id, checkpoint_value)
+                        .await?;
                 } else {
                     tracing::error!("No checkpoint value found");
                 }
@@ -49,6 +53,6 @@ impl HyperlaneService {
 
     pub async fn get_latest_index(&self) -> anyhow::Result<u32> {
         let latest_checkpoint = self.state.rpc_client.get_latest_checkpoint(&self.merkle_tree_hook_address).await?;
-        Ok(latest_checkpoint[1].to_biguint().to_u32_digits()[0])
+        Ok(latest_checkpoint[2].to_biguint().to_u32_digits()[0])
     }
 }

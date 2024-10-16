@@ -7,13 +7,15 @@ use apibara_core::{
 };
 use apibara_sdk::{configuration, ClientBuilder, Configuration, DataMessage, Uri};
 use futures_util::TryStreamExt;
+use starknet::core::types::Felt;
 use starknet::core::utils::get_selector_from_name;
 use tokio::task::JoinSet;
 
-use pragma_utils::{conversions::apibara::felt_as_apibara_field, services::Service};
+use pragma_utils::{conversions::apibara::{felt_as_apibara_field, apibara_field_as_felt}, services::Service};
 
 use crate::{
-    types::hyperlane::{DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
+    storage::DispatchUpdateInfos,
+    types::hyperlane::{DispatchEvent, FromStarknetEventData, HasFeedId, ValidatorAnnouncementEvent},
     AppState, HYPERLANE_CORE_CONTRACT_ADDRESS,
 };
 
@@ -30,7 +32,6 @@ lazy_static::lazy_static! {
 pub struct IndexerService {
     state: AppState,
     uri: Uri,
-    apibara_api_key: String,
     stream_config: Configuration<Filter>,
 }
 
@@ -48,7 +49,7 @@ impl Service for IndexerService {
 }
 
 impl IndexerService {
-    pub fn new(state: AppState, apibara_uri: &str, apibara_api_key: String) -> Result<Self> {
+    pub fn new(state: AppState, apibara_uri: &str) -> Result<Self> {
         let uri = Uri::from_str(apibara_uri)?;
 
         let stream_config = Configuration::<Filter>::default()
@@ -69,7 +70,7 @@ impl IndexerService {
                     .build()
             });
 
-        let indexer_service = Self { state, uri, apibara_api_key, stream_config };
+        let indexer_service = Self { state, uri, stream_config };
         Ok(indexer_service)
     }
 
@@ -79,7 +80,6 @@ impl IndexerService {
         config_client.send(self.stream_config.clone()).await.context("Sending indexing stream configuration")?;
 
         let mut stream = ClientBuilder::default()
-            .with_bearer_token(Some(self.apibara_api_key.clone()))
             .connect(self.uri.clone())
             .await
             .map_err(|e| anyhow!("Error while connecting to Apibara DNA: {}", e))?
@@ -89,7 +89,14 @@ impl IndexerService {
 
         loop {
             match stream.try_next().await {
-                Ok(Some(response)) => self.process_batch(response).await?,
+                Ok(Some(response)) => {
+                    self.process_batch(response).await?;
+                    self.state
+                        .storage
+                        .cached_event()
+                        .process_cached_events(&self.state.storage.checkpoints(), &self.state.storage.dispatch_events())
+                        .await?;
+                }
                 Ok(None) => continue,
                 Err(e) => bail!("Error while streaming indexed batch: {}", e),
             }
@@ -124,17 +131,40 @@ impl IndexerService {
     async fn decode_and_store_event(&self, event: Event) -> Result<()> {
         let event_selector = event.keys.first().context("No event selector")?;
 
+        let event_data: Vec<Felt> = event.data.iter().map(|fe| apibara_field_as_felt(&fe)).collect();
         match event_selector {
             selector if selector == &*DISPATCH_EVENT_SELECTOR => {
                 tracing::info!("Received a DispatchEvent");
-                let dispatch_event = DispatchEvent::from_starknet_event_data(event.data.into_iter())
+                let dispatch_event = DispatchEvent::from_starknet_event_data(event_data)
                     .context("Failed to parse DispatchEvent")?;
-                self.state.storage.dispatch_events().add(dispatch_event).await;
+                tracing::info!("Checking checkpoint storage for correspondence");
+                let message_id = dispatch_event.format_message();
+
+                for update in dispatch_event.message.body.updates.iter() {
+                    let feed_id = update.feed_id();
+                    let dispatch_update_infos = DispatchUpdateInfos {
+                        update: update.clone(),
+                        emitter_address: dispatch_event.message.header.sender.to_string(),
+                        emitter_chain_id: dispatch_event.message.header.origin,
+                        nonce: dispatch_event.message.header.nonce,
+                    };
+                    tracing::info!("here is the udpate{:?}", dispatch_update_infos);
+                    // Check if there's a corresponding checkpoint
+                    if self.state.storage.checkpoints().contains_message_id(message_id).await {
+                        tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
+                        // If found, store the event directly
+                        self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos).await?;
+                    } else {
+                        tracing::info!("No checkpoint found, caching dispatch event");
+                        // If no checkpoint found, add to cache
+                        self.state.storage.cached_event().add_event(message_id, &dispatch_event).await;
+                    }
+                }
             }
             selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {
                 tracing::info!("Received a ValidatorAnnouncementEvent");
                 let validator_announcement_event =
-                    ValidatorAnnouncementEvent::from_starknet_event_data(event.data.into_iter())
+                    ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
                         .context("Failed to parse ValidatorAnnouncementEvent")?;
                 self.state.storage.validators().add_from_announcement_event(validator_announcement_event).await?;
             }

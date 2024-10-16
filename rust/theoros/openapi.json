@@ -29,6 +29,19 @@
                 }
               }
             }
+          },
+          "404": {
+            "description": "Unknown Feed Id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GetCalldataError"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -60,10 +73,60 @@
   "components": {
     "schemas": {
       "GetCalldataError": {
-        "type": "string",
-        "enum": [
-          "InternalServerError",
-          "DatabaseConnection"
+        "oneOf": [
+          {
+            "type": "string",
+            "enum": [
+              "InternalServerError"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "DatabaseConnection"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "InvalidFeedId"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "FailedToRetrieveEvent"
+            ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "FeedNotFound"
+            ],
+            "properties": {
+              "FeedNotFound": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "string",
+            "enum": [
+              "FailedToCreateHyperlaneClient"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "FailedToFetchOnchainValidators"
+            ]
+          },
+          {
+            "type": "string",
+            "enum": [
+              "ValidatorNotFound"
+            ]
+          }
         ]
       },
       "GetCalldataQuery": {
@@ -72,11 +135,12 @@
       "GetCalldataResponse": {
         "type": "object",
         "required": [
-          "hash"
+          "calldata"
         ],
         "properties": {
-          "hash": {
-            "type": "string"
+          "calldata": {
+            "type": "string",
+            "format": "binary"
           }
         }
       },
@@ -116,11 +180,12 @@
             "schema": {
               "type": "object",
               "required": [
-                "hash"
+                "calldata"
               ],
               "properties": {
-                "hash": {
-                  "type": "string"
+                "calldata": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }

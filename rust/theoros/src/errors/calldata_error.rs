@@ -1,5 +1,6 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
+use starknet::core::types::Felt;
 use utoipa::ToSchema;
 
 #[derive(Debug, thiserror::Error, ToSchema)]
@@ -9,6 +10,18 @@ pub enum GetCalldataError {
     InternalServerError,
     #[error("could not establish a connection with the database")]
     DatabaseConnection,
+    #[error("invalid feed id")]
+    InvalidFeedId,
+    #[error("failed to retrieve event")]
+    FailedToRetrieveEvent,
+    #[error("Feed with ID '{0}' not found")]
+    FeedNotFound(String),
+    #[error("Fail to create hyperlane client")]
+    FailedToCreateHyperlaneClient,
+    #[error("Fail to fetch onchain validators")]
+    FailedToFetchOnchainValidators,
+    #[error("Validator not found in validators list")]
+    ValidatorNotFound,
 }
 
 impl IntoResponse for GetCalldataError {

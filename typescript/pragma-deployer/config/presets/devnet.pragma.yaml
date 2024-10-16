@@ -49,21 +49,14 @@ pragma_dispatcher:
   hyperlane_mailbox_address: "0x5bfb1a565a1fa2eb33c5d8e587a7aeb5e6846d3aadf9fecb529ace1e3457096"
 
 # Configuration for the Pragma Solidity EVM contract
-# TODO: Adapt those values
 pragma:
   data_source_emitters:
-    - chain_id: 1
-      address: "0x51298007E4e8A48d11B64D9361d6ED64f2B4309D"
-    - chain_id: 2
-      address: "0x51298007E4e8A48d11B64D9361d6ED64f2B4309D"
-    - chain_id: 3
-      address: "0x51298007E4e8A48d11B64D9361d6ED64f2B4309D"
+    - chain_id: 6363709
+      address: "0x04d997c57f63d509f483927ce74135a4e12de834144d9e90044ac03f6024267e"
 
   valid_time_period_in_seconds: 3600 # 1 hour
-  single_update_fee_in_wei: "0.01" # 0.01 eth
+  single_update_fee_in_wei: "0"
 
   hyperlane:
     validators:
-      - "0x1234567890123456789012345678901234567890"
-      - "0x2345678901234567890123456789012345678901"
-      - "0x3456789012345678901234567890123456789012"
+      - "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"

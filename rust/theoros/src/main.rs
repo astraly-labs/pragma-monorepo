@@ -1,6 +1,7 @@
 mod errors;
 mod extractors;
 mod handlers;
+mod hyperlane;
 mod rpc;
 mod services;
 mod storage;
@@ -23,21 +24,27 @@ use pragma_utils::{
 use rpc::StarknetRpc;
 use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
-// TODO: Everything below here should be configurable, either via CLI or config file.
+// TODO: Everything below here should be configurable, either via CLI  or config file.
 // See: https://github.com/astraly-labs/pragma-monorepo/issues/17
 const APP_NAME: &str = "theoros";
 const LOG_LEVEL: Level = Level::INFO;
 const METRICS_PORT: u16 = 8080;
 
-const MADARA_RPC_URL: &str = "https://free-rpc.nethermind.io/sepolia-juno";
-const APIBARA_DNA_URL: &str = "https://sepolia.starknet.a5a.ch"; // TODO: Should be Pragma X DNA url
+const MADARA_RPC_URL: &str = "https://madara-pragma-prod.karnot.xyz/";
+const APIBARA_DNA_URL: &str = "https://devnet.pragma.a5a.ch";
 
 const SERVER_HOST: &str = "0.0.0.0";
 const SERVER_PORT: u16 = 3000;
 
-const _PRAGMA_WRAPPER_CONTRACT_ADDRESS: Felt = Felt::ZERO;
-const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt = Felt::ZERO;
-const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt = Felt::ZERO;
+const PRAGMA_DISPATCHER_CONTRACT_ADDRESS: Felt =
+    Felt::from_hex_unchecked("0x04d997c57f63d509f483927ce74135a4e12de834144d9e90044ac03f6024267e");
+const HYPERLANE_CORE_CONTRACT_ADDRESS: Felt =
+    Felt::from_hex_unchecked("0x05bfb1a565a1fa2eb33c5d8e587a7aeb5e6846d3aadf9fecb529ace1e3457096");
+const HYPERLANE_MERKLE_TREE_HOOK_ADDRESS: Felt =
+    Felt::from_hex_unchecked("0x01520c48d7aced426c41e8b71587add7fb64c9945115d3ea677a49f45ddf81e3");
+
+const HYPERLANE_VALIDATOR_ANNOUNCE: Felt =
+    Felt::from_hex_unchecked("0x0022245997c5f4f5e6eb13764be91de00b4299147ce7f516dbad925c7aeb69d3");
 
 #[derive(Clone)]
 pub struct AppState {
@@ -56,11 +63,10 @@ async fn main() -> Result<()> {
     let rpc_client = StarknetRpc::new(rpc_url);
 
     // New storage + initialization
-    // let theoros_storage =
-    //     TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_WRAPPER_CONTRACT_ADDRESS, &HYPERLANE_CORE_CONTRACT_ADDRESS)
-    //         .await?;
-    // TODO: remove & uncomment line above when we can fetch from pragma wrapper + hyperlane
-    let theoros_storage = TheorosStorage::testing_state();
+    let theoros_storage =
+        TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_DISPATCHER_CONTRACT_ADDRESS, &HYPERLANE_VALIDATOR_ANNOUNCE)
+            .await?;
+    // let theoros_storage = TheorosStorage::testing_state();
 
     // Theoros metrics
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
@@ -71,8 +77,7 @@ async fn main() -> Result<()> {
         metrics_registry: metrics_service.registry(),
     };
 
-    let apibara_api_key = std::env::var("APIBARA_API_KEY").context("APIBARA_API_KEY not found.")?;
-    let indexer_service = IndexerService::new(state.clone(), APIBARA_DNA_URL, apibara_api_key)?;
+    let indexer_service = IndexerService::new(state.clone(), APIBARA_DNA_URL)?;
 
     let api_service = ApiService::new(state.clone(), SERVER_HOST, SERVER_PORT);
 

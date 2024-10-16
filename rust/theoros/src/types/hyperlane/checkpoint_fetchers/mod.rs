@@ -34,12 +34,12 @@ pub trait FetchFromStorage: Debug + Send + Sync {
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub enum CheckpointStorage {
+    /// A checkpoint storage on S3
     /// A local checkpoint storage
     LocalStorage {
         /// Path
         path: PathBuf,
     },
-    /// A checkpoint storage on S3
     S3 {
         /// Bucket name
         bucket: String,
