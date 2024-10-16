@@ -1,16 +1,14 @@
-use anyhow::anyhow;
 use axum::extract::{Query, State};
 use axum::Json;
-use pragma_feeds::{Feed, FeedType};
+use pragma_feeds::Feed;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToResponse, ToSchema};
 
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
 use crate::hyperlane::calls::HyperlaneClient;
-use crate::storage::ValidatorCheckpointStorage;
-use crate::types::hyperlane::{DispatchUpdate, SignedCheckpointWithMessageId};
-use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload, ValidatorSignature};
+use crate::types::hyperlane::DispatchUpdate;
+use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload};
 use crate::types::pragma::constants::HYPERLANE_VERSION;
 use crate::AppState;
 
@@ -92,8 +90,8 @@ pub async fn get_calldata(
         checkpoint_root: checkpoint_infos.value.checkpoint.root.clone(),
         num_updates: 1,
         update_data_len: 1,
-        proof_len: todo!(),
-        proof: todo!(),
+        proof_len: 0,
+        proof: vec![],
         update_data: update.to_bytes(),
         feed_id,
         publish_time: update.metadata.timestamp,
