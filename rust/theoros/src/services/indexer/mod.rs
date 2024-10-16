@@ -7,10 +7,11 @@ use apibara_core::{
 };
 use apibara_sdk::{configuration, ClientBuilder, Configuration, DataMessage, Uri};
 use futures_util::TryStreamExt;
+use starknet::core::types::Felt;
 use starknet::core::utils::get_selector_from_name;
 use tokio::task::JoinSet;
 
-use pragma_utils::{conversions::apibara::felt_as_apibara_field, services::Service};
+use pragma_utils::{conversions::apibara::{felt_as_apibara_field, apibara_field_as_felt}, services::Service};
 
 use crate::{
     storage::DispatchUpdateInfos,
@@ -130,12 +131,12 @@ impl IndexerService {
     async fn decode_and_store_event(&self, event: Event) -> Result<()> {
         let event_selector = event.keys.first().context("No event selector")?;
 
+        let event_data: Vec<Felt> = event.data.iter().map(|fe| apibara_field_as_felt(&fe)).collect();
         match event_selector {
             selector if selector == &*DISPATCH_EVENT_SELECTOR => {
                 tracing::info!("Received a DispatchEvent");
-                let dispatch_event = DispatchEvent::from_starknet_event_data(event.data.into_iter())
+                let dispatch_event = DispatchEvent::from_starknet_event_data(event_data)
                     .context("Failed to parse DispatchEvent")?;
-
                 tracing::info!("Checking checkpoint storage for correspondence");
                 let message_id = dispatch_event.format_message();
 
@@ -147,6 +148,7 @@ impl IndexerService {
                         emitter_chain_id: dispatch_event.message.header.origin,
                         nonce: dispatch_event.message.header.nonce,
                     };
+                    tracing::info!("here is the udpate{:?}", dispatch_update_infos);
                     // Check if there's a corresponding checkpoint
                     if self.state.storage.checkpoints().contains_message_id(message_id).await {
                         tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
@@ -162,7 +164,7 @@ impl IndexerService {
             selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {
                 tracing::info!("Received a ValidatorAnnouncementEvent");
                 let validator_announcement_event =
-                    ValidatorAnnouncementEvent::from_starknet_event_data(event.data.into_iter())
+                    ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
                         .context("Failed to parse ValidatorAnnouncementEvent")?;
                 self.state.storage.validators().add_from_announcement_event(validator_announcement_event).await?;
             }

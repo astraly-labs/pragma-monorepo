@@ -51,15 +51,15 @@ pub struct Feed {
 
 #[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize)]
 pub enum AssetClass {
-    Crypto = 1,
+    Crypto = 0,
 }
 
-impl TryFrom<u8> for AssetClass {
+impl TryFrom<u16> for AssetClass {
     type Error = anyhow::Error;
 
-    fn try_from(value: u8) -> anyhow::Result<Self> {
+    fn try_from(value: u16) -> anyhow::Result<Self> {
         match value {
-            1 => Ok(AssetClass::Crypto),
+            0 => Ok(AssetClass::Crypto),
             _ => Err(anyhow!("Unknown asset class: {}", value)),
         }
     }
@@ -68,12 +68,12 @@ impl TryFrom<u8> for AssetClass {
 #[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize)]
 pub enum FeedType {
     #[strum(serialize = "Spot Median")]
-    SpotMedian = 21325, // SM as felt
-    Twap = 21591, // TW as felt
+    SpotMedian = 0, 
+    Twap = 1, 
     #[strum(serialize = "Realized Volatility")]
-    RealizedVolatility = 21078, // RV as felt
-    Options = 20304, // OP as felt
-    Perp = 20560, // PP as felt
+    RealizedVolatility = 2, 
+    Options = 3, 
+    Perp = 4, 
 }
 
 impl TryFrom<u16> for FeedType {
@@ -81,11 +81,11 @@ impl TryFrom<u16> for FeedType {
 
     fn try_from(value: u16) -> anyhow::Result<Self> {
         match value {
-            21325 => Ok(FeedType::SpotMedian),
-            21591 => Ok(FeedType::Twap),
-            21078 => Ok(FeedType::RealizedVolatility),
-            20304 => Ok(FeedType::Options),
-            20560 => Ok(FeedType::Perp),
+            0 => Ok(FeedType::SpotMedian),
+            1 => Ok(FeedType::Twap),
+            2 => Ok(FeedType::RealizedVolatility),
+            3 => Ok(FeedType::Options),
+            4 => Ok(FeedType::Perp),
             _ => Err(anyhow!("Unknown feed type: {}", value)),
         }
     }
@@ -109,10 +109,10 @@ impl FromStr for Feed {
         // Pad the bytes to 35 if necessary
         bytes.resize(35, 0);
 
-        let asset_class = AssetClass::try_from(bytes[0])?;
-        let feed_type = FeedType::try_from(u16::from_be_bytes([bytes[1], bytes[2]]))?;
+        let asset_class = AssetClass::try_from(u16::from_be_bytes([bytes[0], bytes[1]]))?;
+        let feed_type = FeedType::try_from(u16::from_be_bytes([bytes[2], bytes[3]]))?;
 
-        let pair_id = String::from_utf8(bytes[3..].to_vec())
+        let pair_id = String::from_utf8(bytes[4..].to_vec())
             .context("Invalid UTF-8 sequence for pair_id")?
             .trim_end_matches('\0')
             .to_string();

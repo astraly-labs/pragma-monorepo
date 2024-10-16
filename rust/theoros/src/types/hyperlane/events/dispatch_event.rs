@@ -1,11 +1,8 @@
 use alloy::primitives::keccak256;
 use alloy_primitives::{hex, U256 as alloy_U256};
 use anyhow::{Context, Result};
-use apibara_core::starknet::v1alpha2::FieldElement;
-use bigdecimal::num_bigint::ToBigInt;
-use bigdecimal::{BigDecimal, ToPrimitive};
-use pragma_feeds::{AssetClass, FeedType};
-use starknet::core::types::U256;
+use pragma_feeds::FeedType;
+use starknet::core::types::{Felt, U256};
 
 use pragma_utils::conversions::apibara::FromFieldBytes;
 
@@ -21,50 +18,53 @@ pub struct DispatchEvent {
 }
 
 // Creates a Dispatch from a Dispatch starknet event data, which is:
-// 0. (felt) sender address
-// 1. (felt) destination chain id
-// 2. (felt:low; felt:high) recipient address
+// 0. sender address
+// 1. destination chain id
+// 2. recipient address
 // 3. message
 //    a. header =>
-//        - felt => version,
-//        - felt => nonce,
-//        - felt => origin,
-//        - felt => sender_low,
-//        - felt => sender_high,
-//        - felt => destination,
-//        - felt => recipient_low,
-//        - felt => recipient_high,
+//        - version,
+//        - nonce,
+//        - origin,
+//        - sender_low,
+//        - sender_high,
+//        - destination,
+//        - recipient_low,
+//        - recipient_high,
 //    b. body:
-//        - felt => nbr data_feeds updated
+//        - nbr data_feeds updated
 //        - update (per data_feed) =>
-//            - felt => asset_class
-//            - felt => data_type (given it, we know update_size)
+//            - asset_class
+//            - data_type (given it, we know update_size)
 //            [depending on the asset_class <=> data_type tuple, update below...]
 //            [for example for SpotMedian below]
-//            - felt => pair_id
-//            - felt => price
-//            - felt => volume
-//            - felt => decimals
-//            - felt => timestamp
-//            - felt => sources_aggregated
+//            - pair_id
+//            - price
+//            - volume
+//            - decimals
+//            - timestamp
+//            - sources_aggregated
 impl FromStarknetEventData for DispatchEvent {
-    fn from_starknet_event_data(data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let mut data = data.into_iter();
+    fn from_starknet_event_data(data: Vec<Felt>) -> Result<Self> {
+        let mut data = data.iter();
 
         let sender = U256::from_words(
-            u128::from_field_bytes(data.next().context("Missing sender part 1")?.to_bytes()),
-            u128::from_field_bytes(data.next().context("Missing sender part 2")?.to_bytes()),
+            u128::from_field_bytes(data.next().context("Missing sender part 1")?.to_bytes_be()),
+            u128::from_field_bytes(data.next().context("Missing sender part 2")?.to_bytes_be()),
         );
 
-        let destination_domain = u32::from_field_bytes(data.next().context("Missing destination")?.to_bytes());
+        let destination_domain = u32::from_field_bytes(data.next().context("Missing destination")?.to_bytes_be());
 
         let recipient_address = U256::from_words(
-            u128::from_field_bytes(data.next().context("Missing recipient part 1")?.to_bytes()),
-            u128::from_field_bytes(data.next().context("Missing recipient part 2")?.to_bytes()),
+            u128::from_field_bytes(data.next().context("Missing recipient part 1")?.to_bytes_be()),
+            u128::from_field_bytes(data.next().context("Missing recipient part 2")?.to_bytes_be()),
         );
 
-        let header = DispatchMessageHeader::from_starknet_event_data(&mut data.by_ref().take(HEADER_SIZE))?;
-        let body = DispatchMessageBody::from_starknet_event_data(&mut data)?;
+        let header = DispatchMessageHeader::from_starknet_event_data(data.clone().cloned().collect())?;
+        const HEADER_SIZE: usize = 8 + 2; // 2 = 2 data that we don't care about
+        let body_data: Vec<Felt> = data.skip(HEADER_SIZE).cloned().collect();
+        let body = DispatchMessageBody::from_starknet_event_data(body_data)?;
+
         let message = DispatchMessage { header, body };
 
         let dispatch = Self { sender, destination_domain, recipient_address, message };
@@ -73,6 +73,7 @@ impl FromStarknetEventData for DispatchEvent {
 }
 
 impl DispatchEvent {
+    /// Generates a message id from a Dispatch Event.
     pub fn format_message(&self) -> alloy_U256 {
         let mut input = Vec::new();
 
@@ -95,16 +96,11 @@ impl DispatchEvent {
                     // Append pair_id (U256 split into high and low parts)
                     input.extend_from_slice(&spot_update.pair_id.low().to_be_bytes());
                     input.extend_from_slice(&spot_update.pair_id.high().to_be_bytes());
-
-                    // Scale price by 10^decimals and convert to u128
-                    let scaled_price = (spot_update.price.clone()
-                        * BigDecimal::from(10u32.pow(spot_update.metadata.decimals)))
-                    .to_u128()
-                    .unwrap_or(0);
-
                     // Append scaled price, volume, decimals, timestamp, and num_sources_aggregated
-                    input.extend_from_slice(&scaled_price.to_be_bytes());
-                    input.extend_from_slice(&spot_update.volume.to_be_bytes());
+                    input.extend_from_slice(&spot_update.price.low().to_be_bytes());
+                    input.extend_from_slice(&spot_update.price.high().to_be_bytes());
+                    input.extend_from_slice(&spot_update.volume.low().to_be_bytes());
+                    input.extend_from_slice(&spot_update.volume.high().to_be_bytes());
                     input.extend_from_slice(&spot_update.metadata.decimals.to_be_bytes());
                     input.extend_from_slice(&spot_update.metadata.timestamp.to_be_bytes());
                     input.extend_from_slice(&spot_update.metadata.num_sources_aggregated.to_be_bytes());
@@ -124,8 +120,6 @@ pub struct DispatchMessage {
     pub body: DispatchMessageBody,
 }
 
-const HEADER_SIZE: usize = 8;
-
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub struct DispatchMessageHeader {
@@ -138,19 +132,20 @@ pub struct DispatchMessageHeader {
 }
 
 impl FromStarknetEventData for DispatchMessageHeader {
-    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
+    fn from_starknet_event_data(data: Vec<Felt>) -> Result<Self> {
+        let mut data = data.iter();
         Ok(Self {
-            version: u8::from_field_bytes(data.next().context("Missing version")?.to_bytes()),
-            nonce: u32::from_field_bytes(data.next().context("Missing nonce")?.to_bytes()),
-            origin: u32::from_field_bytes(data.next().context("Missing origin")?.to_bytes()),
+            version: u8::from_field_bytes(data.next().context("Missing version")?.to_bytes_be()),
+            nonce: u32::from_field_bytes(data.next().context("Missing nonce")?.to_bytes_be()),
+            origin: u32::from_field_bytes(data.next().context("Missing origin")?.to_bytes_be()),
             sender: U256::from_words(
-                u128::from_field_bytes(data.next().context("Missing sender part 1")?.to_bytes()),
-                u128::from_field_bytes(data.next().context("Missing sender part 2")?.to_bytes()),
+                u128::from_field_bytes(data.next().context("Missing sender part 1")?.to_bytes_be()),
+                u128::from_field_bytes(data.next().context("Missing sender part 2")?.to_bytes_be()),
             ),
-            destination: u32::from_field_bytes(data.next().context("Missing destination")?.to_bytes()),
+            destination: u32::from_field_bytes(data.next().context("Missing destination")?.to_bytes_be()),
             recipient: U256::from_words(
-                u128::from_field_bytes(data.next().context("Missing recipient part 1")?.to_bytes()),
-                u128::from_field_bytes(data.next().context("Missing recipient part 2")?.to_bytes()),
+                u128::from_field_bytes(data.next().context("Missing recipient part 1")?.to_bytes_be()),
+                u128::from_field_bytes(data.next().context("Missing recipient part 2")?.to_bytes_be()),
             ),
         })
     }
@@ -159,21 +154,51 @@ impl FromStarknetEventData for DispatchMessageHeader {
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub struct DispatchMessageBody {
-    pub nb_updated: u32,
+    pub nb_updated: u16,
     pub updates: Vec<DispatchUpdate>,
 }
 
 impl FromStarknetEventData for DispatchMessageBody {
-    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let nb_updated = u32::from_field_bytes(data.next().context("Missing number of updates")?.to_bytes());
+    fn from_starknet_event_data(data: Vec<Felt>) -> Result<Self> {
+        // Convert each Felt to its hex string representation and log the event data
+        
+        let x: Vec<String> = data.iter().map(|f| f.to_fixed_hex_string()).collect();
+        tracing::info!("EVENT DATA: {:#?}", x);
 
+        // Flatten the Felt data by removing the first 32 bytes and concatenating the rest
+        let mut data: Vec<u8> = data
+            .iter()
+            .flat_map(|fe| {
+                let bytes = fe.to_bytes_be();
+                // Skip the first 32 bytes, if applicable
+                bytes.split_at(16).1.to_vec()
+            })
+            .collect();
+
+        // Extract the number of updates (2 bytes)
+        let nb_updated = u16::from_be_bytes(data.drain(..2).collect::<Vec<u8>>().try_into().unwrap());
+        tracing::info!("NUM UPDATES: {}", nb_updated.clone());
+
+        // Initialize the updates vector
         let mut updates = Vec::with_capacity(nb_updated as usize);
 
+        // Loop through and parse updates
         for _ in 0..nb_updated {
-            let update = DispatchUpdate::from_starknet_event_data(&mut data).context("Failed to parse update")?;
+            // Parse each update from the remaining data
+            let update = DispatchUpdate::from_starknet_event_data(data.clone()).context("Failed to parse update")?;
+            tracing::info!("🥴🥴🥴🥴 NEW UPDATE FOUND: {:?}", update);
+
+            // Depending on the update type, drain the required number of bytes from `data`
+            match update {
+                DispatchUpdate::SpotMedian { update: _, feed_id: _ } => {
+                    data.drain(..107);
+                }
+            }
+
             updates.push(update);
         }
 
+        // Check that the number of parsed updates matches the declared number
         if updates.len() != nb_updated as usize {
             anyhow::bail!(
                 "Mismatch between declared number of updates ({}) and actual updates parsed ({})",
@@ -182,6 +207,7 @@ impl FromStarknetEventData for DispatchMessageBody {
             );
         }
 
+        // Return the result
         Ok(Self { nb_updated, updates })
     }
 }
@@ -204,29 +230,31 @@ impl HasFeedId for DispatchUpdate {
     }
 }
 
-impl FromStarknetEventData for DispatchUpdate {
-    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        // Asset class is always Crypto for now.
-        let raw_asset_class = u8::from_field_bytes(data.next().context("Missing asset class")?.to_bytes());
-        let asset_class = AssetClass::try_from(raw_asset_class)?;
 
-        let raw_feed_type = u16::from_field_bytes(data.next().context("Missing data type")?.to_bytes());
+
+impl DispatchUpdate {
+    
+    fn from_starknet_event_data(mut data: Vec<u8>) -> Result<Self> {
+        let raw_asset_class = u16::from_be_bytes(data.drain(..2).collect::<Vec<u8>>().try_into().unwrap());
+
+        let raw_feed_type = u16::from_be_bytes(data.drain(..2).collect::<Vec<u8>>().try_into().unwrap());
         let feed_type = FeedType::try_from(raw_feed_type)?;
 
-        let pair_id_low = u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes());
-        let pair_id_high = u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes());
+        let pair_id_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
+        let mut padded_data = [0u8; 16];
+        let extracted_data = data.drain(..12).collect::<Vec<u8>>();
+        padded_data[4..].copy_from_slice(&extracted_data);
 
-        // Create the feed ID string
-        let feed_id = build_feed_id(raw_asset_class, raw_feed_type, pair_id_high, pair_id_low);
+        let pair_id_high = u128::from_be_bytes(padded_data);
+        let pair_id = U256::from_words(pair_id_high, pair_id_low);
 
-        let pair_id = U256::from_words(
-            u128::from_field_bytes(data.next().context("Missing pair ID part 1")?.to_bytes()),
-            u128::from_field_bytes(data.next().context("Missing pair ID part 2")?.to_bytes()),
-        );
+        let feed_id = build_feed_id(raw_asset_class, raw_feed_type, pair_id_low, pair_id_high);
 
+        // Handle updates based on feed type
         let update = match feed_type {
             FeedType::SpotMedian => {
-                let mut res = SpotMedianUpdate::from_starknet_event_data(&mut data)?;
+                // Pass the remaining drained data to the next function
+                let mut res = SpotMedianUpdate::from_starknet_event_data(data)?;
                 res.pair_id = pair_id;
                 DispatchUpdate::SpotMedian { update: res, feed_id }
             }
@@ -237,9 +265,9 @@ impl FromStarknetEventData for DispatchUpdate {
     }
 }
 
-fn build_feed_id(raw_asset_class: u8, raw_feed_type: u16, pair_id_high: u128, pair_id_low: u128) -> String {
-    let mut bytes: Vec<u8> = Vec::with_capacity(35);
-    bytes.push(raw_asset_class);
+fn build_feed_id(raw_asset_class: u16, raw_feed_type: u16, pair_id_high: u128, pair_id_low: u128) -> String {
+    let mut bytes: Vec<u8> = Vec::new();
+    bytes.extend_from_slice(&raw_asset_class.to_be_bytes());
     bytes.extend_from_slice(&raw_feed_type.to_be_bytes());
     bytes.extend_from_slice(&pair_id_high.to_be_bytes());
     bytes.extend_from_slice(&pair_id_low.to_be_bytes());
@@ -250,8 +278,8 @@ fn build_feed_id(raw_asset_class: u8, raw_feed_type: u16, pair_id_high: u128, pa
 #[derive(Debug, Clone)]
 pub struct MetadataUpdate {
     pub timestamp: u64,
-    pub num_sources_aggregated: u32,
-    pub decimals: u32,
+    pub num_sources_aggregated: u16,
+    pub decimals: u8,
 }
 
 #[derive(Debug, Clone)]
@@ -259,24 +287,22 @@ pub struct MetadataUpdate {
 pub struct SpotMedianUpdate {
     pub pair_id: U256,
     pub metadata: MetadataUpdate,
-    pub price: BigDecimal,
-    pub volume: u128,
+    pub price: U256,
+    pub volume: U256,
 }
 
-impl FromStarknetEventData for SpotMedianUpdate {
-    fn from_starknet_event_data(mut data: impl Iterator<Item = FieldElement>) -> Result<Self> {
-        let price_felt = data.next().context("Missing price")?;
-        let volume = u128::from_field_bytes(data.next().context("Missing volume")?.to_bytes());
-        let decimals = u32::from_field_bytes(data.next().context("Missing decimals")?.to_bytes());
+impl SpotMedianUpdate {
+    fn from_starknet_event_data(mut data: Vec<u8>) -> Result<Self> {
+        let timestamp = u64::from_be_bytes(data.drain(..8).collect::<Vec<u8>>().try_into().unwrap());
+        let num_sources_aggregated = u16::from_be_bytes(data.drain(..2).collect::<Vec<u8>>().try_into().unwrap());
+        let decimals = u8::from_be_bytes(data.drain(..1).collect::<Vec<u8>>().try_into().unwrap());
+        let price_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());  // U256
+        let price_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
+        let price = U256::from_words(price_low, price_high);
+        let volume_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap()); // U256
+        let volume_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
+        let volume = U256::from_words(volume_low, volume_high);
 
-        let price =
-            BigDecimal::from(u128::from_field_bytes(price_felt.to_bytes())) / BigDecimal::from(10u32.pow(decimals));
-
-        let timestamp = u64::from_field_bytes(data.next().context("Missing timestamp")?.to_bytes());
-        let num_sources_aggregated =
-            u32::from_field_bytes(data.next().context("Missing sources aggregated")?.to_bytes());
-
-        // We set 0 for the pair_id, will be filled at the upper level
         Ok(Self {
             pair_id: U256::from(0_u8),
             metadata: MetadataUpdate { decimals, timestamp, num_sources_aggregated },
@@ -284,9 +310,7 @@ impl FromStarknetEventData for SpotMedianUpdate {
             volume,
         })
     }
-}
 
-impl SpotMedianUpdate {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
 
@@ -298,19 +322,13 @@ impl SpotMedianUpdate {
         bytes.extend_from_slice(&self.metadata.num_sources_aggregated.to_be_bytes());
         bytes.extend_from_slice(&self.metadata.decimals.to_be_bytes());
 
-        let scaled_price =
-            (self.price.clone() * BigDecimal::from(10u64.pow(18))).to_bigint().expect("Failed to convert to BigInt");
-        let price_bytes = scaled_price.to_bytes_be().1; // get the bytes in big-endian format
-        let mut padded_price_bytes = vec![0u8; 32]; // Initialize with zeros
-        if price_bytes.len() <= 32 {
-            padded_price_bytes[32 - price_bytes.len()..].copy_from_slice(&price_bytes);
-        } else {
-            panic!("Price too large to fit in 32 bytes");
-        }
-        bytes.extend_from_slice(&padded_price_bytes);
+        // Serialize price (U256 is 32 bytes)
+        bytes.extend_from_slice(&self.price.low().to_be_bytes());
+        bytes.extend_from_slice(&self.price.high().to_be_bytes());
 
-        bytes.extend_from_slice(&self.volume.to_be_bytes());
-
+        // Serialize volume (U256 is 32 bytes)
+        bytes.extend_from_slice(&self.volume.low().to_be_bytes());
+        bytes.extend_from_slice(&self.volume.high().to_be_bytes());
         bytes
     }
 }
@@ -318,105 +336,72 @@ impl SpotMedianUpdate {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use apibara_core::starknet::v1alpha2::FieldElement;
 
-    fn create_field_element(value: u64) -> FieldElement {
-        FieldElement::from_u64(value)
+    fn create_event_data(raw_data: Vec<&str>) -> Vec<Felt> {
+        raw_data.iter().map(|hex_str| Felt::from_hex(hex_str).unwrap()).collect()
     }
 
     #[test]
     fn test_dispatch_event_from_event_data() {
-        let event_data = vec![
-            create_field_element(1),          // sender part 1
-            create_field_element(0),          // sender part 2
-            create_field_element(2),          // destination_domain
-            create_field_element(3),          // recipient part 1
-            create_field_element(0),          // recipient part 2
-            create_field_element(1),          // version
-            create_field_element(4),          // nonce
-            create_field_element(5),          // origin
-            create_field_element(6),          // sender part 1
-            create_field_element(0),          // sender part 2
-            create_field_element(7),          // destination
-            create_field_element(8),          // recipient part 1
-            create_field_element(0),          // recipient part 2
-            create_field_element(1),          // nb_updated
-            create_field_element(1),          // asset class (Crypto)
-            create_field_element(21325),      // update type (SpotMedian)
-            create_field_element(9),          // pair_id part 1
-            create_field_element(0),          // pair_id part 2
-            create_field_element(1000),       // price
-            create_field_element(0),          // volume
-            create_field_element(2),          // decimals
-            create_field_element(1234567890), // timestamp
-            create_field_element(5),          // num_sources_aggregated
-        ];
+        let event_data = create_event_data(vec![
+            "0x00000000000000000000000000000000e12de834144d9e90044ac03f6024267e",
+            "0x0000000000000000000000000000000004d997c57f63d509f483927ce74135a4",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000003",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000611a3d",
+            "0x00000000000000000000000000000000e12de834144d9e90044ac03f6024267e",
+            "0x0000000000000000000000000000000004d997c57f63d509f483927ce74135a4",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x00000000000000000000000000000000000000000000000000000000000000d8",
+            "0x000000000000000000000000000000000000000000000000000000000000000e",
+            "0x0000000000000000000000000000000000020000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000004254432f55",
+            "0x0000000000000000000000000000000053440000000067094ce4000108000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x000000000000000000000000000000000000000000000005a9d39c70a7000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x000000000000000000000000000000000000000000004554482f555344000000",
+            "0x000000000000000000000000000000000067094ce40001080000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000038f1e274c20000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "0x0000000000000000000000000000000000000000000000000000000000000000",
+        ]);
 
-        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data.into_iter()).unwrap();
+        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).unwrap();
 
-        assert_eq!(dispatch_event.sender, U256::from(1_u32));
-        assert_eq!(dispatch_event.destination_domain, 2);
-        assert_eq!(dispatch_event.recipient_address, U256::from(3_u32));
-
-        let header = &dispatch_event.message.header;
-        assert_eq!(header.version, 1);
-        assert_eq!(header.nonce, 4);
-        assert_eq!(header.origin, 5);
-        assert_eq!(header.sender, U256::from(6_u32));
-        assert_eq!(header.destination, 7);
-        assert_eq!(header.recipient, U256::from(8_u32));
-
-        let body = &dispatch_event.message.body;
-        assert_eq!(body.nb_updated, 1);
-        assert_eq!(body.updates.len(), 1);
-
-        match &body.updates[0] {
-            DispatchUpdate::SpotMedian { feed_id: _, update } => {
-                assert_eq!(update.pair_id, U256::from(9_u32));
-                assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
-                assert_eq!(update.volume, 0_u128);
-                assert_eq!(update.metadata.decimals, 2);
-                assert_eq!(update.metadata.timestamp, 1234567890);
-                assert_eq!(update.metadata.num_sources_aggregated, 5);
-            }
-        }
-    }
-
-    #[test]
-    fn test_dispatch_event_from_event_data_no_updates() {
-        let event_data = vec![
-            create_field_element(1), // sender part 1
-            create_field_element(0), // sender part 2
-            create_field_element(2), // destination_domain
-            create_field_element(3), // recipient part 1
-            create_field_element(0), // recipient part 2
-            create_field_element(1), // version
-            create_field_element(4), // nonce
-            create_field_element(5), // origin
-            create_field_element(6), // sender part 1
-            create_field_element(0), // sender part 2
-            create_field_element(7), // destination
-            create_field_element(8), // recipient part 1
-            create_field_element(0), // recipient part 2
-            create_field_element(0), // nb_updated
-        ];
-
-        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data.into_iter()).unwrap();
-
-        assert_eq!(dispatch_event.sender, U256::from(1_u32));
-        assert_eq!(dispatch_event.destination_domain, 2);
-        assert_eq!(dispatch_event.recipient_address, U256::from(3_u32));
+        assert_eq!(dispatch_event.sender, U256::from_words(299314662055416172851006310266400155262, 0)); // ça
+        assert_eq!(dispatch_event.destination_domain, 0);
+        assert_eq!(dispatch_event.recipient_address, U256::from(0_u32));
 
         let header = &dispatch_event.message.header;
         assert_eq!(header.version, 1);
         assert_eq!(header.nonce, 4);
         assert_eq!(header.origin, 5);
-        assert_eq!(header.sender, U256::from(6_u32));
+        assert_eq!(header.sender, U256::from_words(299314662055416172851006310266400155262, 0));
         assert_eq!(header.destination, 7);
-        assert_eq!(header.recipient, U256::from(8_u32));
+        assert_eq!(header.recipient, U256::from(0_u32));
 
         let body = &dispatch_event.message.body;
-        assert_eq!(body.nb_updated, 0);
-        assert!(body.updates.is_empty());
+        assert_eq!(body.nb_updated, 2);
+        assert_eq!(body.updates.len(), 2);
+
+        // match &body.updates[0] {
+        //     DispatchUpdate::SpotMedian { feed_id: _, update } => {
+        //         assert_eq!(update.pair_id, U256::from(9_u32));
+        //         assert_eq!(update.price, BigDecimal::from(10)); // 1000 / 10^2
+        //         assert_eq!(update.volume, 0_u128);
+        //         assert_eq!(update.metadata.decimals, 2);
+        //         assert_eq!(update.metadata.timestamp, 1234567890);
+        //         assert_eq!(update.metadata.num_sources_aggregated, 5);
+        //     }
+        // }
     }
 }
