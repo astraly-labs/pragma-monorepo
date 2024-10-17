@@ -52,8 +52,6 @@ impl Service for IndexerService {
     }
 }
 
-// TODO: Index the Pragma Feed Registry [AddFeed] and [RemovedFeed] events so our feed ids list
-// is up to date.
 impl IndexerService {
     pub fn new(
         state: AppState,

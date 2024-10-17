@@ -20,7 +20,7 @@ pub struct TheorosCli {
     pub apibara_dna_uri: Uri,
 
     #[clap(env = "APIBARA_API_KEY", long)]
-    pub apibara_api_key: String,
+    pub apibara_api_key: Option<String>,
 
     #[clap(env = "SERVER_HOST", long, default_value = "0.0.0.0")]
     pub server_host: String,

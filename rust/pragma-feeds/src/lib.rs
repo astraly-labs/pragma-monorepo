@@ -106,8 +106,8 @@ impl FromStr for Feed {
         bytes.resize(35, 0);
         bytes.rotate_right(35 - original_len);
 
-        let asset_class = AssetClass::try_from(u16::from(bytes[0]))?;
-        let feed_type = FeedType::try_from(u16::from_be_bytes([bytes[1], bytes[2]]))?;
+        let asset_class = AssetClass::try_from(u16::from_be_bytes([bytes[0], bytes[1]]))?;
+        let feed_type = FeedType::try_from(u16::from_be_bytes([bytes[2], bytes[3]]))?;
 
         let pair_id = String::from_utf8(bytes[3..].to_vec())
             .context("Invalid UTF-8 sequence for pair_id")?
