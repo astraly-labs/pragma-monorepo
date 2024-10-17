@@ -4,6 +4,8 @@ use pragma_feed_types::{FeedId, FeedWithId};
 pub trait IPragmaFeedsRegistry<TContractState> {
     /// Adds the [feed_id] into the Registry.
     fn add_feed(ref self: TContractState, feed_id: FeedId);
+    /// Adds all the [Span<FeedId>] one by one into the Registry.
+    fn add_feeds(ref self: TContractState, feed_ids: Span<FeedId>);
     /// Removes the [feed_id] from the Registry.
     fn remove_feed(ref self: TContractState, feed_id: FeedId);
     /// Returns a feed.

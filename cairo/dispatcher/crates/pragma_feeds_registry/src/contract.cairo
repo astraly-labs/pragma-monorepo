@@ -103,6 +103,20 @@ pub mod PragmaFeedsRegistry {
             self.emit(NewFeedId { sender: get_caller_address(), feed_id: feed_id, })
         }
 
+        /// Adds all the [Span<FeedId>] one by one into the Registry.
+        ///
+        /// Panics if:
+        ///     * one of the feed_id format is incorrect,
+        ///     * one of the feed_id is already registered.
+        fn add_feeds(ref self: ContractState, feed_ids: Span<FeedId>) {
+            // [Check] Only owner
+            self.ownable.assert_only_owner();
+            // [Effect] Call add_feed with each feed_id
+            for feed_id in feed_ids {
+                self.add_feed(*feed_id);
+            }
+        }
+
         /// Removes the [feed_id] from the Registry.
         ///
         /// Panics if the feed_id is not in the Registry.
