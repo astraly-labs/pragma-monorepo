@@ -47,6 +47,41 @@ fn test_add_feed() {
 }
 
 #[test]
+fn test_add_feeds() {
+    let (registry_address, registry) = deploy_pragma_registry();
+    let mut spy = spy_events();
+
+    let feed_ids: Array<FeedId> = array![0x123, 0x456, 0x789];
+
+    registry.add_feeds(feed_ids.span());
+
+    // Check if all feeds exist
+    for feed_id in feed_ids
+        .clone() {
+            assert!(registry.feed_exists(feed_id), "Feed should exist");
+        };
+
+    // Check if the correct number of feeds were added
+    let all_feeds = registry.get_all_feeds();
+    assert!(all_feeds.len() == feed_ids.len(), "Number of feeds should match");
+
+    // Check if events were emitted for each feed
+    let mut expected_events = array![];
+    for feed_id in feed_ids {
+        expected_events
+            .append(
+                (
+                    registry_address,
+                    PragmaFeedsRegistry::Event::NewFeedId(
+                        PragmaFeedsRegistry::NewFeedId { sender: owner(), feed_id }
+                    )
+                )
+            );
+    };
+    spy.assert_emitted(@expected_events);
+}
+
+#[test]
 #[should_panic(expected: ('Feed ID already registed',))]
 fn test_add_duplicate_feed() {
     let (_, registry) = deploy_pragma_registry();
