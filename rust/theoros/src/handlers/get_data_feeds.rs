@@ -13,7 +13,7 @@ pub struct GetDataFeedsResponse(pub Vec<Feed>);
 
 #[utoipa::path(
     get,
-    path = "/v1/feed_ids",
+    path = "/v1/data_feeds",
     responses(
         (status = 200, description = "Get all the available feed ids", body = [GetDataFeedsResponse])
     ),
