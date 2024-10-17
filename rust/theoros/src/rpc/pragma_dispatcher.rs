@@ -7,18 +7,17 @@ use starknet::{
 
 use super::StarknetRpc;
 
-#[allow(unused)]
 #[async_trait::async_trait]
 pub trait PragmaDispatcherCalls {
-    /// Retrieves the feed registry address from the Pragma oracle Wrapper.
+    /// Retrieves the feed registry address from the Pragma Dispatcher.
     async fn get_pragma_feed_registry_address(&self, pragma_dispatcher_address: &Felt) -> anyhow::Result<Felt>;
-    /// Retrieves all the available data feeds from the Pragma oracle Wrapper.
-    async fn get_data_feeds(&self, feed_registry_address: &Felt) -> anyhow::Result<Vec<String>>;
+    /// Retrieves all the available feed ids from the Pragma Feeds Registry.
+    async fn get_feed_ids(&self, feed_registry_address: &Felt) -> anyhow::Result<Vec<String>>;
 }
 
 #[async_trait::async_trait]
 impl PragmaDispatcherCalls for StarknetRpc {
-    async fn get_data_feeds(&self, feed_registry_address: &Felt) -> anyhow::Result<Vec<String>> {
+    async fn get_feed_ids(&self, feed_registry_address: &Felt) -> anyhow::Result<Vec<String>> {
         let call = FunctionCall {
             contract_address: *feed_registry_address,
             entry_point_selector: selector!("get_all_feeds"),
@@ -38,7 +37,6 @@ impl PragmaDispatcherCalls for StarknetRpc {
         };
 
         let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
-
         Ok(response[0])
     }
 }

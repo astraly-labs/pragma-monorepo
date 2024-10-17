@@ -46,7 +46,7 @@ pub async fn get_calldata(
 ) -> Result<Json<GetCalldataResponse>, GetCalldataError> {
     tracing::info!("Received get calldata request for feed: {feed_id}");
 
-    let stored_feed_ids = state.storage.data_feeds();
+    let stored_feed_ids = state.storage.feed_ids();
     if !stored_feed_ids.contains(&feed_id) {
         return Err(GetCalldataError::FeedNotFound(feed_id));
     };

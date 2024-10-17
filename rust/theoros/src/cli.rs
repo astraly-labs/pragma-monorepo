@@ -31,8 +31,8 @@ pub struct TheorosCli {
     #[clap(env = "PRAGMA_DISPATCHER_ADDRESS", long, value_parser = parse_felt)]
     pub pragma_dispatcher_address: Felt,
 
-    #[clap(env = "HYPERLANE_CORE_ADDRESS", long, value_parser = parse_felt)]
-    pub hyperlane_core_address: Felt,
+    #[clap(env = "HYPERLANE_MAILBOX_ADDRESS", long, value_parser = parse_felt)]
+    pub hyperlane_mailbox_address: Felt,
 
     #[clap(env = "HYPERLANE_MERKLE_TREE_HOOK_ADDRESS", long, value_parser = parse_felt)]
     pub hyperlane_merkle_tree_hook_address: Felt,

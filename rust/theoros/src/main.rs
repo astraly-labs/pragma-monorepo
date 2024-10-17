@@ -57,7 +57,12 @@ async fn main() -> Result<()> {
         storage: Arc::new(theoros_storage),
         metrics_registry: metrics_service.registry(),
     };
-    let indexer_service = IndexerService::new(state.clone(), config.apibara_dna_uri, config.hyperlane_core_address)?;
+    let indexer_service = IndexerService::new(
+        state.clone(),
+        config.apibara_dna_uri,
+        config.hyperlane_mailbox_address,
+        config.hyperlane_validator_announce_address,
+    )?;
     let api_service = ApiService::new(state.clone(), &config.server_host, config.server_port);
     let hyperlane_service = HyperlaneService::new(state.clone(), config.hyperlane_merkle_tree_hook_address);
 

@@ -47,10 +47,15 @@ impl Service for IndexerService {
     }
 }
 
+// TODO: Index the Pragma Feed Registry [AddFeed] and [RemovedFeed] events so our feed ids list
+// is up to date.
 impl IndexerService {
-    pub fn new(state: AppState, apibara_uri: Uri, hyperlane_core_contract_address: Felt) -> Result<Self> {
-        let hyperlane_core_contract_address = felt_as_apibara_field(&hyperlane_core_contract_address);
-
+    pub fn new(
+        state: AppState,
+        apibara_uri: Uri,
+        hyperlane_mailbox_address: Felt,
+        hyperlane_validator_announce_address: Felt,
+    ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
             .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
@@ -58,12 +63,12 @@ impl IndexerService {
                     .with_header(HeaderFilter::weak())
                     .add_event(|event| {
                         event
-                            .with_from_address(hyperlane_core_contract_address.clone())
+                            .with_from_address(felt_as_apibara_field(&hyperlane_mailbox_address))
                             .with_keys(vec![DISPATCH_EVENT_SELECTOR.clone()])
                     })
                     .add_event(|event| {
                         event
-                            .with_from_address(hyperlane_core_contract_address.clone())
+                            .with_from_address(felt_as_apibara_field(&hyperlane_validator_announce_address))
                             .with_keys(vec![VALIDATOR_ANNOUNCEMENT_SELECTOR.clone()])
                     })
                     .build()

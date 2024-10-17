@@ -13,7 +13,7 @@ pub struct GetDataFeedsResponse(pub Vec<Feed>);
 
 #[utoipa::path(
     get,
-    path = "/v1/data_feeds",
+    path = "/v1/feed_ids",
     responses(
         (status = 200, description = "Get all the available feed ids", body = [GetDataFeedsResponse])
     ),
@@ -21,7 +21,7 @@ pub struct GetDataFeedsResponse(pub Vec<Feed>);
 pub async fn get_data_feeds(State(state): State<AppState>) -> Result<Json<GetDataFeedsResponse>, GetDataFeedsError> {
     tracing::info!("Received get all data feeds request");
 
-    let stored_feed_ids = state.storage.data_feeds();
+    let stored_feed_ids = state.storage.feed_ids();
 
     let mut feeds = Vec::with_capacity(stored_feed_ids.len());
     for feed_id in stored_feed_ids {
