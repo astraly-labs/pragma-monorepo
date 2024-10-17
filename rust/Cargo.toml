@@ -79,7 +79,6 @@ num-traits = "0.2"
 ethers = { version = "2.0.11", features = ["abigen"] }
 
 
-
 # Apibara DNA (indexing)
 apibara-core = { git = "https://github.com/apibara/dna", rev = "9caa385" }
 apibara-sdk = { git = "https://github.com/apibara/dna", rev = "9caa385" }

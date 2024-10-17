@@ -12,13 +12,16 @@ async-trait = { workspace = true }
 axum = { workspace = true, features = ["macros", "ws", "tokio"] }
 axum-macros = { workspace = true }
 bigdecimal = { workspace = true }
-clap = { workspace = true, features = ["derive", "env"] }
 chrono = { workspace = true, features = ["serde"] }
+clap = { workspace = true, features = ["derive", "env"] }
 dotenvy = { workspace = true }
 envy = { workspace = true }
+ethers = { workspace = true }
 futures-util = { workspace = true }
 hyper = { workspace = true, features = ["server"] }
 lazy_static = { workspace = true }
+num-bigint = { workspace = true }
+num-traits = { workspace = true }
 opentelemetry = { workspace = true }
 prometheus = { workspace = true }
 rusoto_core = { workspace = true }
@@ -35,10 +38,7 @@ utoipa = { workspace = true, features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipauto = { workspace = true }
 ya-gcp = { workspace = true }
-num-bigint = { workspace = true }
-num-traits = { workspace = true }
-ethers = { workspace = true }
 
+alloy-primitives = "0.8.5"
 pragma-feeds = { workspace = true }
 pragma-utils = { workspace = true }
-alloy-primitives = "0.8.5"
