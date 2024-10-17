@@ -6,7 +6,6 @@ use pragma_utils::conversions::starknet::FeltVecToString;
 use super::FromStarknetEventData;
 
 #[derive(Debug, Clone)]
-#[allow(unused)]
 pub struct ValidatorAnnouncementEvent {
     pub validator: EthAddress,
     pub storage_location: String,

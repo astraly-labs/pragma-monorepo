@@ -1,13 +1,13 @@
+use std::sync::Arc;
+
 use anyhow::{Context, Result};
 use ethers::{
     contract::abigen,
     providers::{Http, Provider},
     types::Address,
 };
-
 use starknet::core::types::Felt;
 
-use std::sync::Arc;
 // Generate the contract bindings
 abigen!(
     IHyperlane,

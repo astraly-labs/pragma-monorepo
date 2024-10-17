@@ -32,13 +32,13 @@ impl HyperlaneService {
         loop {
             let storage = self.state.storage.validators().all().await;
             for (validator, checkpoint) in storage {
-                tracing::info!("Validator: {:?} - Storage: {:?}", validator, checkpoint);
+                tracing::debug!("Validator: {:?} - Storage: {:?}", validator, checkpoint);
                 let index = self.get_latest_index().await?;
                 let fetcher = checkpoint.build().await?;
                 let value = fetcher.fetch(index).await?;
 
                 if let Some(checkpoint_value) = value {
-                    tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
+                    tracing::debug!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
                     self.state
                         .storage
                         .checkpoints()

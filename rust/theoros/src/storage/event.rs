@@ -3,11 +3,6 @@ use anyhow::Result;
 use std::collections::HashMap;
 use tokio::sync::RwLock;
 
-// const DEFAULT_STORAGE_MAX_SIZE: usize = 16;
-
-/// FIFO Buffer of fixed size used to store events.
-/// The first element is the latest.
-///
 #[derive(Debug, Clone)]
 pub struct DispatchUpdateInfos {
     pub update: DispatchUpdate,

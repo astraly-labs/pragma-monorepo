@@ -6,6 +6,7 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+
 #[derive(Clone, Default)]
 pub struct EventCache {
     cache: Arc<RwLock<HashMap<U256, DispatchEvent>>>,
