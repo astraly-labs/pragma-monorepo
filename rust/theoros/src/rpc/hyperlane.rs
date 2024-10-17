@@ -46,8 +46,7 @@ impl HyperlaneCalls for StarknetRpc {
             calldata,
         };
 
-        let mut response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
-
+        let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
         let storage_locations = process_nested_felt_array(&response)?;
 
         Ok(storage_locations)

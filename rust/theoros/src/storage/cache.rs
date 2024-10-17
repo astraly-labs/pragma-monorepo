@@ -52,7 +52,7 @@ impl EventCache {
         if !to_remove.is_empty() {
             let mut cache = self.cache.write().await;
             for message_id in &to_remove {
-                cache.remove(&message_id);
+                cache.remove(message_id);
             }
             tracing::info!("Removed {} processed events from cache", to_remove.len());
         }

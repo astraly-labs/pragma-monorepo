@@ -42,23 +42,3 @@ impl EventStorage {
         Ok(events.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_event_storage() {
-        let storage = EventStorage::new();
-
-        // TODO refactor tests
-        // storage.add(1, 1).await;
-        // storage.add(2, 2).await;
-        // storage.add(3, 3).await;
-        // storage.add(4,4).await;
-
-        // assert_eq!(storage.get(1).await.unwrap(), Ok(1));
-        // assert_eq!(storage.get(2).await, Ok(2));
-        // assert_eq!(storage.all().await, vec![4, 3, 2]);
-    }
-}

@@ -161,7 +161,7 @@ pub struct DispatchMessageBody {
 impl FromStarknetEventData for DispatchMessageBody {
     fn from_starknet_event_data(data: Vec<Felt>) -> Result<Self> {
         // Convert each Felt to its hex string representation and log the event data
-        
+
         let x: Vec<String> = data.iter().map(|f| f.to_fixed_hex_string()).collect();
         tracing::info!("EVENT DATA: {:#?}", x);
 
@@ -230,10 +230,7 @@ impl HasFeedId for DispatchUpdate {
     }
 }
 
-
-
 impl DispatchUpdate {
-    
     fn from_starknet_event_data(mut data: Vec<u8>) -> Result<Self> {
         let raw_asset_class = u16::from_be_bytes(data.drain(..2).collect::<Vec<u8>>().try_into().unwrap());
 
@@ -296,7 +293,7 @@ impl SpotMedianUpdate {
         let timestamp = u64::from_be_bytes(data.drain(..8).collect::<Vec<u8>>().try_into().unwrap());
         let num_sources_aggregated = u16::from_be_bytes(data.drain(..2).collect::<Vec<u8>>().try_into().unwrap());
         let decimals = u8::from_be_bytes(data.drain(..1).collect::<Vec<u8>>().try_into().unwrap());
-        let price_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());  // U256
+        let price_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap()); // U256
         let price_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
         let price = U256::from_words(price_low, price_high);
         let volume_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap()); // U256

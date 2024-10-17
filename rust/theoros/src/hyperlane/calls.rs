@@ -1,4 +1,4 @@
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use ethers::{
     contract::abigen,
     providers::{Http, Provider},
@@ -7,7 +7,6 @@ use ethers::{
 
 use starknet::core::types::Felt;
 
-use std::env;
 use std::sync::Arc;
 // Generate the contract bindings
 abigen!(
@@ -19,7 +18,6 @@ abigen!(
 
 pub struct HyperlaneClient {
     pub contract: IHyperlane<Provider<Http>>,
-    provider: Arc<Provider<Http>>,
 }
 
 impl HyperlaneClient {
@@ -29,26 +27,21 @@ impl HyperlaneClient {
         let provider: Provider<Http> = Provider::<Http>::try_from(rpc_url)?;
         let provider = Arc::new(provider);
 
-        let contract = IHyperlane::new(contract_address, Arc::clone(&provider));
+        let contract = IHyperlane::new(contract_address, provider);
 
-        Ok(Self { contract, provider })
+        Ok(Self { contract })
     }
 
     pub async fn get_validators(&self) -> Result<Vec<Felt>> {
         let mut validators = Vec::new();
         let mut index = 0;
 
-        loop {
-            match self.contract.validators(index.into()).call().await {
-                Ok(address) => {
-                    if address == Address::zero() {
-                        break;
-                    }
-                    validators.push(Felt::from_bytes_be(&pad_to_32_bytes(address.as_bytes())));
-                    index += 1;
-                }
-                Err(_) => break,
+        while let Ok(address) = self.contract.validators(index.into()).call().await {
+            if address == Address::zero() {
+                break;
             }
+            validators.push(Felt::from_bytes_be(&pad_to_32_bytes(address.as_bytes())));
+            index += 1;
         }
 
         Ok(validators)

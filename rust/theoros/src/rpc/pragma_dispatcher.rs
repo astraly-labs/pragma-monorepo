@@ -9,15 +9,15 @@ use super::StarknetRpc;
 
 #[allow(unused)]
 #[async_trait::async_trait]
-pub trait PragmaWrapperCalls {
+pub trait PragmaDispatcherCalls {
     /// Retrieves the feed registry address from the Pragma oracle Wrapper.
-    async fn get_pragma_feed_registry_address(&self, pragma_wrapper_address: &Felt) -> anyhow::Result<Felt>;
+    async fn get_pragma_feed_registry_address(&self, pragma_dispatcher_address: &Felt) -> anyhow::Result<Felt>;
     /// Retrieves all the available data feeds from the Pragma oracle Wrapper.
     async fn get_data_feeds(&self, feed_registry_address: &Felt) -> anyhow::Result<Vec<String>>;
 }
 
 #[async_trait::async_trait]
-impl PragmaWrapperCalls for StarknetRpc {
+impl PragmaDispatcherCalls for StarknetRpc {
     async fn get_data_feeds(&self, feed_registry_address: &Felt) -> anyhow::Result<Vec<String>> {
         let call = FunctionCall {
             contract_address: *feed_registry_address,
@@ -30,9 +30,9 @@ impl PragmaWrapperCalls for StarknetRpc {
         Ok(felt_vec_to_vec_string(&response)?)
     }
 
-    async fn get_pragma_feed_registry_address(&self, pragma_wrapper_address: &Felt) -> anyhow::Result<Felt> {
+    async fn get_pragma_feed_registry_address(&self, pragma_dispatcher_address: &Felt) -> anyhow::Result<Felt> {
         let call = FunctionCall {
-            contract_address: *pragma_wrapper_address,
+            contract_address: *pragma_dispatcher_address,
             entry_point_selector: selector!("get_pragma_feed_registry_address"),
             calldata: vec![],
         };

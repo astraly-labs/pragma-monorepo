@@ -9,7 +9,7 @@ pub use validators::*;
 
 use starknet::core::types::Felt;
 
-use crate::rpc::{HyperlaneCalls, PragmaWrapperCalls, StarknetRpc};
+use crate::rpc::{HyperlaneCalls, PragmaDispatcherCalls, StarknetRpc};
 
 /// Theoros storage that contains:
 ///   * a set of all available data feeds,
@@ -26,34 +26,24 @@ pub struct TheorosStorage {
 }
 
 impl TheorosStorage {
-    // TODO: remove this later, only used for now for tests
-    pub fn testing_state() -> Self {
-        let constants_data_feeds: HashSet<String> = HashSet::from([
-            "0x01534d4254432f555344".into(),     // SPOT MEDIAN: BTC/USD
-            "0x01534d4554482f555344".into(),     // SPOT MEDIAN: ETH/USD
-            "0x014F50454b55424f2f555344".into(), // OPTIONS: EKUBO/USD
-        ]);
-        Self { data_feeds: constants_data_feeds, ..Default::default() }
-    }
-
     pub async fn from_rpc_state(
         rpc_client: &StarknetRpc,
-        pragma_wrapper_address: &Felt,
+        pragma_dispatcher_address: &Felt,
         validator_announce: &Felt,
     ) -> anyhow::Result<Self> {
         let mut theoros_storage = TheorosStorage::default();
 
         let mut initial_validators = rpc_client.get_announced_validators(validator_announce).await?;
-        initial_validators.remove(0);
+        initial_validators.remove(0); // TODO: why?
+
         let initial_locations =
             rpc_client.get_announced_storage_locations(validator_announce, &initial_validators).await?;
-
         theoros_storage.validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
-        let feed_registry_address = rpc_client.get_pragma_feed_registry_address(pragma_wrapper_address).await?;
-
+        let feed_registry_address = rpc_client.get_pragma_feed_registry_address(pragma_dispatcher_address).await?;
         let supported_data_feeds = rpc_client.get_data_feeds(&feed_registry_address).await?;
         theoros_storage.data_feeds = supported_data_feeds.into_iter().collect();
+
         Ok(theoros_storage)
     }
 

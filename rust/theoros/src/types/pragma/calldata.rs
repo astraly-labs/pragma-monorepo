@@ -62,11 +62,8 @@ pub struct Payload {
 // TODO: these should be tested and follow the abi.encodePacked spec
 impl AsCalldata for CalldataHeader {
     fn as_bytes(&self) -> Vec<u8> {
-        let mut bytes = vec![];
-        bytes.push(self.major_version);
-        bytes.push(self.minor_version);
-        bytes.push(self.trailing_header_size);
-        bytes.push(self.hyperlane_msg_size);
+        let mut bytes =
+            vec![self.major_version, self.minor_version, self.trailing_header_size, self.hyperlane_msg_size];
         bytes.extend_from_slice(&self.hyperlane_msg.as_bytes());
         bytes
     }
@@ -74,9 +71,7 @@ impl AsCalldata for CalldataHeader {
 
 impl AsCalldata for HyperlaneMessage {
     fn as_bytes(&self) -> Vec<u8> {
-        let mut bytes = vec![];
-        bytes.push(self.hyperlane_version);
-        bytes.push(self.signers_len);
+        let mut bytes = vec![self.hyperlane_version, self.signers_len];
         for signer in &self.signers {
             bytes.push(signer.validator_index);
             bytes.extend_from_slice(&signer.signature.as_bytes());
@@ -84,7 +79,7 @@ impl AsCalldata for HyperlaneMessage {
         bytes.extend_from_slice(&self.nonce.to_be_bytes());
         bytes.extend_from_slice(&self.timestamp.to_be_bytes());
         bytes.extend_from_slice(&self.emitter_chain_id.to_be_bytes());
-        bytes.extend_from_slice(&self.emitter_address.as_bytes());
+        bytes.extend_from_slice(self.emitter_address.as_bytes());
         bytes.extend_from_slice(&self.payload.as_bytes());
         bytes
     }
@@ -92,8 +87,7 @@ impl AsCalldata for HyperlaneMessage {
 
 impl AsCalldata for ValidatorSignature {
     fn as_bytes(&self) -> Vec<u8> {
-        let mut bytes = vec![];
-        bytes.push(self.validator_index);
+        let mut bytes = vec![self.validator_index];
         bytes.extend_from_slice(&self.signature.as_bytes());
         bytes
     }
@@ -102,15 +96,15 @@ impl AsCalldata for ValidatorSignature {
 impl AsCalldata for Payload {
     fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![];
-        bytes.extend_from_slice(&self.checkpoint_root.as_bytes());
+        bytes.extend_from_slice(self.checkpoint_root.as_bytes());
         bytes.push(self.num_updates);
         bytes.extend_from_slice(&self.update_data_len.to_be_bytes());
         bytes.extend_from_slice(&self.proof_len.to_be_bytes());
         for proof in &self.proof {
-            bytes.extend_from_slice(&proof.as_bytes());
+            bytes.extend_from_slice(proof.as_bytes());
         }
         bytes.extend_from_slice(&self.update_data);
-        bytes.extend_from_slice(&self.feed_id.as_bytes());
+        bytes.extend_from_slice(self.feed_id.as_bytes());
         bytes.extend_from_slice(&self.publish_time.to_be_bytes());
         bytes
     }

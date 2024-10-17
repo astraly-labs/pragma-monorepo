@@ -68,12 +68,12 @@ impl TryFrom<u16> for AssetClass {
 #[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize)]
 pub enum FeedType {
     #[strum(serialize = "Spot Median")]
-    SpotMedian = 0, 
-    Twap = 1, 
+    SpotMedian = 0,
+    Twap = 1,
     #[strum(serialize = "Realized Volatility")]
-    RealizedVolatility = 2, 
-    Options = 3, 
-    Perp = 4, 
+    RealizedVolatility = 2,
+    Options = 3,
+    Perp = 4,
 }
 
 impl TryFrom<u16> for FeedType {

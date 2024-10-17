@@ -11,7 +11,10 @@ use starknet::core::types::Felt;
 use starknet::core::utils::get_selector_from_name;
 use tokio::task::JoinSet;
 
-use pragma_utils::{conversions::apibara::{felt_as_apibara_field, apibara_field_as_felt}, services::Service};
+use pragma_utils::{
+    conversions::apibara::{apibara_field_as_felt, felt_as_apibara_field},
+    services::Service,
+};
 
 use crate::{
     storage::DispatchUpdateInfos,
@@ -94,7 +97,7 @@ impl IndexerService {
                     self.state
                         .storage
                         .cached_event()
-                        .process_cached_events(&self.state.storage.checkpoints(), &self.state.storage.dispatch_events())
+                        .process_cached_events(self.state.storage.checkpoints(), self.state.storage.dispatch_events())
                         .await?;
                 }
                 Ok(None) => continue,
@@ -131,13 +134,13 @@ impl IndexerService {
     async fn decode_and_store_event(&self, event: Event) -> Result<()> {
         let event_selector = event.keys.first().context("No event selector")?;
 
-        let event_data: Vec<Felt> = event.data.iter().map(|fe| apibara_field_as_felt(&fe)).collect();
+        let event_data: Vec<Felt> = event.data.iter().map(apibara_field_as_felt).collect();
         match event_selector {
             selector if selector == &*DISPATCH_EVENT_SELECTOR => {
-                tracing::info!("Received a DispatchEvent");
-                let dispatch_event = DispatchEvent::from_starknet_event_data(event_data)
-                    .context("Failed to parse DispatchEvent")?;
-                tracing::info!("Checking checkpoint storage for correspondence");
+                tracing::info!("📨 [Indexer] Received a DispatchEvent!");
+                let dispatch_event =
+                    DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse DispatchEvent")?;
+                tracing::debug!("Checking checkpoint storage for correspondence");
                 let message_id = dispatch_event.format_message();
 
                 for update in dispatch_event.message.body.updates.iter() {
@@ -148,24 +151,22 @@ impl IndexerService {
                         emitter_chain_id: dispatch_event.message.header.origin,
                         nonce: dispatch_event.message.header.nonce,
                     };
-                    tracing::info!("here is the udpate{:?}", dispatch_update_infos);
                     // Check if there's a corresponding checkpoint
                     if self.state.storage.checkpoints().contains_message_id(message_id).await {
-                        tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
+                        tracing::debug!("Found corresponding checkpoint for message ID: {:?}", message_id);
                         // If found, store the event directly
                         self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos).await?;
                     } else {
-                        tracing::info!("No checkpoint found, caching dispatch event");
+                        tracing::debug!("No checkpoint found, caching dispatch event");
                         // If no checkpoint found, add to cache
                         self.state.storage.cached_event().add_event(message_id, &dispatch_event).await;
                     }
                 }
             }
             selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {
-                tracing::info!("Received a ValidatorAnnouncementEvent");
-                let validator_announcement_event =
-                    ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
-                        .context("Failed to parse ValidatorAnnouncementEvent")?;
+                tracing::info!("📨 [Indexer] Received a ValidatorAnnouncementEvent!");
+                let validator_announcement_event = ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
+                    .context("Failed to parse ValidatorAnnouncementEvent")?;
                 self.state.storage.validators().add_from_announcement_event(validator_announcement_event).await?;
             }
             _ => panic!("Unexpected event selector - should never happen."),

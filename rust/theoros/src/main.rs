@@ -9,7 +9,7 @@ mod types;
 
 use std::sync::Arc;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use prometheus::Registry;
 use starknet::core::types::Felt;
 use storage::TheorosStorage;
@@ -66,7 +66,6 @@ async fn main() -> Result<()> {
     let theoros_storage =
         TheorosStorage::from_rpc_state(&rpc_client, &PRAGMA_DISPATCHER_CONTRACT_ADDRESS, &HYPERLANE_VALIDATOR_ANNOUNCE)
             .await?;
-    // let theoros_storage = TheorosStorage::testing_state();
 
     // Theoros metrics
     let metrics_service = MetricsService::new(false, METRICS_PORT)?;
