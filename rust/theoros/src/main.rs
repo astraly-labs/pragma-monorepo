@@ -10,7 +10,7 @@ mod types;
 
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 use prometheus::Registry;
 use storage::TheorosStorage;
@@ -22,7 +22,7 @@ use pragma_utils::{
 };
 
 use cli::TheorosCli;
-use rpc::StarknetRpc;
+use rpc::{PragmaDispatcherCalls, StarknetRpc};
 use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
 const LOG_LEVEL: Level = Level::INFO;
@@ -43,9 +43,14 @@ async fn main() -> Result<()> {
 
     let rpc_client = StarknetRpc::new(config.madara_rpc_url);
 
+    let pragma_feed_registry_address = rpc_client
+        .get_pragma_feed_registry_address(&config.pragma_dispatcher_address)
+        .await
+        .context("Fetching the Pragma Feed Registry address")?;
+
     let theoros_storage = TheorosStorage::from_rpc_state(
         &rpc_client,
-        &config.pragma_dispatcher_address,
+        &pragma_feed_registry_address,
         &config.hyperlane_validator_announce_address,
     )
     .await?;
@@ -57,6 +62,8 @@ async fn main() -> Result<()> {
         storage: Arc::new(theoros_storage),
         metrics_registry: metrics_service.registry(),
     };
+
+    // TODO: Pass the pragma_feed_registry_address and index events
     let indexer_service = IndexerService::new(
         state.clone(),
         config.apibara_dna_uri,

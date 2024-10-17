@@ -7,24 +7,26 @@ use starknet::{
 
 use super::StarknetRpc;
 
+const PENDING_BLOCK: BlockId = BlockId::Tag(BlockTag::Pending);
+
 #[async_trait::async_trait]
 pub trait PragmaDispatcherCalls {
     /// Retrieves the feed registry address from the Pragma Dispatcher.
     async fn get_pragma_feed_registry_address(&self, pragma_dispatcher_address: &Felt) -> anyhow::Result<Felt>;
     /// Retrieves all the available feed ids from the Pragma Feeds Registry.
-    async fn get_feed_ids(&self, feed_registry_address: &Felt) -> anyhow::Result<Vec<String>>;
+    async fn get_feed_ids(&self, pragma_feed_registry_address: &Felt) -> anyhow::Result<Vec<String>>;
 }
 
 #[async_trait::async_trait]
 impl PragmaDispatcherCalls for StarknetRpc {
-    async fn get_feed_ids(&self, feed_registry_address: &Felt) -> anyhow::Result<Vec<String>> {
+    async fn get_feed_ids(&self, pragma_feed_registry_address: &Felt) -> anyhow::Result<Vec<String>> {
         let call = FunctionCall {
-            contract_address: *feed_registry_address,
+            contract_address: *pragma_feed_registry_address,
             entry_point_selector: selector!("get_all_feeds"),
             calldata: vec![],
         };
 
-        let mut response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
+        let mut response = self.0.call(call, PENDING_BLOCK).await?;
         response.insert(0, Felt::from(1)); // to fit the format given in the function
         Ok(felt_vec_to_vec_string(&response)?)
     }
@@ -36,7 +38,7 @@ impl PragmaDispatcherCalls for StarknetRpc {
             calldata: vec![],
         };
 
-        let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
+        let response = self.0.call(call, PENDING_BLOCK).await?;
         Ok(response[0])
     }
 }
