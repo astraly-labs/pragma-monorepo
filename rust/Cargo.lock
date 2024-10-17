@@ -6234,6 +6234,7 @@ dependencies = [
  "axum-macros",
  "bigdecimal 0.4.5",
  "chrono",
+ "clap",
  "dotenvy",
  "envy",
  "ethers",

@@ -74,7 +74,7 @@ impl FromStarknetEventData for DispatchEvent {
 
 impl DispatchEvent {
     /// Generates a message id from a Dispatch Event.
-    pub fn format_message(&self) -> alloy_U256 {
+    pub fn id(&self) -> alloy_U256 {
         let mut input = Vec::new();
 
         // Formatting header part

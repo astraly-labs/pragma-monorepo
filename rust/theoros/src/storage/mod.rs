@@ -15,7 +15,8 @@ use crate::rpc::{HyperlaneCalls, PragmaDispatcherCalls, StarknetRpc};
 ///   * a set of all available data feeds,
 ///   * a mapping of all the validators and their fetchers.
 ///   * a mapping of all the validators and their latest fetched checkpoints.
-///   * an events storage containing the most recents [DispatchEvent] events indexed,
+///   * an event cache,
+///   * an events storage containing the most recents [DispatchEvent] events indexed.
 #[derive(Default)]
 pub struct TheorosStorage {
     data_feeds: HashSet<String>,
@@ -29,15 +30,14 @@ impl TheorosStorage {
     pub async fn from_rpc_state(
         rpc_client: &StarknetRpc,
         pragma_dispatcher_address: &Felt,
-        validator_announce: &Felt,
+        hyperlane_validator_announce_address: &Felt,
     ) -> anyhow::Result<Self> {
         let mut theoros_storage = TheorosStorage::default();
 
-        let mut initial_validators = rpc_client.get_announced_validators(validator_announce).await?;
-        initial_validators.remove(0); // TODO: why?
-
-        let initial_locations =
-            rpc_client.get_announced_storage_locations(validator_announce, &initial_validators).await?;
+        let initial_validators = rpc_client.get_announced_validators(hyperlane_validator_announce_address).await?;
+        let initial_locations = rpc_client
+            .get_announced_storage_locations(hyperlane_validator_announce_address, &initial_validators)
+            .await?;
         theoros_storage.validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
         let feed_registry_address = rpc_client.get_pragma_feed_registry_address(pragma_dispatcher_address).await?;

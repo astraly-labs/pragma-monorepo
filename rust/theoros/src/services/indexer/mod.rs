@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use anyhow::{anyhow, bail, Context, Result};
 use apibara_core::{
     node::v1alpha2::DataFinality,
@@ -19,14 +17,12 @@ use pragma_utils::{
 use crate::{
     storage::DispatchUpdateInfos,
     types::hyperlane::{DispatchEvent, FromStarknetEventData, HasFeedId, ValidatorAnnouncementEvent},
-    AppState, HYPERLANE_CORE_CONTRACT_ADDRESS,
+    AppState,
 };
 
-// TODO: Everything below here should be configurable, either via CLI or config file.
-// See: https://github.com/astraly-labs/pragma-monorepo/issues/17
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
+
 lazy_static::lazy_static! {
-    pub static ref F_HYPERLANE_CORE_CONTRACT_ADDRESS: FieldElement = felt_as_apibara_field(&HYPERLANE_CORE_CONTRACT_ADDRESS);
     pub static ref DISPATCH_EVENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("Dispatch").unwrap());
     pub static ref VALIDATOR_ANNOUNCEMENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("ValidatorAnnouncement").unwrap());
 }
@@ -52,8 +48,8 @@ impl Service for IndexerService {
 }
 
 impl IndexerService {
-    pub fn new(state: AppState, apibara_uri: &str) -> Result<Self> {
-        let uri = Uri::from_str(apibara_uri)?;
+    pub fn new(state: AppState, apibara_uri: Uri, hyperlane_core_contract_address: Felt) -> Result<Self> {
+        let hyperlane_core_contract_address = felt_as_apibara_field(&hyperlane_core_contract_address);
 
         let stream_config = Configuration::<Filter>::default()
             .with_finality(DataFinality::DataStatusPending)
@@ -62,18 +58,18 @@ impl IndexerService {
                     .with_header(HeaderFilter::weak())
                     .add_event(|event| {
                         event
-                            .with_from_address(F_HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
+                            .with_from_address(hyperlane_core_contract_address.clone())
                             .with_keys(vec![DISPATCH_EVENT_SELECTOR.clone()])
                     })
                     .add_event(|event| {
                         event
-                            .with_from_address(F_HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
+                            .with_from_address(hyperlane_core_contract_address.clone())
                             .with_keys(vec![VALIDATOR_ANNOUNCEMENT_SELECTOR.clone()])
                     })
                     .build()
             });
 
-        let indexer_service = Self { state, uri, stream_config };
+        let indexer_service = Self { state, uri: apibara_uri, stream_config };
         Ok(indexer_service)
     }
 
@@ -137,11 +133,10 @@ impl IndexerService {
         let event_data: Vec<Felt> = event.data.iter().map(apibara_field_as_felt).collect();
         match event_selector {
             selector if selector == &*DISPATCH_EVENT_SELECTOR => {
-                tracing::info!("📨 [Indexer] Received a DispatchEvent!");
+                tracing::info!("📨 [Indexer] Received a DispatchEvent");
                 let dispatch_event =
                     DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse DispatchEvent")?;
-                tracing::debug!("Checking checkpoint storage for correspondence");
-                let message_id = dispatch_event.format_message();
+                let message_id = dispatch_event.id();
 
                 for update in dispatch_event.message.body.updates.iter() {
                     let feed_id = update.feed_id();
@@ -164,12 +159,12 @@ impl IndexerService {
                 }
             }
             selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {
-                tracing::info!("📨 [Indexer] Received a ValidatorAnnouncementEvent!");
+                tracing::info!("📨 [Indexer] Received a ValidatorAnnouncementEvent");
                 let validator_announcement_event = ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
                     .context("Failed to parse ValidatorAnnouncementEvent")?;
                 self.state.storage.validators().add_from_announcement_event(validator_announcement_event).await?;
             }
-            _ => panic!("Unexpected event selector - should never happen."),
+            _ => panic!("😱 Unexpected event selector - should never happen."),
         }
         Ok(())
     }

@@ -42,9 +42,8 @@ impl EventCache {
                     };
                     event_storage.add(feed_id, dispatch_update_infos).await?;
                 }
-
                 to_remove.push(*message_id);
-                tracing::info!("Processed cached event with message ID: {:?}", message_id);
+                tracing::debug!("Processed cached event with message ID: {:?}", message_id);
             }
         }
 
@@ -54,7 +53,7 @@ impl EventCache {
             for message_id in &to_remove {
                 cache.remove(message_id);
             }
-            tracing::info!("Removed {} processed events from cache", to_remove.len());
+            tracing::debug!("Removed {} processed events from cache", to_remove.len());
         }
 
         Ok(())
