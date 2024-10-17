@@ -230,12 +230,11 @@ impl DispatchUpdate {
         let feed_id = build_feed_id(raw_asset_class, raw_feed_type, pair_id_low, pair_id_high);
 
         let update = match feed_type {
-            FeedType::SpotMedian => {
+            FeedType::UniqueSpotMedian => {
                 let mut res = SpotMedianUpdate::from_starknet_event_data(data)?;
                 res.pair_id = pair_id;
                 DispatchUpdate::SpotMedian { update: res, feed_id }
             }
-            _ => unimplemented!("TODO: Implement the other updates"),
         };
 
         Ok(update)
