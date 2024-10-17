@@ -8,6 +8,9 @@ use pragma_utils::conversions::apibara::FromFieldBytes;
 
 use super::FromStarknetEventData;
 
+const MESSAGE_HEADER_FELT_SIZE: usize = 10;
+const SPOT_MEDIAN_UPDATE_SIZE: usize = 107;
+
 #[derive(Debug, Clone)]
 pub struct DispatchEvent {
     pub sender: U256,
@@ -60,8 +63,7 @@ impl FromStarknetEventData for DispatchEvent {
         );
 
         let header = DispatchMessageHeader::from_starknet_event_data(data.clone().cloned().collect())?;
-        const HEADER_SIZE: usize = 8 + 2; // 2 = 2 data that we don't care about
-        let body_data: Vec<Felt> = data.skip(HEADER_SIZE).cloned().collect();
+        let body_data: Vec<Felt> = data.skip(MESSAGE_HEADER_FELT_SIZE).cloned().collect();
         let body = DispatchMessageBody::from_starknet_event_data(body_data)?;
 
         let message = DispatchMessage { header, body };
@@ -173,7 +175,7 @@ impl FromStarknetEventData for DispatchMessageBody {
             let update = DispatchUpdate::from_starknet_event_data(data.clone()).context("Failed to parse update")?;
             match update {
                 DispatchUpdate::SpotMedian { update: _, feed_id: _ } => {
-                    data.drain(..107);
+                    data.drain(..SPOT_MEDIAN_UPDATE_SIZE);
                 }
             }
             updates.push(update);
@@ -227,10 +229,8 @@ impl DispatchUpdate {
 
         let feed_id = build_feed_id(raw_asset_class, raw_feed_type, pair_id_low, pair_id_high);
 
-        // Handle updates based on feed type
         let update = match feed_type {
             FeedType::SpotMedian => {
-                // Pass the remaining drained data to the next function
                 let mut res = SpotMedianUpdate::from_starknet_event_data(data)?;
                 res.pair_id = pair_id;
                 DispatchUpdate::SpotMedian { update: res, feed_id }
@@ -290,19 +290,16 @@ impl SpotMedianUpdate {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
 
-        // Serialize pair_id (U256 is 32 bytes)
         bytes.extend_from_slice(&self.pair_id.low().to_be_bytes());
         bytes.extend_from_slice(&self.pair_id.high().to_be_bytes());
-        // Serialize metadata
+
         bytes.extend_from_slice(&self.metadata.timestamp.to_be_bytes());
         bytes.extend_from_slice(&self.metadata.num_sources_aggregated.to_be_bytes());
         bytes.extend_from_slice(&self.metadata.decimals.to_be_bytes());
 
-        // Serialize price (U256 is 32 bytes)
         bytes.extend_from_slice(&self.price.low().to_be_bytes());
         bytes.extend_from_slice(&self.price.high().to_be_bytes());
 
-        // Serialize volume (U256 is 32 bytes)
         bytes.extend_from_slice(&self.volume.low().to_be_bytes());
         bytes.extend_from_slice(&self.volume.high().to_be_bytes());
         bytes
