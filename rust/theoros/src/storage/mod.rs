@@ -1,11 +1,10 @@
-pub mod cache;
 pub mod event;
-pub mod validators;
+pub mod feed_id;
+pub mod validator;
 
-use crate::storage::cache::EventCache;
 pub use event::*;
-use std::collections::HashSet;
-pub use validators::*;
+pub use feed_id::*;
+pub use validator::*;
 
 use starknet::core::types::Felt;
 
@@ -19,7 +18,7 @@ use crate::rpc::{HyperlaneCalls, PragmaDispatcherCalls, StarknetRpc};
 ///   * an events storage containing the most recents [DispatchEvent] events indexed.
 #[derive(Default)]
 pub struct TheorosStorage {
-    feed_ids: HashSet<String>,
+    feed_ids: FeedIdsStorage,
     validators: ValidatorStorage,
     checkpoints: ValidatorCheckpointStorage,
     cached_events: EventCache,
@@ -34,19 +33,21 @@ impl TheorosStorage {
     ) -> anyhow::Result<Self> {
         let mut theoros_storage = TheorosStorage::default();
 
+        // Fetch the validators & their locations
         let initial_validators = rpc_client.get_announced_validators(hyperlane_validator_announce_address).await?;
         let initial_locations = rpc_client
             .get_announced_storage_locations(hyperlane_validator_announce_address, &initial_validators)
             .await?;
         theoros_storage.validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
+        // Fetch the registered feed ids
         let supported_feed_ids = rpc_client.get_feed_ids(pragma_feed_registry_address).await?;
-        theoros_storage.feed_ids = supported_feed_ids.into_iter().collect();
+        theoros_storage.feed_ids = FeedIdsStorage::from_rpc_response(supported_feed_ids);
 
         Ok(theoros_storage)
     }
 
-    pub fn feed_ids(&self) -> &HashSet<String> {
+    pub fn feed_ids(&self) -> &FeedIdsStorage {
         &self.feed_ids
     }
 

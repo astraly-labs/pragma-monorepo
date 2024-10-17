@@ -63,22 +63,22 @@ async fn main() -> Result<()> {
         metrics_registry: metrics_service.registry(),
     };
 
-    // TODO: Pass the pragma_feed_registry_address and index events
     let indexer_service = IndexerService::new(
         state.clone(),
         config.apibara_dna_uri,
         config.hyperlane_mailbox_address,
         config.hyperlane_validator_announce_address,
+        pragma_feed_registry_address,
     )?;
     let api_service = ApiService::new(state.clone(), &config.server_host, config.server_port);
     let hyperlane_service = HyperlaneService::new(state.clone(), config.hyperlane_merkle_tree_hook_address);
 
     let theoros =
         ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service).with(hyperlane_service);
+
     theoros.start_and_drive_to_end().await?;
 
     // Ensure that the tracing provider is shutdown correctly
     opentelemetry::global::shutdown_tracer_provider();
-
     Ok(())
 }
