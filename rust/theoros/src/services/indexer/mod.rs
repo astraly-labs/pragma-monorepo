@@ -181,13 +181,13 @@ impl IndexerService {
             }
             // Add feed id from the Pragma Feeds Registry
             selector if selector == &*NEW_FEED_ID_EVENT_SELECTOR => {
-                let feed_id = event_data[1].to_string();
+                let feed_id = event_data[1].to_hex_string();
                 tracing::info!("📨 [Indexer] Received a NewFeedId event for: {}", feed_id);
                 self.state.storage.feed_ids().add(feed_id).await;
             }
             // Remove feed id from the Pragma Feeds Registry
             selector if selector == &*REMOVED_FEED_ID_EVENT_SELECTOR => {
-                let feed_id = event_data[1].to_string();
+                let feed_id = event_data[1].to_hex_string();
                 tracing::info!("📨 [Indexer] Received a RemovedFeedId event for: {}", feed_id);
                 self.state.storage.feed_ids().remove(&feed_id).await;
             }
