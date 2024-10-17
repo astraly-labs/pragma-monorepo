@@ -23,8 +23,8 @@ pub async fn get_data_feeds(State(state): State<AppState>) -> Result<Json<GetDat
 
     let feed_ids = state.storage.feed_ids();
 
-    let mut feeds = Vec::with_capacity(feed_ids.len());
-    for feed_id in feed_ids.clone_inner() {
+    let mut feeds = Vec::with_capacity(feed_ids.len().await);
+    for feed_id in feed_ids.iter().await {
         let feed = feed_id.parse().map_err(|_| GetDataFeedsError::ParsingFeedId(feed_id.clone()))?;
         feeds.push(feed);
     }

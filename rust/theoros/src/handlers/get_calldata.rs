@@ -47,7 +47,7 @@ pub async fn get_calldata(
     tracing::info!("Received get calldata request for feed: {feed_id}");
 
     let stored_feed_ids = state.storage.feed_ids();
-    if !stored_feed_ids.contains(&feed_id) {
+    if !stored_feed_ids.contains(&feed_id).await {
         return Err(GetCalldataError::FeedNotFound(feed_id));
     };
 
