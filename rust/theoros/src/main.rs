@@ -10,7 +10,7 @@ mod types;
 
 use std::sync::Arc;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Parser;
 use prometheus::Registry;
 use storage::TheorosStorage;
@@ -22,7 +22,7 @@ use pragma_utils::{
 };
 
 use cli::TheorosCli;
-use rpc::{PragmaDispatcherCalls, StarknetRpc};
+use rpc::StarknetRpc;
 use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
 const LOG_LEVEL: Level = Level::INFO;
@@ -43,14 +43,9 @@ async fn main() -> Result<()> {
 
     let rpc_client = StarknetRpc::new(config.madara_rpc_url);
 
-    let pragma_feed_registry_address = rpc_client
-        .get_pragma_feed_registry_address(&config.pragma_dispatcher_address)
-        .await
-        .context("Fetching the Pragma Feed Registry address")?;
-
     let theoros_storage = TheorosStorage::from_rpc_state(
         &rpc_client,
-        &pragma_feed_registry_address,
+        &config.pragma_feeds_registry_address,
         &config.hyperlane_validator_announce_address,
     )
     .await?;
@@ -68,7 +63,7 @@ async fn main() -> Result<()> {
         config.apibara_dna_uri,
         config.hyperlane_mailbox_address,
         config.hyperlane_validator_announce_address,
-        pragma_feed_registry_address,
+        config.pragma_feeds_registry_address,
     )?;
     let api_service = ApiService::new(state.clone(), &config.server_host, config.server_port);
     let hyperlane_service = HyperlaneService::new(state.clone(), config.hyperlane_merkle_tree_hook_address);

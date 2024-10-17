@@ -8,7 +8,7 @@ pub use validator::*;
 
 use starknet::core::types::Felt;
 
-use crate::rpc::{HyperlaneCalls, PragmaDispatcherCalls, StarknetRpc};
+use crate::rpc::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc};
 
 /// Theoros storage that contains:
 ///   * a set of all available feed ids,
@@ -28,7 +28,7 @@ pub struct TheorosStorage {
 impl TheorosStorage {
     pub async fn from_rpc_state(
         rpc_client: &StarknetRpc,
-        pragma_feed_registry_address: &Felt,
+        pragma_feeds_registry_address: &Felt,
         hyperlane_validator_announce_address: &Felt,
     ) -> anyhow::Result<Self> {
         let mut theoros_storage = TheorosStorage::default();
@@ -41,7 +41,7 @@ impl TheorosStorage {
         theoros_storage.validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
         // Fetch the registered feed ids
-        let supported_feed_ids = rpc_client.get_feed_ids(pragma_feed_registry_address).await?;
+        let supported_feed_ids = rpc_client.get_feed_ids(pragma_feeds_registry_address).await?;
         theoros_storage.feed_ids = FeedIdsStorage::from_rpc_response(supported_feed_ids);
 
         Ok(theoros_storage)

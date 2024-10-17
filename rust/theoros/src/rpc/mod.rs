@@ -1,8 +1,8 @@
 pub mod hyperlane;
-pub mod pragma_dispatcher;
+pub mod pragma_feeds_registry;
 
 pub use hyperlane::*;
-pub use pragma_dispatcher::*;
+pub use pragma_feeds_registry::*;
 
 use starknet::providers::{jsonrpc::HttpTransport, JsonRpcClient};
 use url::Url;

@@ -60,7 +60,7 @@ impl IndexerService {
         apibara_uri: Uri,
         hyperlane_mailbox_address: Felt,
         hyperlane_validator_announce_address: Felt,
-        pragma_feed_registry_address: Felt,
+        pragma_feeds_registry_address: Felt,
     ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
             .with_finality(DataFinality::DataStatusPending)
@@ -79,7 +79,7 @@ impl IndexerService {
                     })
                     .add_event(|event| {
                         event
-                            .with_from_address(felt_as_apibara_field(&pragma_feed_registry_address))
+                            .with_from_address(felt_as_apibara_field(&pragma_feeds_registry_address))
                             .with_keys(vec![NEW_FEED_ID_EVENT_SELECTOR.clone(), REMOVED_FEED_ID_EVENT_SELECTOR.clone()])
                     })
                     .build()

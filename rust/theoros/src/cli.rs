@@ -28,8 +28,8 @@ pub struct TheorosCli {
     #[clap(env = "SERVER_PORT", long, default_value = "3000")]
     pub server_port: u16,
 
-    #[clap(env = "PRAGMA_DISPATCHER_ADDRESS", long, value_parser = parse_felt)]
-    pub pragma_dispatcher_address: Felt,
+    #[clap(env = "PRAGMA_FEEDS_REGISTRY_ADDRESS", long, value_parser = parse_felt)]
+    pub pragma_feeds_registry_address: Felt,
 
     #[clap(env = "HYPERLANE_MAILBOX_ADDRESS", long, value_parser = parse_felt)]
     pub hyperlane_mailbox_address: Felt,
