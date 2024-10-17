@@ -1,6 +1,5 @@
 use axum::extract::{Query, State};
 use axum::Json;
-use pragma_feeds::Feed;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToResponse, ToSchema};
 
@@ -47,12 +46,10 @@ pub async fn get_calldata(
 ) -> Result<Json<GetCalldataResponse>, GetCalldataError> {
     tracing::info!("Received get calldata request for feed: {feed_id}");
 
-    let stored_feed_ids = state.storage.data_feeds();
-    if !stored_feed_ids.contains(&feed_id) {
+    let stored_feed_ids = state.storage.feed_ids();
+    if !stored_feed_ids.contains(&feed_id).await {
         return Err(GetCalldataError::FeedNotFound(feed_id));
     };
-
-    let feed: Feed = feed_id.parse().map_err(|_| GetCalldataError::InvalidFeedId)?;
 
     let checkpoints = state.storage.checkpoints().all().await;
     let event = state
@@ -79,11 +76,10 @@ pub async fn get_calldata(
         .await
         .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
-    let (first_validator, checkpoint_infos) = checkpoints.iter().next().unwrap();
+    let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
 
     let update = match event.update {
-        DispatchUpdate::SpotMedian { update, feed_id } => update,
-        _ => unimplemented!("TODO: Implement the other updates"),
+        DispatchUpdate::SpotMedian { update, feed_id: _ } => update,
     };
 
     let payload = Payload {

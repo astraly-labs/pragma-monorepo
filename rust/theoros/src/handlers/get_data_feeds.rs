@@ -21,10 +21,10 @@ pub struct GetDataFeedsResponse(pub Vec<Feed>);
 pub async fn get_data_feeds(State(state): State<AppState>) -> Result<Json<GetDataFeedsResponse>, GetDataFeedsError> {
     tracing::info!("Received get all data feeds request");
 
-    let stored_feed_ids = state.storage.data_feeds();
+    let feed_ids = state.storage.feed_ids();
 
-    let mut feeds = Vec::with_capacity(stored_feed_ids.len());
-    for feed_id in stored_feed_ids {
+    let mut feeds = Vec::with_capacity(feed_ids.len().await);
+    for feed_id in feed_ids.iter().await {
         let feed = feed_id.parse().map_err(|_| GetDataFeedsError::ParsingFeedId(feed_id.clone()))?;
         feeds.push(feed);
     }

@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use anyhow::{anyhow, bail, Context, Result};
 use apibara_core::{
     node::v1alpha2::DataFinality,
@@ -11,21 +9,27 @@ use starknet::core::types::Felt;
 use starknet::core::utils::get_selector_from_name;
 use tokio::task::JoinSet;
 
-use pragma_utils::{conversions::apibara::{felt_as_apibara_field, apibara_field_as_felt}, services::Service};
+use pragma_utils::{
+    conversions::apibara::{apibara_field_as_felt, felt_as_apibara_field},
+    services::Service,
+};
 
 use crate::{
     storage::DispatchUpdateInfos,
     types::hyperlane::{DispatchEvent, FromStarknetEventData, HasFeedId, ValidatorAnnouncementEvent},
-    AppState, HYPERLANE_CORE_CONTRACT_ADDRESS,
+    AppState,
 };
 
-// TODO: Everything below here should be configurable, either via CLI or config file.
-// See: https://github.com/astraly-labs/pragma-monorepo/issues/17
 const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
+
 lazy_static::lazy_static! {
-    pub static ref F_HYPERLANE_CORE_CONTRACT_ADDRESS: FieldElement = felt_as_apibara_field(&HYPERLANE_CORE_CONTRACT_ADDRESS);
+    // Pragma Dispatcher
     pub static ref DISPATCH_EVENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("Dispatch").unwrap());
+    // Hyperlane mailbox
     pub static ref VALIDATOR_ANNOUNCEMENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("ValidatorAnnouncement").unwrap());
+    // Pragma Feeds Registry
+    pub static ref NEW_FEED_ID_EVENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("NewFeedId").unwrap());
+    pub static ref REMOVED_FEED_ID_EVENT_SELECTOR: FieldElement = felt_as_apibara_field(&get_selector_from_name("RemovedFeedId").unwrap());
 }
 
 #[derive(Clone)]
@@ -49,9 +53,13 @@ impl Service for IndexerService {
 }
 
 impl IndexerService {
-    pub fn new(state: AppState, apibara_uri: &str) -> Result<Self> {
-        let uri = Uri::from_str(apibara_uri)?;
-
+    pub fn new(
+        state: AppState,
+        apibara_uri: Uri,
+        hyperlane_mailbox_address: Felt,
+        hyperlane_validator_announce_address: Felt,
+        pragma_feeds_registry_address: Felt,
+    ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
             .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
@@ -59,18 +67,23 @@ impl IndexerService {
                     .with_header(HeaderFilter::weak())
                     .add_event(|event| {
                         event
-                            .with_from_address(F_HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
+                            .with_from_address(felt_as_apibara_field(&hyperlane_mailbox_address))
                             .with_keys(vec![DISPATCH_EVENT_SELECTOR.clone()])
                     })
                     .add_event(|event| {
                         event
-                            .with_from_address(F_HYPERLANE_CORE_CONTRACT_ADDRESS.clone())
+                            .with_from_address(felt_as_apibara_field(&hyperlane_validator_announce_address))
                             .with_keys(vec![VALIDATOR_ANNOUNCEMENT_SELECTOR.clone()])
+                    })
+                    .add_event(|event| {
+                        event
+                            .with_from_address(felt_as_apibara_field(&pragma_feeds_registry_address))
+                            .with_keys(vec![NEW_FEED_ID_EVENT_SELECTOR.clone(), REMOVED_FEED_ID_EVENT_SELECTOR.clone()])
                     })
                     .build()
             });
 
-        let indexer_service = Self { state, uri, stream_config };
+        let indexer_service = Self { state, uri: apibara_uri, stream_config };
         Ok(indexer_service)
     }
 
@@ -94,7 +107,7 @@ impl IndexerService {
                     self.state
                         .storage
                         .cached_event()
-                        .process_cached_events(&self.state.storage.checkpoints(), &self.state.storage.dispatch_events())
+                        .process_cached_events(self.state.storage.checkpoints(), self.state.storage.dispatch_events())
                         .await?;
                 }
                 Ok(None) => continue,
@@ -112,7 +125,7 @@ impl IndexerService {
                         if event.from_address.is_none() {
                             continue;
                         }
-                        self.decode_and_store_event(event).await?;
+                        self.process_event(event).await?;
                     }
                 }
             }
@@ -128,17 +141,16 @@ impl IndexerService {
     /// Decodes a starknet [Event] into either a:
     ///     * [DispatchEvent] and stores it into the events storage,
     ///     * [ValidatorAnnouncementEvent] and stores it into the validators storage.
-    async fn decode_and_store_event(&self, event: Event) -> Result<()> {
+    async fn process_event(&self, event: Event) -> Result<()> {
         let event_selector = event.keys.first().context("No event selector")?;
-
-        let event_data: Vec<Felt> = event.data.iter().map(|fe| apibara_field_as_felt(&fe)).collect();
+        let event_data: Vec<Felt> = event.data.iter().map(apibara_field_as_felt).collect();
         match event_selector {
+            // Dispatch from the Hyperlane Mailbox
             selector if selector == &*DISPATCH_EVENT_SELECTOR => {
-                tracing::info!("Received a DispatchEvent");
-                let dispatch_event = DispatchEvent::from_starknet_event_data(event_data)
-                    .context("Failed to parse DispatchEvent")?;
-                tracing::info!("Checking checkpoint storage for correspondence");
-                let message_id = dispatch_event.format_message();
+                tracing::info!("📨 [Indexer] Received a Dispatch event");
+                let dispatch_event =
+                    DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
+                let message_id = dispatch_event.id();
 
                 for update in dispatch_event.message.body.updates.iter() {
                     let feed_id = update.feed_id();
@@ -148,27 +160,38 @@ impl IndexerService {
                         emitter_chain_id: dispatch_event.message.header.origin,
                         nonce: dispatch_event.message.header.nonce,
                     };
-                    tracing::info!("here is the udpate{:?}", dispatch_update_infos);
                     // Check if there's a corresponding checkpoint
                     if self.state.storage.checkpoints().contains_message_id(message_id).await {
-                        tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
+                        tracing::debug!("Found corresponding checkpoint for message ID: {:?}", message_id);
                         // If found, store the event directly
                         self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos).await?;
                     } else {
-                        tracing::info!("No checkpoint found, caching dispatch event");
+                        tracing::debug!("No checkpoint found, caching dispatch event");
                         // If no checkpoint found, add to cache
                         self.state.storage.cached_event().add_event(message_id, &dispatch_event).await;
                     }
                 }
             }
+            // Validator Announcement from the Hyperlane Validator Announce contract
             selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {
-                tracing::info!("Received a ValidatorAnnouncementEvent");
-                let validator_announcement_event =
-                    ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
-                        .context("Failed to parse ValidatorAnnouncementEvent")?;
+                tracing::info!("📨 [Indexer] Received a ValidatorAnnouncement event");
+                let validator_announcement_event = ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
+                    .context("Failed to parse ValidatorAnnouncement")?;
                 self.state.storage.validators().add_from_announcement_event(validator_announcement_event).await?;
             }
-            _ => panic!("Unexpected event selector - should never happen."),
+            // Add feed id from the Pragma Feeds Registry
+            selector if selector == &*NEW_FEED_ID_EVENT_SELECTOR => {
+                let feed_id = event_data[1].to_hex_string();
+                tracing::info!("📨 [Indexer] Received a NewFeedId event for: {}", feed_id);
+                self.state.storage.feed_ids().add(feed_id).await;
+            }
+            // Remove feed id from the Pragma Feeds Registry
+            selector if selector == &*REMOVED_FEED_ID_EVENT_SELECTOR => {
+                let feed_id = event_data[1].to_hex_string();
+                tracing::info!("📨 [Indexer] Received a RemovedFeedId event for: {}", feed_id);
+                self.state.storage.feed_ids().remove(&feed_id).await;
+            }
+            _ => panic!("😱 Unexpected event selector - should never happen."),
         }
         Ok(())
     }

@@ -22,7 +22,6 @@ use crate::types::hyperlane::{
 
 use super::SignedCheckpointWithMessageId;
 
-#[allow(unused)]
 /// A generic trait to read/write Checkpoints offchain
 #[async_trait]
 pub trait FetchFromStorage: Debug + Send + Sync {

@@ -1,13 +1,14 @@
-use crate::types::hyperlane::DispatchUpdate;
-use anyhow::Result;
 use std::collections::HashMap;
+use std::sync::Arc;
+
+use alloy::primitives::U256;
+use anyhow::Result;
 use tokio::sync::RwLock;
 
-// const DEFAULT_STORAGE_MAX_SIZE: usize = 16;
+use crate::types::hyperlane::DispatchUpdate;
+use crate::types::hyperlane::HasFeedId;
+use crate::{storage::ValidatorCheckpointStorage, types::hyperlane::DispatchEvent};
 
-/// FIFO Buffer of fixed size used to store events.
-/// The first element is the latest.
-///
 #[derive(Debug, Clone)]
 pub struct DispatchUpdateInfos {
     pub update: DispatchUpdate,
@@ -15,6 +16,9 @@ pub struct DispatchUpdateInfos {
     pub emitter_address: String,
     pub nonce: u32,
 }
+
+// Event Storage
+
 #[derive(Debug, Default)]
 pub struct EventStorage {
     events: RwLock<HashMap<String, DispatchUpdateInfos>>,
@@ -43,22 +47,62 @@ impl EventStorage {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+// Event cache
 
-    #[tokio::test]
-    async fn test_event_storage() {
-        let storage = EventStorage::new();
+#[derive(Clone, Default)]
+pub struct EventCache {
+    cache: Arc<RwLock<HashMap<U256, DispatchEvent>>>,
+}
 
-        // TODO refactor tests
-        // storage.add(1, 1).await;
-        // storage.add(2, 2).await;
-        // storage.add(3, 3).await;
-        // storage.add(4,4).await;
+impl EventCache {
+    pub fn new() -> Self {
+        Self { cache: Arc::new(RwLock::new(HashMap::new())) }
+    }
 
-        // assert_eq!(storage.get(1).await.unwrap(), Ok(1));
-        // assert_eq!(storage.get(2).await, Ok(2));
-        // assert_eq!(storage.all().await, vec![4, 3, 2]);
+    pub async fn add_event(&self, message_id: U256, event: &DispatchEvent) {
+        let mut cache = self.cache.write().await;
+        cache.insert(message_id, event.clone());
+    }
+
+    pub async fn process_cached_events(
+        &self,
+        checkpoint_storage: &ValidatorCheckpointStorage,
+        event_storage: &EventStorage,
+    ) -> Result<()> {
+        let cache = self.cache.read().await;
+        let mut to_remove = Vec::new();
+
+        for (message_id, dispatch_event) in cache.iter() {
+            if checkpoint_storage.contains_message_id(*message_id).await {
+                // Store all updates in event
+                for update in dispatch_event.message.body.updates.iter() {
+                    let feed_id = update.feed_id();
+                    let dispatch_update_infos = DispatchUpdateInfos {
+                        update: update.clone(),
+                        emitter_address: dispatch_event.message.header.sender.to_string(),
+                        emitter_chain_id: dispatch_event.message.header.origin,
+                        nonce: dispatch_event.message.header.nonce,
+                    };
+                    event_storage.add(feed_id, dispatch_update_infos).await?;
+                }
+                to_remove.push(*message_id);
+                tracing::debug!("Processed cached event with message ID: {:?}", message_id);
+            }
+        }
+
+        // Remove processed events from cache
+        if !to_remove.is_empty() {
+            let mut cache = self.cache.write().await;
+            for message_id in &to_remove {
+                cache.remove(message_id);
+            }
+            tracing::debug!("Removed {} processed events from cache", to_remove.len());
+        }
+
+        Ok(())
+    }
+
+    pub async fn get_cache_size(&self) -> usize {
+        self.cache.read().await.len()
     }
 }

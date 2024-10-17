@@ -8,7 +8,6 @@ use ya_gcp::{storage::StorageClient, AuthFlow, ClientBuilder, ClientBuilderConfi
 
 use crate::types::hyperlane::{FetchFromStorage, SignedCheckpointWithMessageId};
 
-#[allow(unused)]
 const ANNOUNCEMENT_KEY: &str = "gcsAnnouncementKey";
 
 /// Path to GCS users_secret file
@@ -40,7 +39,6 @@ impl GcsStorageClientBuilder {
     }
 }
 
-#[allow(unused)]
 /// Google Cloud Storage client
 /// Enables use of any of service account key OR user secrets to authenticate
 /// For anonymous access to public data provide `(None, None)` to Builder

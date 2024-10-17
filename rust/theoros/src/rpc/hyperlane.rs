@@ -15,14 +15,14 @@ pub trait HyperlaneCalls {
     /// The strings are all storage locations path.
     async fn get_announced_storage_locations(
         &self,
-        hyperlane_core_address: &Felt,
+        hyperlane_validator_announce_address: &Felt,
         validators: &[Felt],
     ) -> anyhow::Result<Vec<Vec<String>>>;
 
     /// Retrieves all the announced validators as a [Vec<Felt>] from the hyperlane
     /// core contract.
     /// The felts are validators addresses.
-    async fn get_announced_validators(&self, hyperlane_core_address: &Felt) -> anyhow::Result<Vec<Felt>>;
+    async fn get_announced_validators(&self, hyperlane_validator_announce_address: &Felt) -> anyhow::Result<Vec<Felt>>;
 
     /// Retrieves the latest checkpoint (root, index) tuple from the merkle tree hook contract.
     /// The index is the latest checkpoint index.
@@ -34,32 +34,32 @@ pub trait HyperlaneCalls {
 impl HyperlaneCalls for StarknetRpc {
     async fn get_announced_storage_locations(
         &self,
-        hyperlane_core_address: &Felt,
+        hyperlane_validator_announce_address: &Felt,
         validators: &[Felt],
     ) -> anyhow::Result<Vec<Vec<String>>> {
         let mut calldata = vec![Felt::from(validators.len())];
         calldata.extend(validators);
 
         let call = FunctionCall {
-            contract_address: *hyperlane_core_address,
+            contract_address: *hyperlane_validator_announce_address,
             entry_point_selector: selector!("get_announced_storage_locations"),
             calldata,
         };
 
-        let mut response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
-
+        let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
         let storage_locations = process_nested_felt_array(&response)?;
 
         Ok(storage_locations)
     }
 
-    async fn get_announced_validators(&self, hyperlane_core_address: &Felt) -> anyhow::Result<Vec<Felt>> {
+    async fn get_announced_validators(&self, hyperlane_validator_announce_address: &Felt) -> anyhow::Result<Vec<Felt>> {
         let call = FunctionCall {
-            contract_address: *hyperlane_core_address,
+            contract_address: *hyperlane_validator_announce_address,
             entry_point_selector: selector!("get_announced_validators"),
             calldata: vec![],
         };
-        let response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
+        let mut response = self.0.call(call, BlockId::Tag(BlockTag::Pending)).await?;
+        response.remove(0); // We remove the first element because it is the size of the response.
         Ok(response)
     }
 

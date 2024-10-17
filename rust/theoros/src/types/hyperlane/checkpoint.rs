@@ -7,15 +7,6 @@ use super::SignedType;
 /// Signed (checkpoint, messageId) tuple
 pub type SignedCheckpointWithMessageId = SignedType<CheckpointWithMessageId>;
 
-/// A Hyperlane (checkpoint, messageId) tuple
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub struct CheckpointWithMessageId {
-    /// existing Hyperlane checkpoint struct
-    pub checkpoint: Checkpoint,
-    /// hash of message emitted from mailbox checkpoint.index
-    pub message_id: U256,
-}
-
 /// An Hyperlane checkpoint
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Checkpoint {
@@ -27,4 +18,13 @@ pub struct Checkpoint {
     pub root: String,
     /// The index of the checkpoint
     pub index: u32,
+}
+
+/// A Hyperlane (checkpoint, messageId) tuple
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub struct CheckpointWithMessageId {
+    /// existing Hyperlane checkpoint struct
+    pub checkpoint: Checkpoint,
+    /// hash of message emitted from mailbox checkpoint.index
+    pub message_id: U256,
 }

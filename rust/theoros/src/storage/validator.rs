@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use alloy_primitives::U256;
+use alloy::primitives::U256;
 use anyhow::bail;
 use starknet::core::types::Felt;
 use tokio::sync::RwLock;
@@ -121,10 +121,7 @@ impl ValidatorCheckpointStorage {
             .map(|((validator, _), signed_checkpoint)| {
                 validator_indices
                     .get(validator)
-                    .map(|&index| ValidatorSignature {
-                        validator_index: index,
-                        signature: signed_checkpoint.signature.clone(),
-                    })
+                    .map(|&index| ValidatorSignature { validator_index: index, signature: signed_checkpoint.signature })
                     .ok_or_else(|| anyhow::anyhow!("Validator not found: {}", validator))
             })
             .collect();

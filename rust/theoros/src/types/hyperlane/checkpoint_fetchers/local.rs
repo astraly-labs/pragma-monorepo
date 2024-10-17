@@ -7,14 +7,12 @@ use async_trait::async_trait;
 
 use crate::types::hyperlane::{FetchFromStorage, SignedCheckpointWithMessageId};
 
-#[allow(unused)]
 #[derive(Debug, Clone)]
 /// Type for reading/write to LocalStorage
 pub struct LocalStorage {
     path: PathBuf,
 }
 
-#[allow(unused)]
 impl LocalStorage {
     pub fn new(path: PathBuf) -> Result<Self> {
         if !path.exists() {

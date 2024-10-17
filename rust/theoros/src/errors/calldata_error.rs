@@ -1,6 +1,5 @@
 use axum::{http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
-use starknet::core::types::Felt;
 use utoipa::ToSchema;
 
 #[derive(Debug, thiserror::Error, ToSchema)]

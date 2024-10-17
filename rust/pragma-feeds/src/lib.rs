@@ -65,15 +65,14 @@ impl TryFrom<u16> for AssetClass {
     }
 }
 
+// TODO:
+// This configuration is wrong at the moment. We should include:
+// FeedType(FeedVariant).
+// For now it works because we only have 0 anyway.
 #[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize)]
 pub enum FeedType {
-    #[strum(serialize = "Spot Median")]
-    SpotMedian = 0, 
-    Twap = 1, 
-    #[strum(serialize = "Realized Volatility")]
-    RealizedVolatility = 2, 
-    Options = 3, 
-    Perp = 4, 
+    #[strum(serialize = "Unique Spot Median")]
+    UniqueSpotMedian = 0,
 }
 
 impl TryFrom<u16> for FeedType {
@@ -81,11 +80,7 @@ impl TryFrom<u16> for FeedType {
 
     fn try_from(value: u16) -> anyhow::Result<Self> {
         match value {
-            0 => Ok(FeedType::SpotMedian),
-            1 => Ok(FeedType::Twap),
-            2 => Ok(FeedType::RealizedVolatility),
-            3 => Ok(FeedType::Options),
-            4 => Ok(FeedType::Perp),
+            0 => Ok(FeedType::UniqueSpotMedian),
             _ => Err(anyhow!("Unknown feed type: {}", value)),
         }
     }
@@ -106,15 +101,17 @@ impl FromStr for Feed {
             bail!("Feed ID is too long");
         }
 
-        // Pad the bytes to 35 if necessary
+        // Pad the bytes to 35 if necessary, but at the end
+        let original_len = bytes.len();
         bytes.resize(35, 0);
+        bytes.rotate_right(35 - original_len);
 
         let asset_class = AssetClass::try_from(u16::from_be_bytes([bytes[0], bytes[1]]))?;
         let feed_type = FeedType::try_from(u16::from_be_bytes([bytes[2], bytes[3]]))?;
 
-        let pair_id = String::from_utf8(bytes[4..].to_vec())
+        let pair_id = String::from_utf8(bytes[3..].to_vec())
             .context("Invalid UTF-8 sequence for pair_id")?
-            .trim_end_matches('\0')
+            .trim_start_matches('\0')
             .to_string();
 
         if pair_id.is_empty() {
@@ -131,58 +128,16 @@ mod tests {
 
     #[test]
     fn test_feed_from_str() {
-        let feed_id = "0x01534d4254432f555344";
+        let feed_id = "0x4254432f555344";
         let result: Feed = feed_id.parse().unwrap();
 
         assert_eq!(result.asset_class, AssetClass::Crypto);
-        assert_eq!(result.feed_type, FeedType::SpotMedian);
+        assert_eq!(result.feed_type, FeedType::UniqueSpotMedian);
         assert_eq!(result.pair_id, "BTC/USD");
-    }
-
-    #[test]
-    fn test_feed_type_display() {
-        assert_eq!(FeedType::SpotMedian.to_string(), "Spot Median");
-        assert_eq!(FeedType::Twap.to_string(), "Twap");
-        assert_eq!(FeedType::RealizedVolatility.to_string(), "Realized Volatility");
-        assert_eq!(FeedType::Options.to_string(), "Options");
-        assert_eq!(FeedType::Perp.to_string(), "Perp");
     }
 
     #[test]
     fn test_asset_class_display() {
         assert_eq!(AssetClass::Crypto.to_string(), "Crypto");
-    }
-
-    #[test]
-    fn test_feed_type_from_u16() {
-        assert_eq!(FeedType::try_from(21325).unwrap(), FeedType::SpotMedian);
-        assert_eq!(FeedType::try_from(21591).unwrap(), FeedType::Twap);
-        assert_eq!(FeedType::try_from(21078).unwrap(), FeedType::RealizedVolatility);
-        assert_eq!(FeedType::try_from(20304).unwrap(), FeedType::Options);
-        assert_eq!(FeedType::try_from(20560).unwrap(), FeedType::Perp);
-        assert!(FeedType::try_from(0).is_err());
-    }
-
-    #[test]
-    fn test_feed_from_str_invalid_id() {
-        let feed_id = "0x12"; // Too short
-        let result: anyhow::Result<Feed> = feed_id.parse();
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_feed_from_str_without_0x_prefix() {
-        let feed_id = "0x01534d4254432f555344";
-        let result: Feed = feed_id.parse().unwrap();
-        assert_eq!(result.asset_class, AssetClass::Crypto);
-        assert_eq!(result.feed_type, FeedType::SpotMedian);
-        assert_eq!(result.pair_id, "BTC/USD");
-    }
-
-    #[test]
-    fn test_feed_from_str_invalid_asset_class() {
-        let feed_id = "0x02534d4254432f555344";
-        let result: anyhow::Result<Feed> = feed_id.parse();
-        assert!(result.is_err());
     }
 }

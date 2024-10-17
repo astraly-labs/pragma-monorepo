@@ -21,7 +21,6 @@ use crate::types::hyperlane::{FetchFromStorage, SignedCheckpointWithMessageId};
 /// See https://github.com/rusoto/rusoto/issues/1795.
 const S3_REQUEST_TIMEOUT_SECONDS: u64 = 30;
 
-#[allow(unused)]
 #[derive(Clone)]
 /// Type for reading/writing to S3
 pub struct S3Storage {
@@ -45,7 +44,6 @@ impl fmt::Debug for S3Storage {
     }
 }
 
-#[allow(unused)]
 impl S3Storage {
     /// Creates a new S3Storage.
     pub fn new(bucket: String, folder: Option<String>, region: Region) -> Self {

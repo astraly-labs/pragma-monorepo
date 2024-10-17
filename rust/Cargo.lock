@@ -6225,7 +6225,6 @@ name = "theoros"
 version = "0.1.0"
 dependencies = [
  "alloy",
- "alloy-primitives",
  "anyhow",
  "apibara-core",
  "apibara-sdk",
@@ -6234,6 +6233,7 @@ dependencies = [
  "axum-macros",
  "bigdecimal 0.4.5",
  "chrono",
+ "clap",
  "dotenvy",
  "envy",
  "ethers",
