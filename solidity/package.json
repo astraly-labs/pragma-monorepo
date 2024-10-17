@@ -1,17 +1,35 @@
 {
-  "name": "solidity",
+  "name": "@pragmaprotocol/pragma-sdk-solidity",
   "version": "1.0.0",
   "description": "Solidity contracts of the Pragma protocol.",
   "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/astraly-labs/pragma-monorepo",
+    "directory": "tree/main/solidity"
+  },
   "directories": {
     "lib": "lib",
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write .",
+    "generate-abi": "node scripts/generate.js src/Pragma src/Hyperlane src/interfaces/IHyperlane src/interfaces/IPragma src/interfaces/PragmaStructs",
+    "check-abi": "git diff --exit-code abis",
+    "build": "solcjs --bin MockPyth.sol --base-path . -o build/"
   },
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "pragma",
+    "solidity",
+    "oracle"
+  ],
+  "author": "Pragma",
+  "license": "ISC", 
+   "bugs": {
+    "url": "https://github.com/astraly-labs/pragma-monorepo/issues"
+  },
+  "homepage": "https://github.com/astraly-labs/pragma-monorepo/tree/main/solidity",
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
@@ -19,6 +37,9 @@
     "@openzeppelin/contracts-upgradeable": "^5.0.2",
     "@openzeppelin/hardhat-upgrades": "^3.4.0",
     "ethers": "^6.13.3",
-    "hardhat": "^2.22.12"
+    "hardhat": "^2.22.12", 
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-rc.1",
+    "solc": "^0.8.25"
   }
 }
