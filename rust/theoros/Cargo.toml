@@ -39,6 +39,5 @@ utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipauto = { workspace = true }
 ya-gcp = { workspace = true }
 
-alloy-primitives = "0.8.5"
 pragma-feeds = { workspace = true }
 pragma-utils = { workspace = true }

@@ -6225,7 +6225,6 @@ name = "theoros"
 version = "0.1.0"
 dependencies = [
  "alloy",
- "alloy-primitives",
  "anyhow",
  "apibara-core",
  "apibara-sdk",
