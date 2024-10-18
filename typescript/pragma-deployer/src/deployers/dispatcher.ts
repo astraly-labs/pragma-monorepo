@@ -95,11 +95,9 @@ export class DispatcherDeployer implements ContractDeployer {
     );
 
     console.log("⏳ Registering all feed ids in the config...");
-    for (const feed of feeds.feeds) {
-      let tx = await feedsRegistry.invoke("add_feed", [feed.id]);
-      await deployer.waitForTransaction(tx.transaction_hash);
-      console.log("\tRegistered", feed.name);
-    }
+    let tx = await feedsRegistry.invoke("add_feeds", [feeds.feeds.map((feed) => feed.id)]);
+    await deployer.waitForTransaction(tx.transaction_hash);
+    console.log("\tRegistered", feeds.feeds.map((feed) => feed.name).join(", "));
     console.log("🧩 All feeds registered!");
     console.log("✅ Pragma Feeds Registry deployment complete!\n");
     return feedsRegistry;

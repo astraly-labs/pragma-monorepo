@@ -82,6 +82,30 @@ pub mod PragmaDispatcher {
 
     #[abi(embed_v0)]
     impl PragmaDispatcher of IPragmaDispatcher<ContractState> {
+        /// Sets the Hyperlane Mailbox address
+        fn set_hyperlane_mailbox_address(
+            ref self: ContractState, hyperlane_mailbox_address: ContractAddress
+        ) {
+            self.ownable.assert_only_owner();
+            self
+                .hyperlane_mailbox
+                .write(IMailboxDispatcher { contract_address: hyperlane_mailbox_address });
+        }
+
+        /// Sets the Pragma Feed Registry address
+        fn set_pragma_feed_registry_address(
+            ref self: ContractState, pragma_feed_registry_address: ContractAddress
+        ) {
+            self.ownable.assert_only_owner();
+            self
+                .pragma_feed_registry
+                .write(
+                    IPragmaFeedsRegistryDispatcher {
+                        contract_address: pragma_feed_registry_address
+                    }
+                );
+        }
+
         /// Returns the registered Pragma Feed Registry address.
         fn get_pragma_feed_registry_address(self: @ContractState) -> ContractAddress {
             self.pragma_feed_registry.read().contract_address
