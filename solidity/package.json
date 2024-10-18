@@ -1,5 +1,5 @@
 {
-  "name": "@pragmaprotocol/pragma-sdk-solidity",
+  "name": "@pragma/solidity-sdk",
   "version": "1.0.0",
   "description": "Solidity contracts of the Pragma protocol.",
   "main": "index.js",
@@ -14,10 +14,7 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "format": "prettier --write .",
-    "generate-abi": "node scripts/generate.js src/Pragma src/Hyperlane src/interfaces/IHyperlane src/interfaces/IPragma src/interfaces/PragmaStructs",
-    "check-abi": "git diff --exit-code abis",
-    "build": "solcjs --bin MockPyth.sol --base-path . -o build/"
+    "format": "prettier --write ."
   },
   "keywords": [
     "pragma",
