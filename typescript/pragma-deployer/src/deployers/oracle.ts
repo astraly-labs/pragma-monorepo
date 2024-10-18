@@ -103,14 +103,12 @@ export class OracleDeployer implements ContractDeployer {
       ]);
       await deployer.waitForTransaction(tx.transaction_hash);
       // Register sources for the publisher
-      for (const source of publisher.sources) {
-        tx = await publisherRegistry.invoke("add_source_for_publisher", [
-          publisher.name,
-          source,
-        ]);
-        await deployer.waitForTransaction(tx.transaction_hash);
-        console.log("\t\t Added source", source);
-      }
+      tx = await publisherRegistry.invoke("add_sources_for_publisher", [
+        publisher.name,
+        publisher.sources,
+      ]);
+      await deployer.waitForTransaction(tx.transaction_hash);
+      console.log("\t\t Added sources", publisher.sources);
       console.log("\t ⌛ Registered", publisher.name);
     }
     console.log("🧩 All publishers registered!");

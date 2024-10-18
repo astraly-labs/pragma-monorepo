@@ -5,6 +5,14 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 pub trait IPragmaDispatcher<TContractState> {
+    /// Sets the Pragma Feed Registry address.
+    fn set_pragma_feed_registry_address(
+        ref self: TContractState, pragma_feed_registry_address: ContractAddress
+    );
+    /// Sets the Hyperlane Mailbox address.
+    fn set_hyperlane_mailbox_address(
+        ref self: TContractState, hyperlane_mailbox_address: ContractAddress
+    );
     /// Returns the registered Pragma Feed Registry address.
     fn get_pragma_feed_registry_address(self: @TContractState) -> ContractAddress;
     /// Returns the registered Hyperlane Mailbox address.
