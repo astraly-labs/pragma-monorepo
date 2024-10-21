@@ -11,11 +11,12 @@ const path = require("path");
 function generateAbi(contracts) {
   var sources = {};
   var outputSelection = {};
-  const remappingsPath = 'remappings.txt';
+  const remappingsPath = "remappings.txt";
   const remappings = fs.existsSync(remappingsPath)
-    ? fs.readFileSync(remappingsPath, 'utf8')
-        .split('\n')
-        .filter(line => line.trim() !== '')
+    ? fs
+        .readFileSync(remappingsPath, "utf8")
+        .split("\n")
+        .filter((line) => line.trim() !== "")
     : [];
   for (let contract of contracts) {
     const contractFile = `${contract}.sol`;
@@ -30,8 +31,7 @@ function generateAbi(contracts) {
     sources,
     settings: {
       outputSelection,
-      remappings: remappings
-
+      remappings: remappings,
     },
   };
 
@@ -51,7 +51,7 @@ function generateAbi(contracts) {
   }
 
   for (let contract of contracts) {
-    const trimedContract = contract.split('/').pop();
+    const trimedContract = contract.split("/").pop();
     const contractFile = `${trimedContract}.sol`;
 
     const abi = output.contracts[contractFile][trimedContract].abi;
