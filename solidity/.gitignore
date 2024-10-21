@@ -17,8 +17,8 @@ node_modules
 .env
 
 # Hardhat files
-/cache
-/artifacts
+cache
+out
 
 # TypeChain files
 /typechain
