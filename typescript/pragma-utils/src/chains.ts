@@ -16,7 +16,16 @@ export type Chain =
   | "fantom"
   | "arbitrum"
   | "optimism"
-  | "base";
+  | "base"
+  | "scroll"
+  | "scrollTestnet"
+  | "scrollSepoliaTestnet"
+  | "zircuitTestnet" // TODO: zircuit mainnet
+  | "plumeTestnet" /// TODO: plume testnet
+  | "worldchain"
+  | "worldchainTestnet"
+  | "zksync"
+  | "zksyncTestnet";
 
 export type StarknetChain = Extract<
   Chain,
@@ -44,4 +53,13 @@ export const EVM_CHAINS: Chain[] = [
   "optimism",
   "base",
   "hardhat",
+  "scroll",
+  "scrollTestnet",
+  "scrollSepoliaTestnet",
+  "zircuitTestnet",
+  "plumeTestnet",
+  "worldchain",
+  "worldchainTestnet",
+  "zksync",
+  "zksyncTestnet",
 ];

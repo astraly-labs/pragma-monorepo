@@ -66,7 +66,9 @@ export class PragmaDeployer implements ContractDeployer {
 
   /// Deploys Hyperlane.sol
   private async deployHyperlane(config: DeploymentConfig): Promise<Contract> {
-    const hyperlaneArtifact = await hre.artifacts.readArtifact("Hyperlane");
+    const hyperlaneArtifact = await hre.artifacts.readArtifact(
+      "src/Hyperlane.sol:Hyperlane",
+    );
     const Hyperlane = await ethers.getContractFactory(
       hyperlaneArtifact.abi,
       hyperlaneArtifact.bytecode,
@@ -84,7 +86,9 @@ export class PragmaDeployer implements ContractDeployer {
     deployerAddress: string,
     hyperlaneAddress: string,
   ): Promise<Contract> {
-    const pragmaArtifact = await hre.artifacts.readArtifact("Pragma");
+    const pragmaArtifact = await hre.artifacts.readArtifact(
+      "src/Pragma.sol:Pragma",
+    );
     const Pragma = await ethers.getContractFactory(
       pragmaArtifact.abi,
       pragmaArtifact.bytecode,
@@ -95,6 +99,18 @@ export class PragmaDeployer implements ContractDeployer {
     const dataSourceEmitterAddresses = config.pragma.data_source_emitters.map(
       (emitter) => zeroPadValue(emitter.address, 32),
     );
+
+    console.log(
+      [
+        hyperlaneAddress,
+        deployerAddress,
+        dataSourceEmitterChainIds,
+        dataSourceEmitterAddresses,
+        config.pragma.valid_time_period_in_seconds,
+        parseEther(config.pragma.single_update_fee_in_wei),
+      ]
+    )
+
     const pragma = await upgrades.deployProxy(
       Pragma,
       [
