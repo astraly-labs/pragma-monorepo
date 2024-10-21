@@ -34,11 +34,6 @@ impl EventStorage {
         tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
         tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
         tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
-        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
-        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
-        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
-        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
-        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
         tracing::info!("STORING WITH KEY: {}", feed_id);
         let mut events = self.events.write().await;
         events.insert(feed_id, event);
@@ -47,10 +42,11 @@ impl EventStorage {
 
     pub async fn get(&self, feed_id: &String) -> Result<Option<DispatchUpdateInfos>> {
         let events = self.events.read().await;
+        let feed_id: &String = &String::from("0x00000000000000000000000000000000000000000000000000000000555344542f555344");
         Ok(events.get(feed_id).cloned())
     }
 
-    pub async fn get_all(&self) -> Result<Vec<(String, DispatchUpdateInfos)>> {
+    pub async fn all(&self) -> Result<Vec<(String, DispatchUpdateInfos)>> {
         let events = self.events.read().await;
         Ok(events.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
     }
@@ -68,7 +64,7 @@ impl EventCache {
         Self { cache: Arc::new(RwLock::new(HashMap::new())) }
     }
 
-    pub async fn add_event(&self, message_id: U256, event: &DispatchEvent) {
+    pub async fn add(&self, message_id: U256, event: &DispatchEvent) {
         let mut cache = self.cache.write().await;
         cache.insert(message_id, event.clone());
     }
@@ -111,7 +107,12 @@ impl EventCache {
         Ok(())
     }
 
-    pub async fn get_cache_size(&self) -> usize {
+    pub async fn cache_size(&self) -> usize {
         self.cache.read().await.len()
+    }
+
+    pub async fn all(&self) -> Vec<(U256, DispatchEvent)> {
+        let cache = self.cache.read().await;
+        cache.iter().map(|(k, v)| (*k, v.clone())).collect()
     }
 }

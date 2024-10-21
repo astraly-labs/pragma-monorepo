@@ -118,6 +118,7 @@ impl ValidatorCheckpointStorage {
     ) -> anyhow::Result<Vec<ValidatorSignature>> {
         let checkpoints = self.0.read().await;
 
+        // Create a mapping of <Validator, index>
         let validator_indices: HashMap<_, _> = validators.iter().enumerate().map(|(i, v)| (*v, i as u8)).collect();
 
         // Convert checkpoints into signatures with correct indices

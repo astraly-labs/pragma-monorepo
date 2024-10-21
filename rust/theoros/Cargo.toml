@@ -38,6 +38,5 @@ utoipa = { workspace = true, features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { workspace = true, features = ["axum"] }
 utoipauto = { workspace = true }
 ya-gcp = { workspace = true }
-
 pragma-feeds = { workspace = true }
 pragma-utils = { workspace = true }

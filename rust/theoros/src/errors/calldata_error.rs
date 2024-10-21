@@ -32,6 +32,9 @@ impl IntoResponse for GetCalldataError {
             Self::FeedNotFound(_) => {
                 (StatusCode::NOT_FOUND, "Feed ID is not registered".into())
             },
+            Self::FailedToRetrieveEvent => {
+                (StatusCode::NOT_FOUND, "Failed to retrieve event".into())
+            }
             _ => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Internal server error")),
         };
         (status, Json(json!({"resource":"Calldata", "message": err_msg, "happened_at" : chrono::Utc::now() })))

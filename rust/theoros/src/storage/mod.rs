@@ -63,7 +63,7 @@ impl TheorosStorage {
         &self.dispatch_events
     }
 
-    pub fn cached_event(&self) -> &EventCache {
+    pub fn cached_events(&self) -> &EventCache {
         &self.cached_events
     }
 }

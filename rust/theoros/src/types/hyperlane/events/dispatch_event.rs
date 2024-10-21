@@ -82,35 +82,39 @@ impl DispatchEvent {
         input.push(self.message.header.version);
         input.extend_from_slice(&self.message.header.nonce.to_be_bytes());
         input.extend_from_slice(&self.message.header.origin.to_be_bytes());
-        input.extend_from_slice(&self.message.header.sender.low().to_be_bytes());
         input.extend_from_slice(&self.message.header.sender.high().to_be_bytes());
+        input.extend_from_slice(&self.message.header.sender.low().to_be_bytes());
         input.extend_from_slice(&self.message.header.destination.to_be_bytes());
-        input.extend_from_slice(&self.message.header.recipient.low().to_be_bytes());
         input.extend_from_slice(&self.message.header.recipient.high().to_be_bytes());
+        input.extend_from_slice(&self.message.header.recipient.low().to_be_bytes());
 
         // Formatting body part
         input.extend_from_slice(&self.message.body.nb_updated.to_be_bytes());
 
         for update in &self.message.body.updates {
             match update {
-                DispatchUpdate::SpotMedian { feed_id: _, update: spot_update } => {
+                DispatchUpdate::SpotMedian { feed_id, update: spot_update } => {
                     // Append pair_id (U256 split into high and low parts)
-                    input.extend_from_slice(&spot_update.pair_id.low().to_be_bytes());
-                    input.extend_from_slice(&spot_update.pair_id.high().to_be_bytes());
-                    // Append scaled price, volume, decimals, timestamp, and num_sources_aggregated
-                    input.extend_from_slice(&spot_update.price.low().to_be_bytes());
-                    input.extend_from_slice(&spot_update.price.high().to_be_bytes());
-                    input.extend_from_slice(&spot_update.volume.low().to_be_bytes());
-                    input.extend_from_slice(&spot_update.volume.high().to_be_bytes());
-                    input.extend_from_slice(&spot_update.metadata.decimals.to_be_bytes());
+                    let feed_id = feed_id.replace("0x", "");
+                    let feed_id: alloy_U256 = alloy_U256::from_str_radix(&feed_id, 16).unwrap();
+                    input.extend_from_slice(&feed_id.to_be_bytes_vec());
                     input.extend_from_slice(&spot_update.metadata.timestamp.to_be_bytes());
                     input.extend_from_slice(&spot_update.metadata.num_sources_aggregated.to_be_bytes());
+                    input.extend_from_slice(&spot_update.metadata.decimals.to_be_bytes());
+                    // Append scaled price, volume, decimals, timestamp, and num_sources_aggregated
+                    input.extend_from_slice(&spot_update.price.high().to_be_bytes());
+                    input.extend_from_slice(&spot_update.price.low().to_be_bytes());
+                    input.extend_from_slice(&spot_update.volume.high().to_be_bytes());
+                    input.extend_from_slice(&spot_update.volume.low().to_be_bytes());
                 }
             }
         }
 
         let hash = keccak256(&input);
-        alloy_U256::from_be_bytes(<[u8; 32]>::try_from(hash.as_slice()).expect("Hash should be 32 bytes"))
+        let message_id =
+            alloy_U256::from_be_bytes(<[u8; 32]>::try_from(hash.as_slice()).expect("Hash should be 32 bytes"));
+
+        message_id
     }
 }
 
@@ -167,7 +171,6 @@ impl FromStarknetEventData for DispatchMessageBody {
                 bytes.split_at(16).1.to_vec()
             })
             .collect();
-
 
         let nb_updated = u8::from_be_bytes(data.drain(..1).collect::<Vec<u8>>().try_into().unwrap());
         let mut updates = Vec::with_capacity(nb_updated as usize);

@@ -45,7 +45,7 @@ impl HyperlaneService {
                         .add(validator, checkpoint_value.value.message_id, checkpoint_value)
                         .await?;
                 } else {
-                    tracing::error!("No checkpoint value found");
+                    tracing::debug!("No checkpoint value found");
                 }
             }
         }

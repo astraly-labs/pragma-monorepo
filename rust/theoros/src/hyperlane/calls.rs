@@ -8,7 +8,7 @@ use ethers::{
 };
 use starknet::core::types::Felt;
 
-// Generate the contract bindings
+// TODO: Use
 abigen!(
     IHyperlane,
     r#"[
@@ -22,8 +22,7 @@ pub struct HyperlaneClient {
 
 impl HyperlaneClient {
     pub async fn new(contract_address: Address) -> Result<Self> {
-        let api_key = std::env::var("INFURA_API_KEY").context("INFURA_API_KEY not found.")?;
-        let rpc_url = format!("https://mainnet.infura.io/v3/{}", api_key);
+        let rpc_url = format!("https://zircuit1-testnet.p2pify.com");
         let provider: Provider<Http> = Provider::<Http>::try_from(rpc_url)?;
         let provider = Arc::new(provider);
 

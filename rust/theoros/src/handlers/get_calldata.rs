@@ -51,7 +51,10 @@ pub async fn get_calldata(
         return Err(GetCalldataError::FeedNotFound(feed_id));
     };
 
+    tracing::info!("Dispatch events: {:?}", state.storage.dispatch_events().all().await);
+
     let checkpoints = state.storage.checkpoints().all().await;
+    
     let event = state
         .storage
         .dispatch_events()
@@ -60,14 +63,19 @@ pub async fn get_calldata(
         .map_err(|_| GetCalldataError::FailedToRetrieveEvent)?
         .ok_or_else(|| GetCalldataError::FailedToRetrieveEvent)?;
 
-    let hyperlane_contract_address: Address = "0x5f991af9c64230411CAeC533e9B77A93ee6D3E0A".parse::<Address>().unwrap(); // TODO: store the evm compatible contract address somewhere
+    // TODO: store the evm compatible contract address somewhere
+    let hyperlane_contract_address: Address = "0xb9aB8aDC69Ad3B96a8CdF5610e9bFEcc0415D662".parse::<Address>().unwrap();
 
     let num_validators = checkpoints.keys().len();
 
+    tracing::info!("A");
+
+    // TODO: Create the Client before so we don't create it for each calls
     let client = HyperlaneClient::new(hyperlane_contract_address)
         .await
         .map_err(|_| GetCalldataError::FailedToCreateHyperlaneClient)?;
 
+    tracing::info!("B");
     let validators = client.get_validators().await.map_err(|_| GetCalldataError::FailedToFetchOnchainValidators)?;
 
     tracing::info!("Validators ON ZIRCUIT: {:?}", validators);
@@ -79,6 +87,7 @@ pub async fn get_calldata(
         .await
         .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
+    tracing::info!("C");
     let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
 
     let update = match event.update {
