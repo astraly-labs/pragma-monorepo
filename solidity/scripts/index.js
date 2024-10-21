@@ -42,7 +42,7 @@ function generateAbi(contracts) {
   }
 
   const output = JSON.parse(
-    solc.compile(JSON.stringify(input), { import: findImports })
+    solc.compile(JSON.stringify(input), { import: findImports }),
   );
   console.log(output);
 
@@ -57,7 +57,7 @@ function generateAbi(contracts) {
     const abi = output.contracts[contractFile][trimedContract].abi;
     fs.writeFileSync(
       `abis/${trimedContract}.json`,
-      JSON.stringify(abi, null, 2) + "\n"
+      JSON.stringify(abi, null, 2) + "\n",
     );
   }
 }
