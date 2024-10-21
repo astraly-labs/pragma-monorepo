@@ -100,17 +100,6 @@ export class PragmaDeployer implements ContractDeployer {
       (emitter) => zeroPadValue(emitter.address, 32),
     );
 
-    console.log(
-      [
-        hyperlaneAddress,
-        deployerAddress,
-        dataSourceEmitterChainIds,
-        dataSourceEmitterAddresses,
-        config.pragma.valid_time_period_in_seconds,
-        parseEther(config.pragma.single_update_fee_in_wei),
-      ]
-    )
-
     const pragma = await upgrades.deployProxy(
       Pragma,
       [
