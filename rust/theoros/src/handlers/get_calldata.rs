@@ -10,6 +10,7 @@ use crate::types::hyperlane::DispatchUpdate;
 use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload};
 use crate::types::pragma::constants::HYPERLANE_VERSION;
 use crate::AppState;
+use ethers::utils::hex;
 
 use ethers::types::Address;
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
@@ -17,7 +18,7 @@ pub struct GetCalldataQuery {}
 
 #[derive(Debug, Default, Serialize, Deserialize, ToResponse, ToSchema)]
 pub struct GetCalldataResponse {
-    pub calldata: Vec<u8>,
+    pub calldata: String,
 }
 
 #[utoipa::path(
@@ -103,7 +104,7 @@ pub async fn get_calldata(
         emitter_address: event.emitter_address,
         payload,
     };
-    let response = GetCalldataResponse { calldata: hyperlane_message.as_bytes() };
+    let response = GetCalldataResponse { calldata: hex::encode(hyperlane_message.as_bytes()) };
 
     Ok(Json(response))
 }
