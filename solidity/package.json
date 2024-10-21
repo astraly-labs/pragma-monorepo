@@ -21,7 +21,7 @@
     "oracle"
   ],
   "author": "Pragma",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/astraly-labs/pragma-monorepo/issues"
   },
