@@ -33,6 +33,15 @@ const chainIds = {
   arbitrum: 42161,
   optimism: 10,
   base: 8453,
+  scroll: 534352,
+  scrollTestnet: 11155111,
+  scrollSepoliaTestnet: 534351,
+  zircuitTestnet: 48899,
+  plumeTestnet: 161221135,
+  worldchain: 480,
+  worldchainTestnet: 4801,
+  zksync: 324,
+  zksyncTestnet: 300,
 };
 
 function getChainConfig(
@@ -98,6 +107,36 @@ const config: HardhatUserConfig = {
     arbitrum: getChainConfig("arbitrum", "https://arb1.arbitrum.io/rpc"),
     optimism: getChainConfig("optimism", "https://rpc.ankr.com/optimism"),
     base: getChainConfig("base", "https://mainnet.base.org"),
+    scroll: getChainConfig("scroll", "https://rpc.scroll.io/"),
+    scrollTestnet: getChainConfig(
+      "scrollTestnet",
+      "https://eth-sepolia-public.unifra.io",
+    ),
+    scrollSepoliaTestnet: getChainConfig(
+      "scrollSepoliaTestnet",
+      "https://sepolia-rpc.scroll.io/",
+    ),
+    zircuitTestnet: getChainConfig(
+      "zircuitTestnet",
+      "https://zircuit1-testnet.p2pify.com",
+    ),
+    plumeTestnet: getChainConfig(
+      "plumeTestnet",
+      "https://testnet-rpc.plumenetwork.xyz/http",
+    ),
+    worldchain: getChainConfig(
+      "worldchain",
+      "https://worldchain-mainnet.g.alchemy.com/public",
+    ),
+    worldchainTestnet: getChainConfig(
+      "worldchainTestnet",
+      "https://worldchain-sepolia.g.alchemy.com/public",
+    ),
+    zksync: getChainConfig("zksync", "https://mainnet.era.zksync.io"),
+    zksyncTestnet: getChainConfig(
+      "zksyncTestnet",
+      "https://sepolia.era.zksync.dev",
+    ),
   },
   paths: {
     root: "../../solidity",

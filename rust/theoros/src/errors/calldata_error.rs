@@ -28,7 +28,10 @@ impl IntoResponse for GetCalldataError {
         let (status, err_msg) = match self {
             Self::DatabaseConnection => {
                 (StatusCode::SERVICE_UNAVAILABLE, "Could not establish a connection with the Database".to_string())
-            }
+            },
+            Self::FeedNotFound(_) => {
+                (StatusCode::NOT_FOUND, "Feed ID is not registered".into())
+            },
             _ => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Internal server error")),
         };
         (status, Json(json!({"resource":"Calldata", "message": err_msg, "happened_at" : chrono::Utc::now() })))

@@ -1,4 +1,3 @@
-use pragma_utils::conversions::starknet::felt_vec_to_vec_string;
 use starknet::{
     core::types::{BlockId, BlockTag, Felt, FunctionCall},
     macros::selector,
@@ -24,8 +23,7 @@ impl PragmaFeedsRegistryCalls for StarknetRpc {
             calldata: vec![],
         };
 
-        let mut response = self.0.call(call, PENDING_BLOCK).await?;
-        response.insert(0, Felt::from(1)); // to fit the format given in the function
-        Ok(felt_vec_to_vec_string(&response)?)
+        let raw_response = self.0.call(call, PENDING_BLOCK).await?;
+        Ok(raw_response.iter().map(|x| x.to_hex_string()).skip(1).collect())
     }
 }

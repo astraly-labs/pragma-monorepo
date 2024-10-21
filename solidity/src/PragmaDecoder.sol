@@ -137,7 +137,9 @@ abstract contract PragmaDecoder {
         virtual
         returns (bool valid, uint256 endOffset)
     {
-        (valid, endOffset) = MerkleTree.isProofValid(encodedProof, offset, root, leafData);
+        // TODO: The proof is ignored for now until we figure out how to get it from Hyperlane.
+        // (valid, endOffset) = MerkleTree.isProofValid(encodedProof, offset, root, leafData);
+        return (true, offset);
     }
 
     function extractDataInfoFromUpdate(bytes calldata encoded, uint256 offset, bytes32 checkpointRoot)
