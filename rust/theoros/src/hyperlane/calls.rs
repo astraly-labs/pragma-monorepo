@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use ethers::{
     contract::abigen,
     providers::{Http, Provider},
@@ -22,10 +22,9 @@ pub struct HyperlaneClient {
 
 impl HyperlaneClient {
     pub async fn new(contract_address: Address) -> Result<Self> {
-        let rpc_url = format!("https://zircuit1-testnet.p2pify.com");
+        let rpc_url = "https://zircuit1-testnet.p2pify.com".to_string();
         let provider: Provider<Http> = Provider::<Http>::try_from(rpc_url)?;
         let provider = Arc::new(provider);
-
         let contract = IHyperlane::new(contract_address, provider);
 
         Ok(Self { contract })

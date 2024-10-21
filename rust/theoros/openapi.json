@@ -139,8 +139,7 @@
         ],
         "properties": {
           "calldata": {
-            "type": "string",
-            "format": "binary"
+            "type": "string"
           }
         }
       },
@@ -184,8 +183,7 @@
               ],
               "properties": {
                 "calldata": {
-                  "type": "string",
-                  "format": "binary"
+                  "type": "string"
                 }
               }
             }

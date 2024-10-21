@@ -62,7 +62,7 @@ impl IndexerService {
         pragma_feeds_registry_address: Felt,
     ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
-            .with_starting_block(9500)
+            .with_starting_block(0)
             .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
                 filter
@@ -127,12 +127,6 @@ impl IndexerService {
                     self.reached_pending_block = true;
                 }
                 for block in batch {
-                    match block.header {
-                        Some(h) => {
-                            tracing::info!("🍱 #{}", h.block_number);
-                        },
-                        None => {}
-                    };
                     for event in block.events.into_iter().filter_map(|e| e.event) {
                         if event.from_address.is_none() {
                             continue;
@@ -217,10 +211,7 @@ impl IndexerService {
         };
 
         if let Some(pending_block_number) = maybe_pending_block_number {
-            tracing::info!(
-                "[🔍 Indexer] 🥳🎉 Reached pending block #{}!",
-                pending_block_number
-            );
+            tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block #{}!", pending_block_number);
         } else {
             tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block!",);
         }

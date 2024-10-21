@@ -21,7 +21,7 @@ pub struct DispatchUpdateInfos {
 
 #[derive(Debug, Default)]
 pub struct EventStorage {
-    events: RwLock<HashMap<String, DispatchUpdateInfos>>,
+    events: RwLock<HashMap<U256, DispatchUpdateInfos>>,
 }
 
 impl EventStorage {
@@ -30,25 +30,29 @@ impl EventStorage {
         Self { events: RwLock::new(HashMap::new()) }
     }
 
-    pub async fn add(&self, feed_id: String, event: DispatchUpdateInfos) -> Result<()> {
-        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
-        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
-        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
-        tracing::info!("STORING WITH KEY: {}", feed_id);
+    pub async fn add(&self, mut feed_id: String, event: DispatchUpdateInfos) -> Result<()> {
         let mut events = self.events.write().await;
+        if feed_id.starts_with("0x") {
+            feed_id = feed_id.replace("0x", "");
+        }
+        let feed_id = U256::from_str_radix(&feed_id, 16).unwrap();
         events.insert(feed_id, event);
         Ok(())
     }
 
-    pub async fn get(&self, feed_id: &String) -> Result<Option<DispatchUpdateInfos>> {
+    pub async fn get(&self, feed_id: &str) -> Result<Option<DispatchUpdateInfos>> {
         let events = self.events.read().await;
-        let feed_id: &String = &String::from("0x00000000000000000000000000000000000000000000000000000000555344542f555344");
-        Ok(events.get(feed_id).cloned())
+        let mut feed_id = feed_id.to_owned();
+        if feed_id.starts_with("0x") {
+            feed_id = feed_id.replace("0x", "");
+        }
+        let feed_id = U256::from_str_radix(&feed_id, 16).unwrap();
+        Ok(events.get(&feed_id).cloned())
     }
 
-    pub async fn all(&self) -> Result<Vec<(String, DispatchUpdateInfos)>> {
+    pub async fn all(&self) -> Result<Vec<(U256, DispatchUpdateInfos)>> {
         let events = self.events.read().await;
-        Ok(events.iter().map(|(k, v)| (k.clone(), v.clone())).collect())
+        Ok(events.iter().map(|(k, v)| (*k, v.clone())).collect())
     }
 }
 
