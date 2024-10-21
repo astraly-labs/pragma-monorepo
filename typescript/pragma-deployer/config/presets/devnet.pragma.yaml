@@ -20,7 +20,7 @@ pragma_oracle:
     - "EKUBO/USD"
   publishers:
     - name: "PRAGMA"
-      address: "0x6b09c5cca7e5ef944dc3be7514cc1ae5a6e267f0f1f2b5520e90dc00aecf6e1"
+      address: "0x04b6eb40fb7b0119344ca0dffaa3cfd9ac97734a5b785dfda5e52bd7008205cb"
       sources:
         - "ASCENDEX"
         - "BITSTAMP"
@@ -45,14 +45,14 @@ pragma_oracle:
 
 # Configuration for the Pragma Dispatcher Cairo Contracts
 pragma_dispatcher:
-  pragma_oracle_address: "0x56c94b626e02c82bfe871b06181bdc56adcd78f4ce722fe3f7ae6845795d8a8"
-  hyperlane_mailbox_address: "0x5bfb1a565a1fa2eb33c5d8e587a7aeb5e6846d3aadf9fecb529ace1e3457096"
+  pragma_oracle_address: "0x7ed4f0171a29815651d276fbdabf4773485cebf1feb5640942be74380bc7572"
+  hyperlane_mailbox_address: "0x064bb5e29a7e9fc67dedabb6d1c385050feef028563078daa9025dd8b218e596"
 
 # Configuration for the Pragma Solidity EVM contract
 pragma:
   data_source_emitters:
     - chain_id: 6363709
-      address: "0x04d997c57f63d509f483927ce74135a4e12de834144d9e90044ac03f6024267e"
+      address: "0x30e6665bda019371307edfebc413596903413337c5e8f06d2385144d126cf10"
 
   valid_time_period_in_seconds: 3600 # 1 hour
   single_update_fee_in_wei: "0"
