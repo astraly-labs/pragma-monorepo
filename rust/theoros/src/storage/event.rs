@@ -31,6 +31,15 @@ impl EventStorage {
     }
 
     pub async fn add(&self, feed_id: String, event: DispatchUpdateInfos) -> Result<()> {
+        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
+        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
+        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
+        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
+        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
+        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
+        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
+        tracing::info!("😸😸😸😸😸😸😸😸😸😸😸😸");
+        tracing::info!("STORING WITH KEY: {}", feed_id);
         let mut events = self.events.write().await;
         events.insert(feed_id, event);
         Ok(())

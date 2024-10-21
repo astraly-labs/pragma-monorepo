@@ -58,8 +58,9 @@ pub async fn get_calldata(
         .get(&feed_id)
         .await
         .map_err(|_| GetCalldataError::FailedToRetrieveEvent)?
-        .unwrap();
-    let hyperlane_contract_address: Address = "0x8bA20dB35218bEF1c33Ae6bd129a07f157c71B2D".parse::<Address>().unwrap(); // TODO: store the evm compatible contract address somewhere
+        .ok_or_else(|| GetCalldataError::FailedToRetrieveEvent)?;
+
+    let hyperlane_contract_address: Address = "0x5f991af9c64230411CAeC533e9B77A93ee6D3E0A".parse::<Address>().unwrap(); // TODO: store the evm compatible contract address somewhere
 
     let num_validators = checkpoints.keys().len();
 
@@ -69,6 +70,8 @@ pub async fn get_calldata(
 
     let validators = client.get_validators().await.map_err(|_| GetCalldataError::FailedToFetchOnchainValidators)?;
 
+    tracing::info!("Validators ON ZIRCUIT: {:?}", validators);
+    
     let signers = state
         .storage
         .checkpoints()

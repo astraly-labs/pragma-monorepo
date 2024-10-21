@@ -152,7 +152,7 @@ impl FromStarknetEventData for DispatchMessageHeader {
 
 #[derive(Debug, Clone)]
 pub struct DispatchMessageBody {
-    pub nb_updated: u16,
+    pub nb_updated: u8,
     pub updates: Vec<DispatchUpdate>,
 }
 
@@ -168,7 +168,8 @@ impl FromStarknetEventData for DispatchMessageBody {
             })
             .collect();
 
-        let nb_updated = u16::from_be_bytes(data.drain(..2).collect::<Vec<u8>>().try_into().unwrap());
+
+        let nb_updated = u8::from_be_bytes(data.drain(..1).collect::<Vec<u8>>().try_into().unwrap());
         let mut updates = Vec::with_capacity(nb_updated as usize);
 
         for _ in 0..nb_updated {

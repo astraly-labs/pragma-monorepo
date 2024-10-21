@@ -38,7 +38,7 @@ impl HyperlaneService {
                 let value = fetcher.fetch(index).await?;
 
                 if let Some(checkpoint_value) = value {
-                    tracing::debug!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
+                    tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
                     self.state
                         .storage
                         .checkpoints()
