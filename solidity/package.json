@@ -1,6 +1,6 @@
 {
-  "name": "@pragma/solidity-sdk",
-  "version": "1.0.0",
+  "name": "@pragmaoracle/solidity-sdk",
+  "version": "1.0.1",
   "description": "Solidity contracts of the Pragma protocol.",
   "main": "index.js",
   "repository": {
