@@ -62,7 +62,7 @@ impl IndexerService {
         pragma_feeds_registry_address: Felt,
     ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
-            .with_starting_block(29000)
+            .with_starting_block(0)
             .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
                 filter
