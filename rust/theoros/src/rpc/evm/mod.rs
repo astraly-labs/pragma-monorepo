@@ -1,6 +1,7 @@
 pub mod hyperlane;
 
 pub use hyperlane::*;
+use starknet::core::types::Felt;
 
 use std::collections::HashMap;
 
@@ -11,9 +12,9 @@ use url::Url;
 use crate::configs::evm_config::{EvmChainName, EvmConfig};
 
 #[derive(Debug, Clone)]
-pub struct HyperlaneRpcsMapping(HashMap<EvmChainName, HyperlaneClient>);
+pub struct HyperlaneValidatorsMapping(HashMap<EvmChainName, Vec<Felt>>);
 
-impl HyperlaneRpcsMapping {
+impl HyperlaneValidatorsMapping {
     pub async fn from_config(config: &EvmConfig) -> anyhow::Result<Self> {
         let mut contracts = HashMap::new();
 
@@ -22,17 +23,19 @@ impl HyperlaneRpcsMapping {
             let address = Address::from_hex(&chain_config.hyperlane_address)
                 .map_err(|e| anyhow::anyhow!("Invalid hyperlane address for {chain_name:?}: {e}"))?;
             let rpc_client = HyperlaneClient::new(rpc_url, address).await;
-            contracts.insert(*chain_name, rpc_client);
+
+            let validators = rpc_client.get_validators().await?;
+            contracts.insert(*chain_name, validators);
         }
 
         Ok(Self(contracts))
     }
 
-    pub fn get_rpc(&self, chain_name: EvmChainName) -> Option<&HyperlaneClient> {
+    pub fn get_rpc(&self, chain_name: EvmChainName) -> Option<&Vec<Felt>> {
         self.0.get(&chain_name)
     }
 
-    pub fn rpcs(&self) -> &HashMap<EvmChainName, HyperlaneClient> {
+    pub fn rpcs(&self) -> &HashMap<EvmChainName, Vec<Felt>> {
         &self.0
     }
 

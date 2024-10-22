@@ -67,17 +67,15 @@ pub async fn get_calldata(
         .map_err(|_| GetCalldataError::DispatchNotFound)?
         .ok_or(GetCalldataError::DispatchNotFound)?;
 
-    let hyperlane_rpc = state
-        .evm_hyperlane_rpcs_mapping
+    let validators = state
+        .hyperlane_validators_mapping
         .get_rpc(chain_name)
         .ok_or(GetCalldataError::ChainNotSupported(raw_chain_name))?;
-    let validators =
-        hyperlane_rpc.get_validators().await.map_err(|_| GetCalldataError::FailedToFetchOnchainValidators)?;
 
     let signatures = state
         .storage
         .checkpoints()
-        .get_validators_signatures(&validators)
+        .get_validators_signatures(validators)
         .await
         .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
