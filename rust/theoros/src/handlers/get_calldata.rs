@@ -1,3 +1,5 @@
+use alloy::hex;
+use alloy::primitives::Address;
 use axum::extract::{Query, State};
 use axum::Json;
 use serde::{Deserialize, Serialize};
@@ -5,14 +7,11 @@ use utoipa::{IntoParams, ToResponse, ToSchema};
 
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
-use crate::hyperlane::calls::HyperlaneClient;
+use crate::rpc::evm::HyperlaneClient;
 use crate::types::hyperlane::DispatchUpdate;
 use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload};
 use crate::types::pragma::constants::HYPERLANE_VERSION;
 use crate::AppState;
-
-use alloy::hex;
-use alloy::primitives::Address;
 
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
 pub struct GetCalldataQuery {}

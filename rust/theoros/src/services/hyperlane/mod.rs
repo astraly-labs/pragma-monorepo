@@ -2,7 +2,8 @@ use pragma_utils::services::Service;
 use starknet::core::types::Felt;
 use tokio::task::JoinSet;
 
-use crate::{rpc::HyperlaneCalls, AppState};
+use crate::rpc::starknet::hyperlane::HyperlaneCalls;
+use crate::AppState;
 
 #[derive(Clone)]
 pub struct HyperlaneService {

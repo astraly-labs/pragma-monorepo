@@ -2,7 +2,6 @@ mod cli;
 mod errors;
 mod extractors;
 mod handlers;
-mod hyperlane;
 mod rpc;
 mod services;
 mod storage;
@@ -22,7 +21,7 @@ use pragma_utils::{
 };
 
 use cli::TheorosCli;
-use rpc::StarknetRpc;
+use rpc::starknet::StarknetRpc;
 use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
 const LOG_LEVEL: Level = Level::INFO;
