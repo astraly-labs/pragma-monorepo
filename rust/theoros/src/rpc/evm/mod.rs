@@ -21,7 +21,7 @@ impl HyperlaneRpcs {
             let rpc_url: Url = chain_config.rpc_url.parse()?;
             let address = Address::from_hex(&chain_config.hyperlane_address)
                 .map_err(|e| anyhow::anyhow!("Invalid hyperlane address for {chain_name:?}: {e}"))?;
-            let rpc_client = HyperlaneClient::new(rpc_url, address).await?;
+            let rpc_client = HyperlaneClient::new(rpc_url, address).await;
             contracts.insert(*chain_name, rpc_client);
         }
 

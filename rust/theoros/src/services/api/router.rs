@@ -16,9 +16,13 @@ pub fn api_router<T: OpenApiT>(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/health", get(health))
         .merge(SwaggerUi::new("/v1/docs").url("/v1/docs/openapi.json", open_api))
-        .nest("/v1", calldata_routes(state.clone()))
-        .nest("/v1", data_feeds_routes(state.clone()))
-        .nest("/v1", chains_routes(state.clone()))
+        .nest(
+            "/v1",
+            Router::new()
+                .merge(calldata_routes(state.clone()))
+                .merge(data_feeds_routes(state.clone()))
+                .merge(chains_routes(state.clone())),
+        )
         .fallback(handler_404)
 }
 

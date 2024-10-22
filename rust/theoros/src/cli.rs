@@ -50,6 +50,9 @@ pub struct TheorosCli {
         value_parser = parse_evm_config
     )]
     pub evm_config: evm_config::EvmConfig,
+
+    #[clap(env = "INDEXER_STARTING_BLOCK", long, default_value = "0")]
+    pub indexer_starting_block: u64,
 }
 
 /// Parse a Felt.

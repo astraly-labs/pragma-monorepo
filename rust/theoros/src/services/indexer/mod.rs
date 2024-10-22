@@ -60,9 +60,10 @@ impl IndexerService {
         hyperlane_mailbox_address: Felt,
         hyperlane_validator_announce_address: Felt,
         pragma_feeds_registry_address: Felt,
+        starting_block: u64,
     ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
-            .with_starting_block(0)
+            .with_starting_block(starting_block)
             .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
                 filter
