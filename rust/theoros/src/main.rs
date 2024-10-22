@@ -1,4 +1,5 @@
 mod cli;
+mod configs;
 mod errors;
 mod extractors;
 mod handlers;
@@ -21,14 +22,15 @@ use pragma_utils::{
 };
 
 use cli::TheorosCli;
-use rpc::starknet::StarknetRpc;
+use rpc::{evm::HyperlaneRpcs, starknet::StarknetRpc};
 use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
 const LOG_LEVEL: Level = Level::INFO;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub rpc_client: Arc<StarknetRpc>,
+    pub starknet_rpc: Arc<StarknetRpc>,
+    pub evm_hyperlane_rpcs: Arc<HyperlaneRpcs>,
     pub storage: Arc<TheorosStorage>,
     pub metrics_registry: Registry, // already wrapped into an Arc
 }
@@ -40,10 +42,11 @@ async fn main() -> Result<()> {
 
     init_tracing(&config.app_name, LOG_LEVEL)?;
 
-    let rpc_client = StarknetRpc::new(config.madara_rpc_url);
+    let starknet_rpc = StarknetRpc::new(config.madara_rpc_url);
+    let hyperlane_rpcs = HyperlaneRpcs::from_config(&config.evm_config).await?;
 
     let theoros_storage = TheorosStorage::from_rpc_state(
-        &rpc_client,
+        &starknet_rpc,
         &config.pragma_feeds_registry_address,
         &config.hyperlane_validator_announce_address,
     )
@@ -52,7 +55,8 @@ async fn main() -> Result<()> {
     let metrics_service = MetricsService::new(false, config.metrics_port)?;
 
     let state = AppState {
-        rpc_client: Arc::new(rpc_client),
+        starknet_rpc: Arc::new(starknet_rpc),
+        evm_hyperlane_rpcs: Arc::new(hyperlane_rpcs),
         storage: Arc::new(theoros_storage),
         metrics_registry: metrics_service.registry(),
     };

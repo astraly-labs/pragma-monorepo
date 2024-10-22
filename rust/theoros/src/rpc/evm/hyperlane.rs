@@ -26,11 +26,11 @@ pub type HyperlaneContract = IHyperlane::IHyperlaneInstance<
     >,
 >;
 
+#[derive(Debug, Clone)]
 pub struct HyperlaneClient(HyperlaneContract);
 
 impl HyperlaneClient {
-    pub async fn new(contract_address: Address) -> Result<Self> {
-        let rpc_url: Url = "https://zircuit1-testnet.p2pify.com".parse()?;
+    pub async fn new(rpc_url: Url, contract_address: Address) -> Result<Self> {
         let provider = ProviderBuilder::new().with_recommended_fillers().on_http(rpc_url);
         let hyperlane_client = IHyperlane::new(contract_address, provider);
         Ok(Self(hyperlane_client))

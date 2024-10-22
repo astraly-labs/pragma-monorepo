@@ -19,7 +19,7 @@ pub struct GetDataFeedsResponse(pub Vec<Feed>);
     ),
 )]
 pub async fn get_data_feeds(State(state): State<AppState>) -> Result<Json<GetDataFeedsResponse>, GetDataFeedsError> {
-    tracing::info!("Received get all data feeds request");
+    let started_at = std::time::Instant::now();
 
     let feed_ids = state.storage.feed_ids();
 
@@ -30,5 +30,6 @@ pub async fn get_data_feeds(State(state): State<AppState>) -> Result<Json<GetDat
     }
 
     let response = GetDataFeedsResponse(feeds);
+    tracing::info!("🌐 get_data_feeds - {:?}", started_at.elapsed());
     Ok(Json(response))
 }

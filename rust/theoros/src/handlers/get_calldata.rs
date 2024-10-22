@@ -1,13 +1,14 @@
+use std::str::FromStr;
+
 use alloy::hex;
-use alloy::primitives::Address;
 use axum::extract::{Query, State};
 use axum::Json;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToResponse, ToSchema};
 
+use crate::configs::evm_config::EvmChainName;
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
-use crate::rpc::evm::HyperlaneClient;
 use crate::types::hyperlane::DispatchUpdate;
 use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload};
 use crate::types::pragma::constants::HYPERLANE_VERSION;
@@ -23,7 +24,7 @@ pub struct GetCalldataResponse {
 
 #[utoipa::path(
     get,
-    path = "/v1/calldata/{feed_id}",
+    path = "/v1/calldata/{chain}/{feed_id}",
     responses(
         (
             status = 200,
@@ -42,10 +43,13 @@ pub struct GetCalldataResponse {
 )]
 pub async fn get_calldata(
     State(state): State<AppState>,
-    PathExtractor(feed_id): PathExtractor<String>,
+    PathExtractor(path_args): PathExtractor<(String, String)>,
     Query(_params): Query<GetCalldataQuery>,
 ) -> Result<Json<GetCalldataResponse>, GetCalldataError> {
-    tracing::info!("Received get calldata request for feed: {feed_id}");
+    let started_at = std::time::Instant::now();
+    let (raw_chain_name, feed_id) = path_args;
+    let chain_name = EvmChainName::from_str(&raw_chain_name)
+        .map_err(|_| GetCalldataError::ChainNotSupported(raw_chain_name.clone()))?;
 
     let stored_feed_ids = state.storage.feed_ids();
     if !stored_feed_ids.contains(&feed_id).await {
@@ -53,31 +57,26 @@ pub async fn get_calldata(
     };
 
     let checkpoints = state.storage.checkpoints().all().await;
+    let num_validators = checkpoints.keys().len();
 
     let event = state
         .storage
         .dispatch_events()
         .get(&feed_id)
         .await
-        .map_err(|_| GetCalldataError::FailedToRetrieveEvent)?
-        .ok_or(GetCalldataError::FailedToRetrieveEvent)?;
+        .map_err(|_| GetCalldataError::DispatchNotFound)?
+        .ok_or(GetCalldataError::DispatchNotFound)?;
 
-    // TODO: store the evm compatible contract address somewhere
-    let hyperlane_contract_address: Address = "0xb9aB8aDC69Ad3B96a8CdF5610e9bFEcc0415D662".parse::<Address>().unwrap();
-    let num_validators = checkpoints.keys().len();
-
-    // TODO: Create the Client before so we don't create it for each calls
-    let client = HyperlaneClient::new(hyperlane_contract_address)
-        .await
-        .map_err(|_| GetCalldataError::FailedToCreateHyperlaneClient)?;
-    let validators = client.get_validators().await.map_err(|_| GetCalldataError::FailedToFetchOnchainValidators)?;
+    let hyperlane_rpc =
+        state.evm_hyperlane_rpcs.get_rpc(chain_name).ok_or(GetCalldataError::ChainNotSupported(raw_chain_name))?;
+    let validators =
+        hyperlane_rpc.get_validators().await.map_err(|_| GetCalldataError::FailedToFetchOnchainValidators)?;
 
     let signatures = state
         .storage
         .checkpoints()
         .get_validators_signatures(&validators)
         .await
-        // TODO: Error
         .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
     let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
@@ -108,6 +107,6 @@ pub async fn get_calldata(
         payload,
     };
     let response = GetCalldataResponse { calldata: hex::encode(hyperlane_message.as_bytes()) };
-
+    tracing::info!("🌐 get_calldata - {:?}", started_at.elapsed());
     Ok(Json(response))
 }

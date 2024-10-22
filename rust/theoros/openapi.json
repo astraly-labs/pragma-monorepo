@@ -9,7 +9,7 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/v1/calldata/{feed_id}": {
+    "/v1/calldata/{chain}/{feed_id}": {
       "get": {
         "tags": [
           "crate::handlers::get_calldata"
@@ -38,6 +38,29 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/GetCalldataError"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/chains": {
+      "get": {
+        "tags": [
+          "crate::handlers::get_chains"
+        ],
+        "operationId": "get_chains",
+        "responses": {
+          "200": {
+            "description": "Get all the supported chains",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GetDataFeedsResponse"
                   }
                 }
               }
@@ -95,7 +118,7 @@
           {
             "type": "string",
             "enum": [
-              "FailedToRetrieveEvent"
+              "DispatchNotFound"
             ]
           },
           {
@@ -126,6 +149,17 @@
             "enum": [
               "ValidatorNotFound"
             ]
+          },
+          {
+            "type": "object",
+            "required": [
+              "ChainNotSupported"
+            ],
+            "properties": {
+              "ChainNotSupported": {
+                "type": "string"
+              }
+            }
           }
         ]
       },
@@ -141,6 +175,18 @@
           "calldata": {
             "type": "string"
           }
+        }
+      },
+      "GetChainsError": {
+        "type": "string",
+        "enum": [
+          "InternalServerError"
+        ]
+      },
+      "GetChainsResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/EvmChainName"
         }
       },
       "GetDataFeedsError": {
@@ -185,6 +231,19 @@
                 "calldata": {
                   "type": "string"
                 }
+              }
+            }
+          }
+        }
+      },
+      "GetChainsResponse": {
+        "description": "",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/EvmChainName"
               }
             }
           }

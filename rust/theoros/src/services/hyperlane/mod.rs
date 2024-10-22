@@ -53,7 +53,7 @@ impl HyperlaneService {
     }
 
     pub async fn get_latest_index(&self) -> anyhow::Result<u32> {
-        let latest_checkpoint = self.state.rpc_client.get_latest_checkpoint(&self.merkle_tree_hook_address).await?;
+        let latest_checkpoint = self.state.starknet_rpc.get_latest_checkpoint(&self.merkle_tree_hook_address).await?;
         Ok(latest_checkpoint[2].to_biguint().to_u32_digits()[0])
     }
 }
