@@ -10,9 +10,10 @@ use crate::types::hyperlane::DispatchUpdate;
 use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload};
 use crate::types::pragma::constants::HYPERLANE_VERSION;
 use crate::AppState;
-use ethers::utils::hex;
 
-use ethers::types::Address;
+use alloy::hex;
+use alloy::primitives::Address;
+
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
 pub struct GetCalldataQuery {}
 
@@ -72,11 +73,12 @@ pub async fn get_calldata(
         .map_err(|_| GetCalldataError::FailedToCreateHyperlaneClient)?;
     let validators = client.get_validators().await.map_err(|_| GetCalldataError::FailedToFetchOnchainValidators)?;
 
-    let signers = state
+    let signatures = state
         .storage
         .checkpoints()
-        .match_validators_with_signatures(&validators)
+        .get_validators_signatures(&validators)
         .await
+        // TODO: Error
         .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
     let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
@@ -99,7 +101,7 @@ pub async fn get_calldata(
     let hyperlane_message = HyperlaneMessage {
         hyperlane_version: HYPERLANE_VERSION,
         signers_len: num_validators as u8,
-        signers,
+        signatures,
         nonce: event.nonce,
         timestamp: update.metadata.timestamp,
         emitter_chain_id: event.emitter_chain_id,

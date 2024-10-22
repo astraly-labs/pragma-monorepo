@@ -16,7 +16,7 @@ use pragma_utils::{
 
 use crate::{
     storage::DispatchUpdateInfos,
-    types::hyperlane::{DispatchEvent, FromStarknetEventData, HasFeedId, ValidatorAnnouncementEvent},
+    types::hyperlane::{DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
     AppState,
 };
 
@@ -62,7 +62,7 @@ impl IndexerService {
         pragma_feeds_registry_address: Felt,
     ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
-            .with_starting_block(0)
+            .with_starting_block(29000)
             .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
                 filter
@@ -204,14 +204,14 @@ impl IndexerService {
 
     /// Logs that we successfully reached current pending block
     fn log_pending_block_reached(&self, last_block_in_batch: Option<&Block>) {
-        let maybe_pending_block_number = if let Some(last_block) = last_block_in_batch {
+        let maybe_block_number = if let Some(last_block) = last_block_in_batch {
             last_block.header.as_ref().map(|header| header.block_number)
         } else {
             None
         };
 
-        if let Some(pending_block_number) = maybe_pending_block_number {
-            tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block #{}!", pending_block_number);
+        if let Some(block_number) = maybe_block_number {
+            tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block #{}!", block_number);
         } else {
             tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block!",);
         }

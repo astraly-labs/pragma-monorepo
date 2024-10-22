@@ -20,7 +20,7 @@ pub struct ValidatorStorage(RwLock<HashMap<Felt, CheckpointStorage>>);
 
 impl ValidatorStorage {
     pub fn new() -> Self {
-        Self(RwLock::new(HashMap::default()))
+        Self(RwLock::new(HashMap::new()))
     }
 
     /// Fills the [HashMap] with the initial state fetched from the RPC.
@@ -112,16 +112,11 @@ impl ValidatorCheckpointStorage {
         false
     }
 
-    pub async fn match_validators_with_signatures(
-        &self,
-        validators: &[Felt],
-    ) -> anyhow::Result<Vec<ValidatorSignature>> {
+    pub async fn get_validators_signatures(&self, validators: &[Felt]) -> anyhow::Result<Vec<ValidatorSignature>> {
         let checkpoints = self.0.read().await;
 
-        // Create a mapping of <Validator, index>
         let validator_indices: HashMap<_, _> = validators.iter().enumerate().map(|(i, v)| (*v, i as u8)).collect();
 
-        // Convert checkpoints into signatures with correct indices
         let signers: anyhow::Result<Vec<_>> = checkpoints
             .iter()
             .map(|((validator, _), signed_checkpoint)| {

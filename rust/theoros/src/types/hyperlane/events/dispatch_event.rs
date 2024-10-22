@@ -199,24 +199,18 @@ impl FromStarknetEventData for DispatchMessageBody {
     }
 }
 
-pub trait HasFeedId {
-    fn feed_id(&self) -> String;
-}
-
 #[derive(Debug, Clone)]
 pub enum DispatchUpdate {
     SpotMedian { update: SpotMedianUpdate, feed_id: String },
 }
 
-impl HasFeedId for DispatchUpdate {
-    fn feed_id(&self) -> String {
+impl DispatchUpdate {
+    pub fn feed_id(&self) -> String {
         match self {
             DispatchUpdate::SpotMedian { feed_id, update: _ } => feed_id.clone(),
         }
     }
-}
 
-impl DispatchUpdate {
     fn from_starknet_event_data(mut data: Vec<u8>) -> Result<Self> {
         let raw_asset_class = u16::from_be_bytes(data.drain(..2).collect::<Vec<u8>>().try_into().unwrap());
 
@@ -227,7 +221,6 @@ impl DispatchUpdate {
         let mut padded_data = [0u8; 16];
         let extracted_data = data.drain(..12).collect::<Vec<u8>>();
         padded_data[4..].copy_from_slice(&extracted_data);
-
         let pair_id_high = u128::from_be_bytes(padded_data);
         let pair_id = U256::from_words(pair_id_high, pair_id_low);
 
@@ -283,7 +276,7 @@ impl SpotMedianUpdate {
         let volume = U256::from_words(volume_low, volume_high);
 
         Ok(Self {
-            pair_id: U256::from(0_u8),
+            pair_id: U256::from(0_u8), // This will get populated later
             metadata: MetadataUpdate { decimals, timestamp, num_sources_aggregated },
             price,
             volume,

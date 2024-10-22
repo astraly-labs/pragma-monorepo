@@ -6,7 +6,6 @@ use anyhow::Result;
 use tokio::sync::RwLock;
 
 use crate::types::hyperlane::DispatchUpdate;
-use crate::types::hyperlane::HasFeedId;
 use crate::{storage::ValidatorCheckpointStorage, types::hyperlane::DispatchEvent};
 
 #[derive(Debug, Clone)]
