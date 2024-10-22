@@ -9,7 +9,7 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/v1/calldata/{chain}/{feed_id}": {
+    "/v1/calldata/{chain_name}/{feed_id}": {
       "get": {
         "tags": [
           "crate::handlers::get_calldata"

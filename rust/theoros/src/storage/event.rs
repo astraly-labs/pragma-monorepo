@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use alloy::primitives::U256;
 use anyhow::Result;
+use pragma_utils::conversions::alloy::hex_str_to_u256;
 use tokio::sync::RwLock;
 
 use crate::types::hyperlane::DispatchUpdate;
@@ -29,23 +30,16 @@ impl EventStorage {
         Self { events: RwLock::new(HashMap::new()) }
     }
 
-    pub async fn add(&self, mut feed_id: String, event: DispatchUpdateInfos) -> Result<()> {
+    pub async fn add(&self, feed_id: String, event: DispatchUpdateInfos) -> Result<()> {
         let mut events = self.events.write().await;
-        if feed_id.starts_with("0x") {
-            feed_id = feed_id.replace("0x", "");
-        }
-        let feed_id = U256::from_str_radix(&feed_id, 16).unwrap();
+        let feed_id = hex_str_to_u256(&feed_id)?;
         events.insert(feed_id, event);
         Ok(())
     }
 
     pub async fn get(&self, feed_id: &str) -> Result<Option<DispatchUpdateInfos>> {
         let events = self.events.read().await;
-        let mut feed_id = feed_id.to_owned();
-        if feed_id.starts_with("0x") {
-            feed_id = feed_id.replace("0x", "");
-        }
-        let feed_id = U256::from_str_radix(&feed_id, 16).unwrap();
+        let feed_id = hex_str_to_u256(feed_id)?;
         Ok(events.get(&feed_id).cloned())
     }
 

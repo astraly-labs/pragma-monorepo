@@ -2,6 +2,7 @@ use alloy::primitives::keccak256;
 use alloy::primitives::{hex, U256 as alloy_U256};
 use anyhow::{Context, Result};
 use pragma_feeds::FeedType;
+use pragma_utils::conversions::alloy::hex_str_to_u256;
 use starknet::core::types::{Felt, U256};
 
 use pragma_utils::conversions::apibara::FromFieldBytes;
@@ -94,14 +95,13 @@ impl DispatchEvent {
         for update in &self.message.body.updates {
             match update {
                 DispatchUpdate::SpotMedian { feed_id, update: spot_update } => {
-                    // Append pair_id (U256 split into high and low parts)
-                    let feed_id = feed_id.replace("0x", "");
-                    let feed_id: alloy_U256 = alloy_U256::from_str_radix(&feed_id, 16).unwrap();
+                    let feed_id = hex_str_to_u256(feed_id).unwrap();
                     input.extend_from_slice(&feed_id.to_be_bytes_vec());
+                    // Append metadata, i.e timestamp, nb sources & decimals
                     input.extend_from_slice(&spot_update.metadata.timestamp.to_be_bytes());
                     input.extend_from_slice(&spot_update.metadata.num_sources_aggregated.to_be_bytes());
                     input.extend_from_slice(&spot_update.metadata.decimals.to_be_bytes());
-                    // Append scaled price, volume, decimals, timestamp, and num_sources_aggregated
+                    // Append scaled price and volume
                     input.extend_from_slice(&spot_update.price.high().to_be_bytes());
                     input.extend_from_slice(&spot_update.price.low().to_be_bytes());
                     input.extend_from_slice(&spot_update.volume.high().to_be_bytes());

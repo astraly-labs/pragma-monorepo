@@ -24,7 +24,7 @@ pub struct GetCalldataResponse {
 
 #[utoipa::path(
     get,
-    path = "/v1/calldata/{chain}/{feed_id}",
+    path = "/v1/calldata/{chain_name}/{feed_id}",
     responses(
         (
             status = 200,

@@ -20,8 +20,8 @@ export type Chain =
   | "scroll"
   | "scrollTestnet"
   | "scrollSepoliaTestnet"
-  | "zircuitTestnet" // TODO: zircuit mainnet
-  | "plumeTestnet" /// TODO: plume testnet
+  | "zircuitTestnet"
+  | "plumeTestnet"
   | "worldchain"
   | "worldchainTestnet"
   | "zksync"
