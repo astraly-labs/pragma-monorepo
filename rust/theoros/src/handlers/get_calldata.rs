@@ -67,8 +67,10 @@ pub async fn get_calldata(
         .map_err(|_| GetCalldataError::DispatchNotFound)?
         .ok_or(GetCalldataError::DispatchNotFound)?;
 
-    let hyperlane_rpc =
-        state.evm_hyperlane_rpcs.get_rpc(chain_name).ok_or(GetCalldataError::ChainNotSupported(raw_chain_name))?;
+    let hyperlane_rpc = state
+        .evm_hyperlane_rpcs_mapping
+        .get_rpc(chain_name)
+        .ok_or(GetCalldataError::ChainNotSupported(raw_chain_name))?;
     let validators =
         hyperlane_rpc.get_validators().await.map_err(|_| GetCalldataError::FailedToFetchOnchainValidators)?;
 

@@ -11,9 +11,9 @@ use url::Url;
 use crate::configs::evm_config::{EvmChainName, EvmConfig};
 
 #[derive(Debug, Clone)]
-pub struct HyperlaneRpcs(HashMap<EvmChainName, HyperlaneClient>);
+pub struct HyperlaneRpcsMapping(HashMap<EvmChainName, HyperlaneClient>);
 
-impl HyperlaneRpcs {
+impl HyperlaneRpcsMapping {
     pub async fn from_config(config: &EvmConfig) -> anyhow::Result<Self> {
         let mut contracts = HashMap::new();
 

@@ -20,7 +20,7 @@ pub struct GetChainsResponse(pub Vec<EvmChainName>);
 pub async fn get_chains(State(state): State<AppState>) -> Result<Json<GetChainsResponse>, GetChainsError> {
     let started_at = std::time::Instant::now();
 
-    let chains = state.evm_hyperlane_rpcs.chain_names();
+    let chains = state.evm_hyperlane_rpcs_mapping.chain_names();
     let response = GetChainsResponse(chains);
 
     tracing::info!("🌐 get_chains - {:?}", started_at.elapsed());
