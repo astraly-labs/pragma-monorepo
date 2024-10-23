@@ -24,6 +24,6 @@ impl PragmaFeedsRegistryCalls for StarknetRpc {
         };
 
         let raw_response = self.0.call(call, PENDING_BLOCK).await?;
-        Ok(raw_response.iter().map(|x| x.to_hex_string()).skip(1).collect())
+        Ok(raw_response.iter().skip(1).map(|x| x.to_hex_string()).collect())
     }
 }

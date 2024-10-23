@@ -11,7 +11,7 @@ use url::Url;
 
 use crate::configs::evm_config::{EvmChainName, EvmConfig};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct HyperlaneValidatorsMapping(HashMap<EvmChainName, Vec<Felt>>);
 
 impl HyperlaneValidatorsMapping {
