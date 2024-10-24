@@ -1,1 +1,1 @@
-pub const HYPERLANE_VERSION: u8 = 1;
+pub const HYPERLANE_VERSION: u8 = 3;

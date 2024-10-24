@@ -65,7 +65,7 @@ export class DispatcherDeployer implements ContractDeployer {
     );
 
     // 3. Save deployment addresses
-    const jsonContent = JSON.stringify(deploymentInfo, null, 4);
+    const jsonContent = JSON.stringify(deploymentInfo, null, 2);
     const directoryPath = path.join("..", "..", "deployments", chain);
     const filePath = path.join(directoryPath, "dispatcher.json");
     // Create the directory if it doesn't exist
@@ -95,9 +95,14 @@ export class DispatcherDeployer implements ContractDeployer {
     );
 
     console.log("⏳ Registering all feed ids in the config...");
-    let tx = await feedsRegistry.invoke("add_feeds", [feeds.feeds.map((feed) => feed.id)]);
+    let tx = await feedsRegistry.invoke("add_feeds", [
+      feeds.feeds.map((feed) => feed.id),
+    ]);
     await deployer.waitForTransaction(tx.transaction_hash);
-    console.log("\tRegistered", feeds.feeds.map((feed) => feed.name).join(", "));
+    console.log(
+      "\tRegistered",
+      feeds.feeds.map((feed) => feed.name).join(", "),
+    );
     console.log("🧩 All feeds registered!");
     console.log("✅ Pragma Feeds Registry deployment complete!\n");
     return feedsRegistry;

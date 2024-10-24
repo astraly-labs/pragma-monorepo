@@ -1,14 +1,14 @@
 {
-    "FeedsRegistry": "0x4bdad51395192c74da761af49ecd9443514ff01dbfd15b490c798f57a3e75d8",
-    "PragmaDispatcher": "0x60240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc3",
-    "AssetClassRouters": {
-        "Crypto": {
-            "address": "0x7640ae54477a5ad09a8607cf6161fff83ef8b3b3af041674f1fee252bac99b",
-            "feed_type_routers": {
-                "Unique: Spot Median": "0x3ef6f8b04c145a548665c7b718f714a929f1ba6fddbb990bbb85cd3019c732e",
-                "Unique: Perp Median": "0x248864b58e2e8237462f73c350553ef7b3ac64d90d81b8923934f7cf8ba284e",
-                "Unique: Spot Mean": "0x1d5f49df212da404bf2f27af29f3e7619d44732ae2bae53a513cfc0369e6b62"
-            }
-        }
+  "FeedsRegistry": "0x4bdad51395192c74da761af49ecd9443514ff01dbfd15b490c798f57a3e75d8",
+  "PragmaDispatcher": "0x60240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc3",
+  "AssetClassRouters": {
+    "Crypto": {
+      "address": "0x7640ae54477a5ad09a8607cf6161fff83ef8b3b3af041674f1fee252bac99b",
+      "feed_type_routers": {
+        "Unique: Spot Median": "0x3ef6f8b04c145a548665c7b718f714a929f1ba6fddbb990bbb85cd3019c732e",
+        "Unique: Perp Median": "0x248864b58e2e8237462f73c350553ef7b3ac64d90d81b8923934f7cf8ba284e",
+        "Unique: Spot Mean": "0x1d5f49df212da404bf2f27af29f3e7619d44732ae2bae53a513cfc0369e6b62"
+      }
     }
+  }
 }

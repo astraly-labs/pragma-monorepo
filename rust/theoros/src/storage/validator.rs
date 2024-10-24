@@ -20,7 +20,7 @@ pub struct ValidatorStorage(RwLock<HashMap<Felt, CheckpointStorage>>);
 
 impl ValidatorStorage {
     pub fn new() -> Self {
-        Self(RwLock::new(HashMap::default()))
+        Self(RwLock::new(HashMap::new()))
     }
 
     /// Fills the [HashMap] with the initial state fetched from the RPC.
@@ -37,8 +37,10 @@ impl ValidatorStorage {
 
         for (validator, location) in validators.into_iter().zip(locations.into_iter()) {
             // TODO: in this case, we use the last storage registered for the operation
-            let storage = CheckpointStorage::from_str(&location[location.len() - 1])?;
-            all_storages.insert(validator, storage);
+            if !&location[location.len() - 1].starts_with("file") {
+                let storage = CheckpointStorage::from_str(&location[location.len() - 1])?;
+                all_storages.insert(validator, storage);
+            }
         }
 
         Ok(())
@@ -54,8 +56,11 @@ impl ValidatorStorage {
     /// Adds or updates the [CheckpointStorage] for the given validator from a [ValidatorAnnouncementEvent]
     pub async fn add_from_announcement_event(&self, event: ValidatorAnnouncementEvent) -> anyhow::Result<()> {
         let validator: Felt = event.validator.into();
-        let storage = CheckpointStorage::from_str(&event.storage_location)?;
-        self.add(validator, storage).await
+        if !event.storage_location.starts_with("file") {
+            let storage = CheckpointStorage::from_str(&event.storage_location)?;
+            self.add(validator, storage).await?;
+        };
+        Ok(())
     }
 
     /// Returns all the storages for each validator
@@ -107,15 +112,11 @@ impl ValidatorCheckpointStorage {
         false
     }
 
-    pub async fn match_validators_with_signatures(
-        &self,
-        validators: &[Felt],
-    ) -> anyhow::Result<Vec<ValidatorSignature>> {
+    pub async fn get_validators_signatures(&self, validators: &[Felt]) -> anyhow::Result<Vec<ValidatorSignature>> {
         let checkpoints = self.0.read().await;
 
         let validator_indices: HashMap<_, _> = validators.iter().enumerate().map(|(i, v)| (*v, i as u8)).collect();
 
-        // Convert checkpoints into signatures with correct indices
         let signers: anyhow::Result<Vec<_>> = checkpoints
             .iter()
             .map(|((validator, _), signed_checkpoint)| {

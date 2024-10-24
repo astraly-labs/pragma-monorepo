@@ -2,7 +2,8 @@ use pragma_utils::services::Service;
 use starknet::core::types::Felt;
 use tokio::task::JoinSet;
 
-use crate::{rpc::HyperlaneCalls, AppState};
+use crate::rpc::starknet::hyperlane::HyperlaneCalls;
+use crate::AppState;
 
 #[derive(Clone)]
 pub struct HyperlaneService {
@@ -38,21 +39,21 @@ impl HyperlaneService {
                 let value = fetcher.fetch(index).await?;
 
                 if let Some(checkpoint_value) = value {
-                    tracing::debug!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
+                    tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
                     self.state
                         .storage
                         .checkpoints()
                         .add(validator, checkpoint_value.value.message_id, checkpoint_value)
                         .await?;
                 } else {
-                    tracing::error!("No checkpoint value found");
+                    tracing::debug!("No checkpoint value found");
                 }
             }
         }
     }
 
     pub async fn get_latest_index(&self) -> anyhow::Result<u32> {
-        let latest_checkpoint = self.state.rpc_client.get_latest_checkpoint(&self.merkle_tree_hook_address).await?;
+        let latest_checkpoint = self.state.starknet_rpc.get_latest_checkpoint(&self.merkle_tree_hook_address).await?;
         Ok(latest_checkpoint[2].to_biguint().to_u32_digits()[0])
     }
 }

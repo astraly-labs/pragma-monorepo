@@ -16,7 +16,7 @@ use pragma_utils::{
 
 use crate::{
     storage::DispatchUpdateInfos,
-    types::hyperlane::{DispatchEvent, FromStarknetEventData, HasFeedId, ValidatorAnnouncementEvent},
+    types::hyperlane::{DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
     AppState,
 };
 
@@ -37,6 +37,7 @@ pub struct IndexerService {
     state: AppState,
     uri: Uri,
     stream_config: Configuration<Filter>,
+    reached_pending_block: bool,
 }
 
 #[async_trait::async_trait]
@@ -59,8 +60,10 @@ impl IndexerService {
         hyperlane_mailbox_address: Felt,
         hyperlane_validator_announce_address: Felt,
         pragma_feeds_registry_address: Felt,
+        starting_block: u64,
     ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
+            .with_starting_block(starting_block)
             .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
                 filter
@@ -83,7 +86,7 @@ impl IndexerService {
                     .build()
             });
 
-        let indexer_service = Self { state, uri: apibara_uri, stream_config };
+        let indexer_service = Self { state, uri: apibara_uri, stream_config, reached_pending_block: false };
         Ok(indexer_service)
     }
 
@@ -106,7 +109,7 @@ impl IndexerService {
                     self.process_batch(response).await?;
                     self.state
                         .storage
-                        .cached_event()
+                        .cached_events()
                         .process_cached_events(self.state.storage.checkpoints(), self.state.storage.dispatch_events())
                         .await?;
                 }
@@ -119,7 +122,11 @@ impl IndexerService {
     /// Process a batch of blocks indexed by Apibara DNA
     async fn process_batch(&mut self, batch: DataMessage<Block>) -> Result<()> {
         match batch {
-            DataMessage::Data { cursor: _, end_cursor: _, finality: _, batch } => {
+            DataMessage::Data { cursor: _, end_cursor: _, finality, batch } => {
+                if finality == DataFinality::DataStatusPending && !self.reached_pending_block {
+                    self.log_pending_block_reached(batch.last());
+                    self.reached_pending_block = true;
+                }
                 for block in batch {
                     for event in block.events.into_iter().filter_map(|e| e.event) {
                         if event.from_address.is_none() {
@@ -162,13 +169,13 @@ impl IndexerService {
                     };
                     // Check if there's a corresponding checkpoint
                     if self.state.storage.checkpoints().contains_message_id(message_id).await {
-                        tracing::debug!("Found corresponding checkpoint for message ID: {:?}", message_id);
+                        tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
                         // If found, store the event directly
                         self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos).await?;
                     } else {
                         tracing::debug!("No checkpoint found, caching dispatch event");
                         // If no checkpoint found, add to cache
-                        self.state.storage.cached_event().add_event(message_id, &dispatch_event).await;
+                        self.state.storage.cached_events().add(message_id, &dispatch_event).await;
                     }
                 }
             }
@@ -194,5 +201,20 @@ impl IndexerService {
             _ => panic!("😱 Unexpected event selector - should never happen."),
         }
         Ok(())
+    }
+
+    /// Logs that we successfully reached current pending block
+    fn log_pending_block_reached(&self, last_block_in_batch: Option<&Block>) {
+        let maybe_block_number = if let Some(last_block) = last_block_in_batch {
+            last_block.header.as_ref().map(|header| header.block_number)
+        } else {
+            None
+        };
+
+        if let Some(block_number) = maybe_block_number {
+            tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block #{}!", block_number);
+        } else {
+            tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block!",);
+        }
     }
 }

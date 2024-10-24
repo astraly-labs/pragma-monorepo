@@ -64,7 +64,7 @@ export class OracleDeployer implements ContractDeployer {
     deploymentInfo.SummaryStats = summaryStats.address;
 
     // 4. Save deployment addresses
-    const jsonContent = JSON.stringify(deploymentInfo, null, 4);
+    const jsonContent = JSON.stringify(deploymentInfo, null, 2);
     const directoryPath = path.join("..", "..", "deployments", chain);
     const filePath = path.join(directoryPath, "oracle.json");
     // Create the directory if it doesn't exist

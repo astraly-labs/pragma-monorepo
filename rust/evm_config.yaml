@@ -1,0 +1,6 @@
+# EVM Chains Configuration
+# Contains RPC endpoints and Hyperlane contract addresses for supported networks
+
+zircuit_testnet:
+  rpc_url: "https://zircuit1-testnet.p2pify.com"
+  hyperlane_address: "0xb9aB8aDC69Ad3B96a8CdF5610e9bFEcc0415D662"

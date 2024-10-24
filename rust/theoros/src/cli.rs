@@ -5,6 +5,8 @@ use apibara_sdk::Uri;
 use starknet::core::types::Felt;
 use url::Url;
 
+use crate::configs::evm_config;
+
 #[derive(clap::Parser, Debug)]
 pub struct TheorosCli {
     #[clap(env = "APP_NAME", long, default_value = "theoros")]
@@ -39,6 +41,18 @@ pub struct TheorosCli {
 
     #[clap(env = "HYPERLANE_VALIDATOR_ANNOUNCE_ADDRESS", long, value_parser = parse_felt)]
     pub hyperlane_validator_announce_address: Felt,
+
+    #[clap(
+        env = "EVM_CONFIG_PATH",
+        long,
+        alias = "evm_config_path",
+        default_value = evm_config::DEFAULT_CONFIG_PATH,
+        value_parser = parse_evm_config
+    )]
+    pub evm_config: evm_config::EvmConfig,
+
+    #[clap(env = "INDEXER_STARTING_BLOCK", long, default_value = "0")]
+    pub indexer_starting_block: u64,
 }
 
 /// Parse a Felt.
@@ -54,4 +68,15 @@ pub fn parse_url(s: &str) -> Result<Url, url::ParseError> {
 /// Parse a string URI & returns it as [Uri].
 pub fn parse_uri(s: &str) -> anyhow::Result<Uri> {
     Uri::from_str(s).with_context(|| format!("Invalid URI format: {s}"))
+}
+
+/// Parses the EVM Config path & returns it as [evm_config::EvmConfig]
+pub fn parse_evm_config(s: &str) -> anyhow::Result<evm_config::EvmConfig> {
+    // Check if the file exists
+    if !std::path::Path::new(s).exists() {
+        anyhow::bail!("EVM config file not found at path: {}", s);
+    }
+
+    // Load and parse the config
+    evm_config::EvmConfig::from_file(s).with_context(|| format!("Failed to load EVM config from path: {}", s))
 }

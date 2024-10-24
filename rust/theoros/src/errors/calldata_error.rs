@@ -11,8 +11,8 @@ pub enum GetCalldataError {
     DatabaseConnection,
     #[error("invalid feed id")]
     InvalidFeedId,
-    #[error("failed to retrieve event")]
-    FailedToRetrieveEvent,
+    #[error("could not find any dispatch event")]
+    DispatchNotFound,
     #[error("Feed with ID '{0}' not found")]
     FeedNotFound(String),
     #[error("Fail to create hyperlane client")]
@@ -21,6 +21,8 @@ pub enum GetCalldataError {
     FailedToFetchOnchainValidators,
     #[error("Validator not found in validators list")]
     ValidatorNotFound,
+    #[error("The chain '{0}' is not supported")]
+    ChainNotSupported(String),
 }
 
 impl IntoResponse for GetCalldataError {
@@ -28,6 +30,12 @@ impl IntoResponse for GetCalldataError {
         let (status, err_msg) = match self {
             Self::DatabaseConnection => {
                 (StatusCode::SERVICE_UNAVAILABLE, "Could not establish a connection with the Database".to_string())
+            }
+            Self::FeedNotFound(feed_id) => {
+                (StatusCode::NOT_FOUND, format!("Feed ID \"{}\" is not registered", feed_id))
+            }
+            Self::DispatchNotFound => {
+                (StatusCode::NOT_FOUND, "Could not find any Dispatch event for the provided Feed ID".into())
             }
             _ => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Internal server error")),
         };

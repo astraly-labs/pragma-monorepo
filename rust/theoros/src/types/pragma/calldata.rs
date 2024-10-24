@@ -17,6 +17,16 @@ pub struct CalldataHeader {
     /// Hyperlane message
     pub hyperlane_msg: HyperlaneMessage,
 }
+
+impl AsCalldata for CalldataHeader {
+    fn as_bytes(&self) -> Vec<u8> {
+        let mut bytes =
+            vec![self.major_version, self.minor_version, self.trailing_header_size, self.hyperlane_msg_size];
+        bytes.extend_from_slice(&self.hyperlane_msg.as_bytes());
+        bytes
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct HyperlaneMessage {
     /// Version of the Hyperlane protocol
@@ -24,7 +34,7 @@ pub struct HyperlaneMessage {
     /// Number of signers
     pub signers_len: u8,
     /// List of signatures
-    pub signers: Vec<ValidatorSignature>,
+    pub signatures: Vec<ValidatorSignature>,
     pub nonce: u32,
     pub timestamp: u64,
     /// Chain ID of the emitter (pragma chain id)
@@ -33,12 +43,38 @@ pub struct HyperlaneMessage {
     pub emitter_address: String,
     pub payload: Payload,
 }
+
+impl AsCalldata for HyperlaneMessage {
+    fn as_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![self.hyperlane_version, self.signers_len];
+        for signer in &self.signatures {
+            bytes.push(signer.validator_index);
+            bytes.extend_from_slice(&signer.signature.as_bytes());
+        }
+        bytes.extend_from_slice(&self.nonce.to_be_bytes());
+        bytes.extend_from_slice(&self.timestamp.to_be_bytes());
+        bytes.extend_from_slice(&self.emitter_chain_id.to_be_bytes());
+        bytes.extend_from_slice(self.emitter_address.as_bytes());
+        bytes.extend_from_slice(&self.payload.as_bytes());
+        bytes
+    }
+}
+
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct ValidatorSignature {
     /// Index of the validator in the solidity mapping
     pub validator_index: u8,
     pub signature: Signature,
 }
+
+impl AsCalldata for ValidatorSignature {
+    fn as_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![self.validator_index];
+        bytes.extend_from_slice(&self.signature.as_bytes());
+        bytes
+    }
+}
+
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Payload {
     /// Merkle root of the checkpoint (computed by the merkle tree hook)
@@ -60,38 +96,6 @@ pub struct Payload {
 }
 
 // TODO: these should be tested and follow the abi.encodePacked spec
-impl AsCalldata for CalldataHeader {
-    fn as_bytes(&self) -> Vec<u8> {
-        let mut bytes =
-            vec![self.major_version, self.minor_version, self.trailing_header_size, self.hyperlane_msg_size];
-        bytes.extend_from_slice(&self.hyperlane_msg.as_bytes());
-        bytes
-    }
-}
-
-impl AsCalldata for HyperlaneMessage {
-    fn as_bytes(&self) -> Vec<u8> {
-        let mut bytes = vec![self.hyperlane_version, self.signers_len];
-        for signer in &self.signers {
-            bytes.push(signer.validator_index);
-            bytes.extend_from_slice(&signer.signature.as_bytes());
-        }
-        bytes.extend_from_slice(&self.nonce.to_be_bytes());
-        bytes.extend_from_slice(&self.timestamp.to_be_bytes());
-        bytes.extend_from_slice(&self.emitter_chain_id.to_be_bytes());
-        bytes.extend_from_slice(self.emitter_address.as_bytes());
-        bytes.extend_from_slice(&self.payload.as_bytes());
-        bytes
-    }
-}
-
-impl AsCalldata for ValidatorSignature {
-    fn as_bytes(&self) -> Vec<u8> {
-        let mut bytes = vec![self.validator_index];
-        bytes.extend_from_slice(&self.signature.as_bytes());
-        bytes
-    }
-}
 
 impl AsCalldata for Payload {
     fn as_bytes(&self) -> Vec<u8> {

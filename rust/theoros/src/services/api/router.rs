@@ -7,6 +7,7 @@ use utoipa::OpenApi as OpenApiT;
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::handlers::get_calldata::get_calldata;
+use crate::handlers::get_chains::get_chains;
 use crate::handlers::get_data_feeds::get_data_feeds;
 use crate::AppState;
 
@@ -15,8 +16,13 @@ pub fn api_router<T: OpenApiT>(state: AppState) -> Router<AppState> {
     Router::new()
         .route("/health", get(health))
         .merge(SwaggerUi::new("/v1/docs").url("/v1/docs/openapi.json", open_api))
-        .nest("/v1", calldata_routes(state.clone()))
-        .nest("/v1", data_feeds_routes(state.clone()))
+        .nest(
+            "/v1",
+            Router::new()
+                .merge(calldata_routes(state.clone()))
+                .merge(data_feeds_routes(state.clone()))
+                .merge(chains_routes(state.clone())),
+        )
         .fallback(handler_404)
 }
 
@@ -29,9 +35,13 @@ async fn handler_404() -> impl IntoResponse {
 }
 
 fn calldata_routes(state: AppState) -> Router<AppState> {
-    Router::new().route("/calldata/:feed_id", get(get_calldata)).with_state(state)
+    Router::new().route("/calldata/:chain_name/:feed_id", get(get_calldata)).with_state(state)
 }
 
 fn data_feeds_routes(state: AppState) -> Router<AppState> {
     Router::new().route("/data_feeds", get(get_data_feeds).with_state(state))
+}
+
+fn chains_routes(state: AppState) -> Router<AppState> {
+    Router::new().route("/chains", get(get_chains).with_state(state))
 }

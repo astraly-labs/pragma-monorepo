@@ -8,7 +8,7 @@ pub use validator::*;
 
 use starknet::core::types::Felt;
 
-use crate::rpc::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc};
+use crate::rpc::starknet::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc};
 
 /// Theoros storage that contains:
 ///   * a set of all available feed ids,
@@ -63,7 +63,7 @@ impl TheorosStorage {
         &self.dispatch_events
     }
 
-    pub fn cached_event(&self) -> &EventCache {
+    pub fn cached_events(&self) -> &EventCache {
         &self.cached_events
     }
 }

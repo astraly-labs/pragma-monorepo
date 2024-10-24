@@ -1,8 +1,8 @@
 mod cli;
+mod configs;
 mod errors;
 mod extractors;
 mod handlers;
-mod hyperlane;
 mod rpc;
 mod services;
 mod storage;
@@ -22,14 +22,15 @@ use pragma_utils::{
 };
 
 use cli::TheorosCli;
-use rpc::StarknetRpc;
+use rpc::{evm::HyperlaneValidatorsMapping, starknet::StarknetRpc};
 use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
 const LOG_LEVEL: Level = Level::INFO;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub rpc_client: Arc<StarknetRpc>,
+    pub starknet_rpc: Arc<StarknetRpc>,
+    pub hyperlane_validators_mapping: Arc<HyperlaneValidatorsMapping>,
     pub storage: Arc<TheorosStorage>,
     pub metrics_registry: Registry, // already wrapped into an Arc
 }
@@ -41,10 +42,11 @@ async fn main() -> Result<()> {
 
     init_tracing(&config.app_name, LOG_LEVEL)?;
 
-    let rpc_client = StarknetRpc::new(config.madara_rpc_url);
+    let starknet_rpc = StarknetRpc::new(config.madara_rpc_url);
+    let hyperlane_rpcs = HyperlaneValidatorsMapping::from_config(&config.evm_config).await?;
 
     let theoros_storage = TheorosStorage::from_rpc_state(
-        &rpc_client,
+        &starknet_rpc,
         &config.pragma_feeds_registry_address,
         &config.hyperlane_validator_announce_address,
     )
@@ -53,7 +55,8 @@ async fn main() -> Result<()> {
     let metrics_service = MetricsService::new(false, config.metrics_port)?;
 
     let state = AppState {
-        rpc_client: Arc::new(rpc_client),
+        starknet_rpc: Arc::new(starknet_rpc),
+        hyperlane_validators_mapping: Arc::new(hyperlane_rpcs),
         storage: Arc::new(theoros_storage),
         metrics_registry: metrics_service.registry(),
     };
@@ -64,6 +67,7 @@ async fn main() -> Result<()> {
         config.hyperlane_mailbox_address,
         config.hyperlane_validator_announce_address,
         config.pragma_feeds_registry_address,
+        config.indexer_starting_block,
     )?;
     let api_service = ApiService::new(state.clone(), &config.server_host, config.server_port);
     let hyperlane_service = HyperlaneService::new(state.clone(), config.hyperlane_merkle_tree_hook_address);
