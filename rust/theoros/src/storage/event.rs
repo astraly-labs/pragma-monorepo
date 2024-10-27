@@ -43,6 +43,28 @@ impl EventStorage {
         Ok(events.get(&feed_id).cloned())
     }
 
+    /// Retrieves multiple events by their feed IDs.
+    /// Returns a tuple of (found_events, first_missing_feed_id).
+    /// If all feed IDs are found, first_missing_feed_id will be None.
+    pub async fn get_vec(&self, feed_ids: &[String]) -> Result<(Vec<DispatchUpdateInfos>, Option<String>)> {
+        let events = self.events.read().await;
+        let mut result = Vec::with_capacity(feed_ids.len());
+        let mut missing_feed_id = None;
+
+        for feed_id in feed_ids {
+            let u256_feed_id = hex_str_to_u256(feed_id)?;
+            match events.get(&u256_feed_id) {
+                Some(event) => result.push(event.clone()),
+                None => {
+                    missing_feed_id = Some(feed_id.clone());
+                    break;
+                }
+            }
+        }
+
+        Ok((result, missing_feed_id))
+    }
+
     pub async fn all(&self) -> Result<Vec<(U256, DispatchUpdateInfos)>> {
         let events = self.events.read().await;
         Ok(events.iter().map(|(k, v)| (*k, v.clone())).collect())

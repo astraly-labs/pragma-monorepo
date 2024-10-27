@@ -88,11 +88,25 @@ pub struct Payload {
 
     pub proof: Vec<String>,
 
+    pub feed_updates: Vec<FeedUpdate>,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug)]
+pub struct FeedUpdate {
     pub update_data: Vec<u8>,
     /// The id associated to the feed to be updated
     pub feed_id: String,
-
     pub publish_time: u64,
+}
+
+impl AsCalldata for FeedUpdate {
+    fn as_bytes(&self) -> Vec<u8> {
+        let mut bytes = vec![];
+        bytes.extend_from_slice(&self.update_data);
+        bytes.extend_from_slice(self.feed_id.as_bytes());
+        bytes.extend_from_slice(&self.publish_time.to_be_bytes());
+        bytes
+    }
 }
 
 // TODO: these should be tested and follow the abi.encodePacked spec
@@ -107,9 +121,9 @@ impl AsCalldata for Payload {
         for proof in &self.proof {
             bytes.extend_from_slice(proof.as_bytes());
         }
-        bytes.extend_from_slice(&self.update_data);
-        bytes.extend_from_slice(self.feed_id.as_bytes());
-        bytes.extend_from_slice(&self.publish_time.to_be_bytes());
+        for feed_update in &self.feed_updates {
+            bytes.extend_from_slice(&feed_update.as_bytes());
+        }
         bytes
     }
 }
