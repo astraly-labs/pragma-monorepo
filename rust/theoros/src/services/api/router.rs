@@ -6,9 +6,10 @@ use axum::Router;
 use utoipa::OpenApi as OpenApiT;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::handlers::get_calldata::get_calldata;
-use crate::handlers::get_chains::get_chains;
-use crate::handlers::get_data_feeds::get_data_feeds;
+use crate::handlers::rest::get_calldata::get_calldata;
+use crate::handlers::rest::get_chains::get_chains;
+use crate::handlers::rest::get_data_feeds::get_data_feeds;
+use crate::handlers::websocket::subscribe_to_calldata;
 use crate::AppState;
 
 pub fn api_router<T: OpenApiT>(state: AppState) -> Router<AppState> {
