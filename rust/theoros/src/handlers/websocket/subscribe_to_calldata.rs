@@ -1,12 +1,17 @@
 use {
     crate::{
-        storage::DispatchUpdateInfos,
+        configs::evm_config::EvmChainName,
         types::{
-            pragma::constants::{MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION},
+            hyperlane::{CheckpointMatchEvent, DispatchUpdate, SpotMedianUpdate},
+            pragma::{
+                calldata::{AsCalldata, FeedUpdate, HyperlaneMessage, Payload},
+                constants::{DEFAULT_ACTIVE_CHAIN, HYPERLANE_VERSION, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION},
+            },
             rpc::RpcDataFeed,
         },
         AppState,
     },
+    alloy::hex,
     anyhow::{anyhow, Result},
     axum::{
         extract::{
@@ -27,8 +32,6 @@ use {
     serde::{Deserialize, Serialize},
     std::{
         collections::HashMap,
-        net::IpAddr,
-        num::NonZeroU32,
         sync::{
             atomic::{AtomicUsize, Ordering},
             Arc,
@@ -38,7 +41,7 @@ use {
 };
 
 #[derive(Clone)]
-pub struct PriceFeedClientConfig {}
+pub struct DataFeedClientConfig {}
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelValue)]
 pub enum Interaction {
@@ -70,7 +73,7 @@ impl WsState {
 #[serde(tag = "type")]
 enum ClientMessage {
     #[serde(rename = "subscribe")]
-    Subscribe { ids: Vec<String> },
+    Subscribe { ids: Vec<String>, chain_name: EvmChainName },
     #[serde(rename = "unsubscribe")]
     Unsubscribe { ids: Vec<String> },
 }
@@ -124,9 +127,11 @@ pub struct Subscriber {
     id: SubscriberId,
     closed: bool,
     state: Arc<AppState>,
-    feeds_receiver: Receiver<DispatchUpdateInfos>,
+    feeds_receiver: Receiver<CheckpointMatchEvent>,
     receiver: SplitStream<WebSocket>,
     sender: SplitSink<WebSocket, Message>,
+    data_feeds_with_config: HashMap<String, DataFeedClientConfig>,
+    active_chain: EvmChainName,
     ping_interval: tokio::time::Interval,
     exit: watch::Receiver<bool>,
     responded_to_ping: bool,
@@ -136,7 +141,7 @@ impl Subscriber {
     pub fn new(
         id: SubscriberId,
         state: Arc<AppState>,
-        feeds_receiver: Receiver<DispatchUpdateInfos>,
+        feeds_receiver: Receiver<CheckpointMatchEvent>,
         receiver: SplitStream<WebSocket>,
         sender: SplitSink<WebSocket, Message>,
     ) -> Self {
@@ -147,6 +152,8 @@ impl Subscriber {
             feeds_receiver,
             receiver,
             sender,
+            data_feeds_with_config: HashMap::new(),
+            active_chain: DEFAULT_ACTIVE_CHAIN,
             ping_interval: tokio::time::interval(PING_INTERVAL_DURATION),
             exit: crate::EXIT.subscribe(),
             responded_to_ping: true,
@@ -200,8 +207,81 @@ impl Subscriber {
         }
     }
 
-    async fn handle_data_feeds_update(&mut self, update_infos: DispatchUpdateInfos) -> Result<()> {
-        todo!()
+    async fn handle_data_feeds_update(&mut self, event: CheckpointMatchEvent) -> Result<()> {
+        tracing::debug!(subscriber = self.id, n = event.block_number(), "Handling Data Feeds Update.");
+        // Retrieve the updates for subscribed feed ids at the given slot
+        let feed_ids = self.data_feeds_with_config.keys().cloned().collect::<Vec<_>>();
+
+        // TODO: refactor this code as it's reused from rest endpoint
+
+        let checkpoints = self.state.storage.checkpoints().all().await;
+        let num_validators = checkpoints.keys().len();
+
+        let (events, _) = self.state.storage.dispatch_events().get_vec(&feed_ids).await?;
+
+        let validators = self.state.hyperlane_validators_mapping.get_rpc(self.active_chain).unwrap();
+
+        let signatures = self.state.storage.checkpoints().get_validators_signatures(validators).await?;
+
+        let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
+
+        let updates = events
+            .iter()
+            .map(|event| {
+                let update = match &event.update {
+                    DispatchUpdate::SpotMedian { update, feed_id } => (update, feed_id),
+                };
+                update
+            })
+            .collect::<Vec<(&SpotMedianUpdate, &String)>>();
+
+        let payload = Payload {
+            checkpoint_root: checkpoint_infos.value.checkpoint.root.clone(),
+            num_updates: feed_ids.len() as u8,
+            update_data_len: 1,
+            proof_len: 0,
+            proof: vec![],
+            feed_updates: updates
+                .into_iter()
+                .map(|(update, feed_id)| FeedUpdate {
+                    update_data: update.to_bytes(),
+                    feed_id: feed_id.to_string(),
+                    publish_time: update.metadata.timestamp,
+                })
+                .collect(),
+        };
+
+        let first_event = events.first().unwrap();
+        let nonce = first_event.nonce;
+        let emitter_chain_id = first_event.emitter_chain_id;
+        let emitter_address = first_event.emitter_address.clone();
+
+        let hyperlane_message = HyperlaneMessage {
+            hyperlane_version: HYPERLANE_VERSION,
+            signers_len: num_validators as u8,
+            signatures,
+            nonce,
+            timestamp: chrono::Utc::now().timestamp() as u64,
+            emitter_chain_id,
+            emitter_address,
+            payload,
+        };
+
+        for feed_id in feed_ids {
+            let hyperlane_message = hyperlane_message.clone();
+            let message = serde_json::to_string(&ServerMessage::DataFeedUpdate {
+                data_feed: RpcDataFeed {
+                    id: feed_id.clone(),
+                    calldata: Some(hex::encode(hyperlane_message.as_bytes())),
+                },
+            })?;
+            self.sender.feed(message.into()).await?;
+        }
+
+        // TODO: success metric
+
+        self.sender.flush().await?;
+        Ok(())
     }
 
     #[tracing::instrument(skip(self, message))]
@@ -212,7 +292,7 @@ impl Subscriber {
                 // list, instead when the Subscriber struct is dropped the channel
                 // to subscribers list will be closed and it will eventually get
                 // removed.
-                tracing::trace!(id = self.id, "Subscriber Closed Connection.");
+                tracing::trace!(id = self.id, "📨 [CLOSE]");
                 // self.ws_state
                 //     .metrics
                 //     .interactions
@@ -252,6 +332,7 @@ impl Subscriber {
                 //     .interactions
                 //     .get_or_create(&Labels { interaction: Interaction::ClientMessage, status: Status::Error })
                 //     .inc();
+                tracing::error!("😶‍🌫️ Client disconnected/error occurred. Closing the channel.");
                 self.sender
                     .send(
                         serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Err {
@@ -263,37 +344,36 @@ impl Subscriber {
                 return Ok(());
             }
 
-            Ok(ClientMessage::Subscribe { ids }) => {
-                // let price_ids: Vec<PriceIdentifier> = ids.into_iter().map(|id| id.into()).collect();
-                // let available_price_ids = Aggregates::get_price_feed_ids(&*self.state).await;
+            Ok(ClientMessage::Subscribe { ids: feed_ids, chain_name }) => {
+                let stored_feed_ids = self.state.storage.feed_ids();
 
-                // let not_found_price_ids: Vec<&PriceIdentifier> =
-                //     price_ids.iter().filter(|price_id| !available_price_ids.contains(price_id)).collect();
-
-                // // If there is a single price id that is not found, we don't subscribe to any of the
-                // // asked correct price feed ids and return an error to be more explicit and clear.
-                // if !not_found_price_ids.is_empty() {
-                //     self.sender
-                //         .send(
-                //             serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Err {
-                //                 error: format!("Price feed(s) with id(s) {:?} not found", not_found_price_ids),
-                //             }))?
-                //             .into(),
-                //         )
-                //         .await?;
-                //     return Ok(());
-                // } else {
-                //     for price_id in price_ids {
-                //         self.price_feeds_with_config
-                //             .insert(price_id, PriceFeedClientConfig { verbose, binary, allow_out_of_order });
-                //     }
-                // }
+                // If there is a single price id that is not found, we don't subscribe to any of the
+                // asked correct price feed ids and return an error to be more explicit and clear.
+                match stored_feed_ids.contains_vec(&feed_ids).await {
+                    Some(missing_id) => {
+                        // TODO: return multiple missing ids
+                        self.sender
+                            .send(
+                                serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Err {
+                                    error: format!("Data feed(s) with id(s) {:?} not found", missing_id),
+                                }))?
+                                .into(),
+                            )
+                            .await?;
+                        return Ok(());
+                    }
+                    None => {
+                        for feed_id in feed_ids {
+                            self.data_feeds_with_config.insert(feed_id, DataFeedClientConfig {});
+                            self.active_chain = chain_name.clone();
+                        }
+                    }
+                }
             }
-            Ok(ClientMessage::Unsubscribe { ids }) => {
-                // for id in ids {
-                //     let price_id: PriceIdentifier = id.into();
-                //     self.price_feeds_with_config.remove(&price_id);
-                // }
+            Ok(ClientMessage::Unsubscribe { ids: feed_ids }) => {
+                for feed_id in feed_ids {
+                    self.data_feeds_with_config.remove(&feed_id);
+                }
             }
         }
 

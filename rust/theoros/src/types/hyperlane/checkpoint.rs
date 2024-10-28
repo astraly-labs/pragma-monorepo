@@ -28,3 +28,18 @@ pub struct CheckpointWithMessageId {
     /// hash of message emitted from mailbox checkpoint.index
     pub message_id: U256,
 }
+
+/// An event that is emitted when we find a match between a checkpoint and a message
+#[derive(Clone, PartialEq, Debug)]
+pub enum CheckpointMatchEvent {
+    New { block_number: u64 },
+}
+
+impl CheckpointMatchEvent {
+    /// Returns the block number of the event
+    pub fn block_number(&self) -> u64 {
+        match self {
+            CheckpointMatchEvent::New { block_number } => *block_number,
+        }
+    }
+}

@@ -16,7 +16,7 @@ use pragma_utils::{
 
 use crate::{
     storage::DispatchUpdateInfos,
-    types::hyperlane::{DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
+    types::hyperlane::{CheckpointMatchEvent, DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
     AppState,
 };
 
@@ -128,11 +128,11 @@ impl IndexerService {
                     self.reached_pending_block = true;
                 }
                 for block in batch {
-                    for event in block.events.into_iter().filter_map(|e| e.event) {
+                    for event in block.clone().events.into_iter().filter_map(|e| e.event) {
                         if event.from_address.is_none() {
                             continue;
                         }
-                        self.process_event(event).await?;
+                        self.process_event(event, &block).await?;
                     }
                 }
             }
@@ -148,7 +148,7 @@ impl IndexerService {
     /// Decodes a starknet [Event] into either a:
     ///     * [DispatchEvent] and stores it into the events storage,
     ///     * [ValidatorAnnouncementEvent] and stores it into the validators storage.
-    async fn process_event(&self, event: Event) -> Result<()> {
+    async fn process_event(&self, event: Event, block: &Block) -> Result<()> {
         let event_selector = event.keys.first().context("No event selector")?;
         let event_data: Vec<Felt> = event.data.iter().map(apibara_field_as_felt).collect();
         match event_selector {
@@ -171,7 +171,12 @@ impl IndexerService {
                     if self.state.storage.checkpoints().contains_message_id(message_id).await {
                         tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
                         // If found, store the event directly
-                        self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos).await?;
+                        self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos.clone()).await?;
+                        let _ = self
+                            .state
+                            .storage
+                            .feeds_channel
+                            .send(CheckpointMatchEvent::New { block_number: block.clone().header.unwrap().block_number });
                     } else {
                         tracing::debug!("No checkpoint found, caching dispatch event");
                         // If no checkpoint found, add to cache

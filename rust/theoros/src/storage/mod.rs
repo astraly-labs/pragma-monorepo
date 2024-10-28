@@ -9,7 +9,7 @@ pub use validator::*;
 
 use starknet::core::types::Felt;
 
-use crate::rpc::starknet::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc};
+use crate::{rpc::starknet::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc}, types::hyperlane::CheckpointMatchEvent};
 
 /// Theoros storage that contains:
 ///   * a set of all available feed ids,
@@ -24,7 +24,7 @@ pub struct TheorosStorage {
     checkpoints: ValidatorCheckpointStorage,
     cached_events: EventCache,
     dispatch_events: EventStorage,
-    pub feeds_channel: Sender<DispatchUpdateInfos>,
+    pub feeds_channel: Sender<CheckpointMatchEvent>,
 }
 
 impl TheorosStorage {
@@ -32,7 +32,7 @@ impl TheorosStorage {
         rpc_client: &StarknetRpc,
         pragma_feeds_registry_address: &Felt,
         hyperlane_validator_announce_address: &Felt,
-        update_tx: Sender<DispatchUpdateInfos>,
+        update_tx: Sender<CheckpointMatchEvent>,
     ) -> anyhow::Result<Self> {
         // Fetch the validators & their locations
         let mut validators = ValidatorStorage::new();
