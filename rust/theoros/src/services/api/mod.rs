@@ -40,11 +40,17 @@ impl Service for ApiService {
 
         let governor_conf = Arc::new(GovernorConfigBuilder::default().per_second(4).burst_size(2).finish().unwrap());
         let governor_limiter = governor_conf.limiter().clone();
-        // a separate background task to clean up
-        std::thread::spawn(move || loop {
-            std::thread::sleep(Duration::from_secs(60));
-            tracing::info!("❌ Rate limiting storage size: {}", governor_limiter.len());
-            governor_limiter.retain_recent();
+
+        join_set.spawn(async move {
+            loop {
+                tokio::time::sleep(Duration::from_secs(60)).await;
+                tracing::info!("❌ Rate limiting storage size: {}", governor_limiter.len());
+                governor_limiter.retain_recent();
+
+                // Check if we need to shut down
+                let _ = crate::EXIT.subscribe().changed().await;
+                tracing::info!("🛑 Shutting down cleanup task...");
+            }
         });
 
         join_set.spawn(async move {
