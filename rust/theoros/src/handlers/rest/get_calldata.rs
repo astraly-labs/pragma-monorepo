@@ -7,11 +7,11 @@ use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToResponse, ToSchema};
 
 use crate::configs::evm_config::EvmChainName;
+use crate::constants::HYPERLANE_VERSION;
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
 use crate::types::hyperlane::DispatchUpdate;
 use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload};
-use crate::constants::HYPERLANE_VERSION;
 use crate::AppState;
 
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
