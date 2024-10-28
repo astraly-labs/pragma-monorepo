@@ -8,7 +8,7 @@ mod services;
 mod storage;
 mod types;
 
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 
 use anyhow::Result;
 use clap::Parser;
@@ -16,6 +16,7 @@ use handlers::websocket::subscribe_to_calldata::WsState;
 use prometheus::Registry;
 use storage::TheorosStorage;
 use tokio::sync::watch;
+use tower_governor::governor::GovernorConfigBuilder;
 use tracing::Level;
 
 use pragma_utils::{
@@ -68,6 +69,15 @@ async fn main() -> Result<()> {
     let config = TheorosCli::parse();
 
     init_tracing(&config.app_name, LOG_LEVEL)?;
+
+    let governor_conf = Arc::new(GovernorConfigBuilder::default().per_second(4).burst_size(2).finish().unwrap());
+    let governor_limiter = governor_conf.limiter().clone();
+    // a separate background task to clean up
+    std::thread::spawn(move || loop {
+        std::thread::sleep(Duration::from_secs(60));
+        tracing::info!("❌ Rate limiting storage size: {}", governor_limiter.len());
+        governor_limiter.retain_recent();
+    });
 
     let starknet_rpc = StarknetRpc::new(config.madara_rpc_url);
     let hyperlane_rpcs = HyperlaneValidatorsMapping::from_config(&config.evm_config).await?;

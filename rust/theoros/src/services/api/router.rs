@@ -9,7 +9,7 @@ use utoipa_swagger_ui::SwaggerUi;
 use crate::handlers::rest::get_calldata::get_calldata;
 use crate::handlers::rest::get_chains::get_chains;
 use crate::handlers::rest::get_data_feeds::get_data_feeds;
-use crate::handlers::websocket::subscribe_to_calldata;
+use crate::handlers::websocket::subscribe_to_calldata::ws_route_handler;
 use crate::AppState;
 
 pub fn api_router<T: OpenApiT>(state: AppState) -> Router<AppState> {
@@ -22,7 +22,8 @@ pub fn api_router<T: OpenApiT>(state: AppState) -> Router<AppState> {
             Router::new()
                 .merge(calldata_routes(state.clone()))
                 .merge(data_feeds_routes(state.clone()))
-                .merge(chains_routes(state.clone())),
+                .merge(chains_routes(state.clone()))
+                .merge(ws_route(state.clone())),
         )
         .fallback(handler_404)
 }
@@ -33,6 +34,10 @@ async fn health() -> StatusCode {
 
 async fn handler_404() -> impl IntoResponse {
     (StatusCode::NOT_FOUND, "The requested resource was not found")
+}
+
+fn ws_route(state: AppState) -> Router<AppState> {
+    Router::new().route("/ws", get(ws_route_handler)).with_state(state)
 }
 
 fn calldata_routes(state: AppState) -> Router<AppState> {

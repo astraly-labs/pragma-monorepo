@@ -172,11 +172,9 @@ impl IndexerService {
                         tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
                         // If found, store the event directly
                         self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos.clone()).await?;
-                        let _ = self
-                            .state
-                            .storage
-                            .feeds_channel
-                            .send(CheckpointMatchEvent::New { block_number: block.clone().header.unwrap().block_number });
+                        let _ = self.state.storage.feeds_channel.send(CheckpointMatchEvent::New {
+                            block_number: block.clone().header.unwrap().block_number,
+                        });
                     } else {
                         tracing::debug!("No checkpoint found, caching dispatch event");
                         // If no checkpoint found, add to cache

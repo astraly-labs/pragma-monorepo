@@ -83,11 +83,8 @@ pub async fn get_calldata(
 
     let updates = events
         .iter()
-        .map(|event| {
-            let update = match &event.update {
-                DispatchUpdate::SpotMedian { update, feed_id } => (update, feed_id),
-            };
-            update
+        .map(|event| match &event.update {
+            DispatchUpdate::SpotMedian { update, feed_id } => (update, feed_id),
         })
         .collect::<Vec<(&SpotMedianUpdate, &String)>>();
 

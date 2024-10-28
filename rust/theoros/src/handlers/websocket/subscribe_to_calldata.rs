@@ -16,7 +16,7 @@ use {
     axum::{
         extract::{
             ws::{Message, WebSocket, WebSocketUpgrade},
-            State as AxumState,
+            ConnectInfo, State as AxumState,
         },
         http::HeaderMap,
         response::IntoResponse,
@@ -32,6 +32,7 @@ use {
     serde::{Deserialize, Serialize},
     std::{
         collections::HashMap,
+        net::SocketAddr,
         sync::{
             atomic::{AtomicUsize, Ordering},
             Arc,
@@ -96,10 +97,10 @@ enum ServerResponseMessage {
     Err { error: String },
 }
 
-pub fn ws_route_handler(
+pub async fn ws_route_handler(
     ws: WebSocketUpgrade,
     AxumState(state): AxumState<AppState>,
-    headers: HeaderMap,
+    ConnectInfo(client_addr): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
     ws.max_message_size(MAX_CLIENT_MESSAGE_SIZE).on_upgrade(move |socket| websocket_handler(socket, state))
 }
@@ -227,11 +228,8 @@ impl Subscriber {
 
         let updates = events
             .iter()
-            .map(|event| {
-                let update = match &event.update {
-                    DispatchUpdate::SpotMedian { update, feed_id } => (update, feed_id),
-                };
-                update
+            .map(|event| match &event.update {
+                DispatchUpdate::SpotMedian { update, feed_id } => (update, feed_id),
             })
             .collect::<Vec<(&SpotMedianUpdate, &String)>>();
 
@@ -365,7 +363,7 @@ impl Subscriber {
                     None => {
                         for feed_id in feed_ids {
                             self.data_feeds_with_config.insert(feed_id, DataFeedClientConfig {});
-                            self.active_chain = chain_name.clone();
+                            self.active_chain = chain_name;
                         }
                     }
                 }
