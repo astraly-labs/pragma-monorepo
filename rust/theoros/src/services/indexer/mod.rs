@@ -184,7 +184,8 @@ impl IndexerService {
                 tracing::info!("📨 [Indexer] Received a ValidatorAnnouncement event");
                 let validator_announcement_event = ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
                     .context("Failed to parse ValidatorAnnouncement")?;
-                self.state.storage.validators().add_from_announcement_event(validator_announcement_event).await?;
+                let validators = &mut self.state.storage.validators();
+                validators.add_from_announcement_event(validator_announcement_event).await?;
             }
             // Add feed id from the Pragma Feeds Registry
             selector if selector == &*NEW_FEED_ID_EVENT_SELECTOR => {

@@ -37,8 +37,8 @@
 use std::convert::TryFrom;
 use std::str::FromStr;
 
+use ::serde::{Deserialize, Serialize};
 use anyhow::{anyhow, bail, Context};
-use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumString};
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
