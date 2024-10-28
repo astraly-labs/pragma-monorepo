@@ -25,7 +25,7 @@ impl ValidatorStorage {
 
     /// Fills the [HashMap] with the initial state fetched from the RPC.
     pub async fn fill_with_initial_state(
-        &self,
+        &mut self,
         validators: Vec<Felt>,
         locations: Vec<Vec<String>>,
     ) -> anyhow::Result<()> {

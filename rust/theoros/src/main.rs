@@ -1,5 +1,6 @@
 mod cli;
 mod configs;
+mod constants;
 mod errors;
 mod extractors;
 mod handlers;
@@ -8,12 +9,13 @@ mod services;
 mod storage;
 mod types;
 
-use std::sync::Arc;
+use std::sync::{atomic::AtomicUsize, Arc};
 
 use anyhow::Result;
 use clap::Parser;
 use prometheus::Registry;
 use storage::TheorosStorage;
+use tokio::sync::watch;
 use tracing::Level;
 
 use pragma_utils::{
@@ -27,12 +29,47 @@ use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
 const LOG_LEVEL: Level = Level::INFO;
 
-#[derive(Clone)]
 pub struct AppState {
     pub starknet_rpc: Arc<StarknetRpc>,
     pub hyperlane_validators_mapping: Arc<HyperlaneValidatorsMapping>,
     pub storage: Arc<TheorosStorage>,
     pub metrics_registry: Registry, // already wrapped into an Arc
+    pub ws: Arc<WsState>,
+}
+
+pub struct WsState {
+    pub subscriber_counter: AtomicUsize,
+}
+
+#[allow(clippy::new_without_default)]
+impl WsState {
+    pub fn new() -> Self {
+        Self { subscriber_counter: AtomicUsize::new(0) }
+    }
+}
+
+impl Clone for AppState {
+    fn clone(&self) -> Self {
+        Self {
+            starknet_rpc: self.starknet_rpc.clone(),
+            hyperlane_validators_mapping: self.hyperlane_validators_mapping.clone(),
+            storage: self.storage.clone(),
+            metrics_registry: self.metrics_registry.clone(),
+            ws: self.ws.clone(),
+        }
+    }
+}
+
+lazy_static::lazy_static! {
+    /// A static exit flag to indicate to running threads that we're shutting down. This is used to
+    /// gracefully shut down the application.
+    ///
+    /// We make this global based such that:
+    /// - It's easy to access from anywhere in the application.
+    /// - No need to carefully pass it around.
+    /// - Sender does not require an async context to operate.
+    /// - All receivers will be notified when the flag is set.
+    pub static ref EXIT: watch::Sender<bool> = watch::channel(false).0;
 }
 
 #[tokio::main]
@@ -45,10 +82,13 @@ async fn main() -> Result<()> {
     let starknet_rpc = StarknetRpc::new(config.madara_rpc_url);
     let hyperlane_rpcs = HyperlaneValidatorsMapping::from_config(&config.evm_config).await?;
 
+    let (update_tx, _) = tokio::sync::broadcast::channel(1000);
+
     let theoros_storage = TheorosStorage::from_rpc_state(
         &starknet_rpc,
         &config.pragma_feeds_registry_address,
         &config.hyperlane_validator_announce_address,
+        update_tx,
     )
     .await?;
 
@@ -59,6 +99,7 @@ async fn main() -> Result<()> {
         hyperlane_validators_mapping: Arc::new(hyperlane_rpcs),
         storage: Arc::new(theoros_storage),
         metrics_registry: metrics_service.registry(),
+        ws: Arc::new(WsState::new()),
     };
 
     let indexer_service = IndexerService::new(
@@ -74,6 +115,14 @@ async fn main() -> Result<()> {
 
     let theoros =
         ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service).with(hyperlane_service);
+
+    // Listen for Ctrl+C so we can set the exit flag and wait for a graceful shutdown.
+    tokio::spawn(async move {
+        tracing::info!("Registered shutdown signal handler...");
+        tokio::signal::ctrl_c().await.unwrap();
+        tracing::info!("Shut down signal received, waiting for tasks...");
+        let _ = EXIT.send(true);
+    });
 
     theoros.start_and_drive_to_end().await?;
 
