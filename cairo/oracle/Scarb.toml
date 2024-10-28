@@ -14,16 +14,16 @@ license-file = "../LICENSE.md"
 starknet = "2.8.2"
 
 # OpenZeppelin components & utilities
-openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", branch = "upgrade-edition-2024-07" }
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.17.0" }
 
 
 # Alexandria (same version than Hyperlane)
 # TODO: Update back to main repository once PR is merged:
 # https://github.com/keep-starknet-strange/alexandria/pull/332
-alexandria_bytes = { git = "https://github.com/maxdesalle/alexandria.git" }
-alexandria_sorting = { git = "https://github.com/maxdesalle/alexandria.git" }
-alexandria_storage = { git = "https://github.com/maxdesalle/alexandria.git" }
-alexandria_math = { git = "https://github.com/maxdesalle/alexandria.git" }
+alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "95d98a5" }
+alexandria_sorting = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "95d98a5" }
+alexandria_storage = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "95d98a5" }
+alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "95d98a5" }
 cubit = { git = "https://github.com/dojoengine/cubit", branch = "cairo_2.7" }
 
 
@@ -35,7 +35,7 @@ pragma_entry = { path = "crates/pragma_entry" }
 pragma_operations = { path = "crates/pragma_operations" }
 
 # Test dependencies
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.30.0" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.31.0" }
 
 [workspace.tool.fmt]
 sort-module-level-items = true

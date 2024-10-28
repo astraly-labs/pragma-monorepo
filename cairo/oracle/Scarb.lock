@@ -4,7 +4,7 @@ version = 1
 [[package]]
 name = "alexandria_bytes"
 version = "0.1.0"
-source = "git+https://github.com/maxdesalle/alexandria.git#51653c50277491d77ab0783f0ad1d89237c940dd"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=95d98a5#95d98a5182001d07673b856a356eff0e6bd05354"
 dependencies = [
  "alexandria_data_structures",
  "alexandria_math",
@@ -13,7 +13,7 @@ dependencies = [
 [[package]]
 name = "alexandria_data_structures"
 version = "0.2.0"
-source = "git+https://github.com/maxdesalle/alexandria.git#51653c50277491d77ab0783f0ad1d89237c940dd"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=95d98a5#95d98a5182001d07673b856a356eff0e6bd05354"
 dependencies = [
  "alexandria_encoding",
 ]
@@ -21,7 +21,7 @@ dependencies = [
 [[package]]
 name = "alexandria_encoding"
 version = "0.1.0"
-source = "git+https://github.com/maxdesalle/alexandria.git#51653c50277491d77ab0783f0ad1d89237c940dd"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=95d98a5#95d98a5182001d07673b856a356eff0e6bd05354"
 dependencies = [
  "alexandria_bytes",
  "alexandria_math",
@@ -31,12 +31,12 @@ dependencies = [
 [[package]]
 name = "alexandria_math"
 version = "0.2.1"
-source = "git+https://github.com/maxdesalle/alexandria.git#51653c50277491d77ab0783f0ad1d89237c940dd"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=95d98a5#95d98a5182001d07673b856a356eff0e6bd05354"
 
 [[package]]
 name = "alexandria_numeric"
 version = "0.1.0"
-source = "git+https://github.com/maxdesalle/alexandria.git#51653c50277491d77ab0783f0ad1d89237c940dd"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=95d98a5#95d98a5182001d07673b856a356eff0e6bd05354"
 dependencies = [
  "alexandria_math",
  "alexandria_searching",
@@ -45,7 +45,7 @@ dependencies = [
 [[package]]
 name = "alexandria_searching"
 version = "0.1.0"
-source = "git+https://github.com/maxdesalle/alexandria.git#51653c50277491d77ab0783f0ad1d89237c940dd"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=95d98a5#95d98a5182001d07673b856a356eff0e6bd05354"
 dependencies = [
  "alexandria_data_structures",
 ]
@@ -53,7 +53,7 @@ dependencies = [
 [[package]]
 name = "alexandria_sorting"
 version = "0.1.0"
-source = "git+https://github.com/maxdesalle/alexandria.git#51653c50277491d77ab0783f0ad1d89237c940dd"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=95d98a5#95d98a5182001d07673b856a356eff0e6bd05354"
 dependencies = [
  "alexandria_data_structures",
 ]
@@ -61,7 +61,7 @@ dependencies = [
 [[package]]
 name = "alexandria_storage"
 version = "0.3.0"
-source = "git+https://github.com/maxdesalle/alexandria.git#51653c50277491d77ab0783f0ad1d89237c940dd"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=95d98a5#95d98a5182001d07673b856a356eff0e6bd05354"
 
 [[package]]
 name = "cubit"
@@ -70,11 +70,12 @@ source = "git+https://github.com/dojoengine/cubit?branch=cairo_2.7#53020b6320a10
 
 [[package]]
 name = "openzeppelin"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 dependencies = [
  "openzeppelin_access",
  "openzeppelin_account",
+ "openzeppelin_finance",
  "openzeppelin_governance",
  "openzeppelin_introspection",
  "openzeppelin_merkle_tree",
@@ -87,8 +88,8 @@ dependencies = [
 
 [[package]]
 name = "openzeppelin_access"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 dependencies = [
  "openzeppelin_introspection",
  "openzeppelin_utils",
@@ -96,17 +97,26 @@ dependencies = [
 
 [[package]]
 name = "openzeppelin_account"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 dependencies = [
  "openzeppelin_introspection",
  "openzeppelin_utils",
 ]
 
 [[package]]
+name = "openzeppelin_finance"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
+dependencies = [
+ "openzeppelin_access",
+ "openzeppelin_token",
+]
+
+[[package]]
 name = "openzeppelin_governance"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 dependencies = [
  "openzeppelin_access",
  "openzeppelin_introspection",
@@ -114,21 +124,22 @@ dependencies = [
 
 [[package]]
 name = "openzeppelin_introspection"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 
 [[package]]
 name = "openzeppelin_merkle_tree"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 
 [[package]]
 name = "openzeppelin_presets"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 dependencies = [
  "openzeppelin_access",
  "openzeppelin_account",
+ "openzeppelin_finance",
  "openzeppelin_introspection",
  "openzeppelin_token",
  "openzeppelin_upgrades",
@@ -136,13 +147,13 @@ dependencies = [
 
 [[package]]
 name = "openzeppelin_security"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 
 [[package]]
 name = "openzeppelin_token"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 dependencies = [
  "openzeppelin_account",
  "openzeppelin_governance",
@@ -151,13 +162,13 @@ dependencies = [
 
 [[package]]
 name = "openzeppelin_upgrades"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 
 [[package]]
 name = "openzeppelin_utils"
-version = "0.16.0"
-source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?branch=upgrade-edition-2024-07#b936c3f65ee5ace10a56ec6e3118fdf1ae358952"
+version = "0.17.0"
+source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
 
 [[package]]
 name = "pragma_entry"
@@ -207,13 +218,13 @@ dependencies = [
 
 [[package]]
 name = "snforge_scarb_plugin"
-version = "0.1.0"
-source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.30.0#196f06b251926697c3d66800f2a93ae595e76496"
+version = "0.31.0"
+source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.31.0#72ea785ca354e9e506de3e5d687da9fb2c1b3c67"
 
 [[package]]
 name = "snforge_std"
-version = "0.30.0"
-source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.30.0#196f06b251926697c3d66800f2a93ae595e76496"
+version = "0.31.0"
+source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.31.0#72ea785ca354e9e506de3e5d687da9fb2c1b3c67"
 dependencies = [
  "snforge_scarb_plugin",
 ]
