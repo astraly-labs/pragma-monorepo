@@ -24,10 +24,6 @@ use {
         stream::{SplitSink, SplitStream},
         SinkExt, StreamExt,
     },
-    prometheus_client::{
-        encoding::{EncodeLabelSet, EncodeLabelValue},
-        metrics::{counter::Counter, family::Family},
-    },
     serde::{Deserialize, Serialize},
     std::{
         collections::HashMap,
@@ -43,26 +39,11 @@ use {
 #[derive(Clone)]
 pub struct DataFeedClientConfig {}
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelValue)]
-pub enum Interaction {
-    NewConnection,
-    CloseConnection,
-    ClientHeartbeat,
-    PriceUpdate,
-    ClientMessage,
-    RateLimit,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelValue)]
-pub enum Status {
-    Success,
-    Error,
-}
-
 pub struct WsState {
     pub subscriber_counter: AtomicUsize,
 }
 
+#[allow(clippy::new_without_default)]
 impl WsState {
     pub fn new() -> Self {
         Self { subscriber_counter: AtomicUsize::new(0) }
@@ -99,7 +80,7 @@ enum ServerResponseMessage {
 pub async fn ws_route_handler(
     ws: WebSocketUpgrade,
     AxumState(state): AxumState<AppState>,
-    ConnectInfo(client_addr): ConnectInfo<SocketAddr>,
+    ConnectInfo(_): ConnectInfo<SocketAddr>,
 ) -> impl IntoResponse {
     ws.max_message_size(MAX_CLIENT_MESSAGE_SIZE).on_upgrade(move |socket| websocket_handler(socket, state))
 }
@@ -212,6 +193,7 @@ impl Subscriber {
         // Retrieve the updates for subscribed feed ids at the given slot
         let feed_ids = self.data_feeds_with_config.keys().cloned().collect::<Vec<_>>();
 
+        // TODO: add support for multiple feeds
         let feed_id = feed_ids.first().unwrap();
 
         // TODO: refactor this code as it's reused from rest endpoint
@@ -219,7 +201,7 @@ impl Subscriber {
         let checkpoints = self.state.storage.checkpoints().all().await;
         let num_validators = checkpoints.keys().len();
 
-        let event = self.state.storage.dispatch_events().get(&feed_id).await?.unwrap();
+        let event = self.state.storage.dispatch_events().get(feed_id).await?.unwrap();
 
         let validators = self.state.hyperlane_validators_mapping.get_rpc(self.active_chain).unwrap();
 
@@ -253,20 +235,14 @@ impl Subscriber {
             payload,
         };
 
-        for feed_id in feed_ids {
-            let hyperlane_message = hyperlane_message.clone();
-            let message = serde_json::to_string(&ServerMessage::DataFeedUpdate {
-                data_feed: RpcDataFeed {
-                    id: feed_id.clone(),
-                    calldata: Some(hex::encode(hyperlane_message.as_bytes())),
-                },
-            })?;
-            self.sender.feed(message.into()).await?;
-        }
+        let message = serde_json::to_string(&ServerMessage::DataFeedUpdate {
+            data_feed: RpcDataFeed { id: feed_id.clone(), calldata: Some(hex::encode(hyperlane_message.as_bytes())) },
+        })?;
+        self.sender.send(message.into()).await?;
 
         // TODO: success metric
 
-        self.sender.flush().await?;
+        // self.sender.flush().await?;
         Ok(())
     }
 
