@@ -20,10 +20,10 @@ openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", ta
 # Alexandria (same version than Hyperlane)
 # TODO: Update back to main repository once PR is merged:
 # https://github.com/keep-starknet-strange/alexandria/pull/332
-alexandria_bytes = { git = "https://github.com/maxdesalle/alexandria.git" }
-alexandria_sorting = { git = "https://github.com/maxdesalle/alexandria.git" }
-alexandria_storage = { git = "https://github.com/maxdesalle/alexandria.git" }
-alexandria_math = { git = "https://github.com/maxdesalle/alexandria.git" }
+alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "95d98a5" }
+alexandria_sorting = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "95d98a5" }
+alexandria_storage = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "95d98a5" }
+alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "95d98a5" }
 cubit = { git = "https://github.com/dojoengine/cubit", branch = "cairo_2.7" }
 
 
