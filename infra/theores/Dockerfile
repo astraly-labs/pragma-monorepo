@@ -18,7 +18,7 @@ RUN cargo build --release --package ${PACKAGE_NAME}
 FROM debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends  \
-    libssl-dev  && \
+    libssl-dev wget ca-certificates&& \
     apt-get autoremove -y  && \
     apt-get clean  && \
     rm -rf /var/lib/apt/lists/*  
