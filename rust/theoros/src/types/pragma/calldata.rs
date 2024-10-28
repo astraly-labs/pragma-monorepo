@@ -91,7 +91,6 @@ pub struct Payload {
     pub update_data: Vec<u8>,
     /// The id associated to the feed to be updated
     pub feed_id: String,
-
     pub publish_time: u64,
 }
 

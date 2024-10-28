@@ -4,11 +4,15 @@ pub mod validator;
 
 pub use event::*;
 pub use feed_id::*;
+use tokio::sync::broadcast::Sender;
 pub use validator::*;
 
 use starknet::core::types::Felt;
 
-use crate::rpc::starknet::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc};
+use crate::{
+    rpc::starknet::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc},
+    types::hyperlane::CheckpointMatchEvent,
+};
 
 /// Theoros storage that contains:
 ///   * a set of all available feed ids,
@@ -16,13 +20,14 @@ use crate::rpc::starknet::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc
 ///   * a mapping of all the validators and their latest fetched checkpoints.
 ///   * an event cache,
 ///   * an events storage containing the most recents [DispatchEvent] events indexed.
-#[derive(Default)]
+///   * a channel to dispatch updates to the clients.
 pub struct TheorosStorage {
     feed_ids: FeedIdsStorage,
     validators: ValidatorStorage,
     checkpoints: ValidatorCheckpointStorage,
     cached_events: EventCache,
     dispatch_events: EventStorage,
+    pub feeds_channel: Sender<CheckpointMatchEvent>,
 }
 
 impl TheorosStorage {
@@ -30,21 +35,28 @@ impl TheorosStorage {
         rpc_client: &StarknetRpc,
         pragma_feeds_registry_address: &Felt,
         hyperlane_validator_announce_address: &Felt,
+        update_tx: Sender<CheckpointMatchEvent>,
     ) -> anyhow::Result<Self> {
-        let mut theoros_storage = TheorosStorage::default();
-
         // Fetch the validators & their locations
+        let mut validators = ValidatorStorage::new();
         let initial_validators = rpc_client.get_announced_validators(hyperlane_validator_announce_address).await?;
         let initial_locations = rpc_client
             .get_announced_storage_locations(hyperlane_validator_announce_address, &initial_validators)
             .await?;
-        theoros_storage.validators.fill_with_initial_state(initial_validators, initial_locations).await?;
+        validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
         // Fetch the registered feed ids
         let supported_feed_ids = rpc_client.get_feed_ids(pragma_feeds_registry_address).await?;
-        theoros_storage.feed_ids = FeedIdsStorage::from_rpc_response(supported_feed_ids);
+        let feed_ids = FeedIdsStorage::from_rpc_response(supported_feed_ids);
 
-        Ok(theoros_storage)
+        Ok(Self {
+            feed_ids,
+            validators: ValidatorStorage::new(),
+            checkpoints: ValidatorCheckpointStorage::new(),
+            cached_events: EventCache::new(),
+            dispatch_events: EventStorage::new(),
+            feeds_channel: update_tx,
+        })
     }
 
     pub fn feed_ids(&self) -> &FeedIdsStorage {

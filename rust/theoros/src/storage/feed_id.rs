@@ -31,6 +31,13 @@ impl FeedIdsStorage {
         feed_ids.contains(feed_id)
     }
 
+    /// Checks if all feed IDs in the given vector are present in the storage.
+    /// Returns None if all IDs are present, or Some(id) with the first missing ID.
+    pub async fn contains_vec(&self, feed_ids: &[String]) -> Option<String> {
+        let stored_feed_ids = self.0.read().await;
+        feed_ids.iter().find(|id| !stored_feed_ids.contains(*id)).cloned()
+    }
+
     /// Returns the number of feed IDs in the storage.
     pub async fn len(&self) -> usize {
         let feed_ids = self.0.read().await;

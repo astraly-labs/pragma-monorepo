@@ -1,7 +1,6 @@
-use std::path::PathBuf;
-
 use anyhow::Result;
 use serde_json::to_string_pretty;
+use std::path::PathBuf;
 use utoipa::OpenApi;
 use utoipauto::utoipauto;
 

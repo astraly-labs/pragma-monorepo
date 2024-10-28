@@ -31,11 +31,11 @@ impl HyperlaneValidatorsMapping {
         Ok(Self(contracts))
     }
 
-    pub fn get_rpc(&self, chain_name: EvmChainName) -> Option<&Vec<Felt>> {
+    pub fn get_validators(&self, chain_name: EvmChainName) -> Option<&Vec<Felt>> {
         self.0.get(&chain_name)
     }
 
-    pub fn rpcs(&self) -> &HashMap<EvmChainName, Vec<Felt>> {
+    pub fn validators(&self) -> &HashMap<EvmChainName, Vec<Felt>> {
         &self.0
     }
 
