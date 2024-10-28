@@ -2,9 +2,9 @@ use {
     crate::{
         configs::evm_config::EvmChainName,
         types::{
-            hyperlane::{CheckpointMatchEvent, DispatchUpdate, SpotMedianUpdate},
+            hyperlane::{CheckpointMatchEvent, DispatchUpdate},
             pragma::{
-                calldata::{AsCalldata, FeedUpdate, HyperlaneMessage, Payload},
+                calldata::{AsCalldata, HyperlaneMessage, Payload},
                 constants::{DEFAULT_ACTIVE_CHAIN, HYPERLANE_VERSION, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION},
             },
             rpc::RpcDataFeed,
@@ -18,7 +18,6 @@ use {
             ws::{Message, WebSocket, WebSocketUpgrade},
             ConnectInfo, State as AxumState,
         },
-        http::HeaderMap,
         response::IntoResponse,
     },
     futures::{
@@ -213,12 +212,14 @@ impl Subscriber {
         // Retrieve the updates for subscribed feed ids at the given slot
         let feed_ids = self.data_feeds_with_config.keys().cloned().collect::<Vec<_>>();
 
+        let feed_id = feed_ids.first().unwrap();
+
         // TODO: refactor this code as it's reused from rest endpoint
 
         let checkpoints = self.state.storage.checkpoints().all().await;
         let num_validators = checkpoints.keys().len();
 
-        let (events, _) = self.state.storage.dispatch_events().get_vec(&feed_ids).await?;
+        let event = self.state.storage.dispatch_events().get(&feed_id).await?.unwrap();
 
         let validators = self.state.hyperlane_validators_mapping.get_rpc(self.active_chain).unwrap();
 
@@ -226,42 +227,29 @@ impl Subscriber {
 
         let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
 
-        let updates = events
-            .iter()
-            .map(|event| match &event.update {
-                DispatchUpdate::SpotMedian { update, feed_id } => (update, feed_id),
-            })
-            .collect::<Vec<(&SpotMedianUpdate, &String)>>();
+        let update = match event.update {
+            DispatchUpdate::SpotMedian { update, feed_id: _ } => update,
+        };
 
         let payload = Payload {
             checkpoint_root: checkpoint_infos.value.checkpoint.root.clone(),
-            num_updates: feed_ids.len() as u8,
+            num_updates: 1,
             update_data_len: 1,
             proof_len: 0,
             proof: vec![],
-            feed_updates: updates
-                .into_iter()
-                .map(|(update, feed_id)| FeedUpdate {
-                    update_data: update.to_bytes(),
-                    feed_id: feed_id.to_string(),
-                    publish_time: update.metadata.timestamp,
-                })
-                .collect(),
+            update_data: update.to_bytes(),
+            feed_id: feed_id.clone(),
+            publish_time: update.metadata.timestamp,
         };
-
-        let first_event = events.first().unwrap();
-        let nonce = first_event.nonce;
-        let emitter_chain_id = first_event.emitter_chain_id;
-        let emitter_address = first_event.emitter_address.clone();
 
         let hyperlane_message = HyperlaneMessage {
             hyperlane_version: HYPERLANE_VERSION,
             signers_len: num_validators as u8,
             signatures,
-            nonce,
-            timestamp: chrono::Utc::now().timestamp() as u64,
-            emitter_chain_id,
-            emitter_address,
+            nonce: event.nonce,
+            timestamp: update.metadata.timestamp,
+            emitter_chain_id: event.emitter_chain_id,
+            emitter_address: event.emitter_address,
             payload,
         };
 
