@@ -1,5 +1,6 @@
 mod cli;
 mod configs;
+mod constants;
 mod errors;
 mod extractors;
 mod handlers;
@@ -8,15 +9,13 @@ mod services;
 mod storage;
 mod types;
 
-use std::{sync::Arc, time::Duration};
+use std::sync::{atomic::AtomicUsize, Arc};
 
 use anyhow::Result;
 use clap::Parser;
-use handlers::websocket::subscribe_to_calldata::WsState;
 use prometheus::Registry;
 use storage::TheorosStorage;
 use tokio::sync::watch;
-use tower_governor::governor::GovernorConfigBuilder;
 use tracing::Level;
 
 use pragma_utils::{
@@ -38,6 +37,17 @@ pub struct AppState {
     pub ws: Arc<WsState>,
 }
 
+pub struct WsState {
+    pub subscriber_counter: AtomicUsize,
+}
+
+#[allow(clippy::new_without_default)]
+impl WsState {
+    pub fn new() -> Self {
+        Self { subscriber_counter: AtomicUsize::new(0) }
+    }
+}
+
 impl Clone for AppState {
     fn clone(&self) -> Self {
         Self {
@@ -54,12 +64,11 @@ lazy_static::lazy_static! {
     /// A static exit flag to indicate to running threads that we're shutting down. This is used to
     /// gracefully shut down the application.
     ///
-    /// We make this global based on the fact the:
-    /// - The `Sender` side does not rely on any async runtime.
-    /// - Exit logic doesn't really require carefully threading this value through the app.
-    /// - The `Receiver` side of a watch channel performs the detection based on if the change
-    ///   happened after the subscribe, so it means all listeners should always be notified
-    ///   correctly.
+    /// We make this global based such that:
+    /// - It's easy to access from anywhere in the application.
+    /// - No need to carefully pass it around.
+    /// - Sender does not require an async context to operate.
+    /// - All receivers will be notified when the flag is set.
     pub static ref EXIT: watch::Sender<bool> = watch::channel(false).0;
 }
 
@@ -69,15 +78,6 @@ async fn main() -> Result<()> {
     let config = TheorosCli::parse();
 
     init_tracing(&config.app_name, LOG_LEVEL)?;
-
-    let governor_conf = Arc::new(GovernorConfigBuilder::default().per_second(4).burst_size(2).finish().unwrap());
-    let governor_limiter = governor_conf.limiter().clone();
-    // a separate background task to clean up
-    std::thread::spawn(move || loop {
-        std::thread::sleep(Duration::from_secs(60));
-        tracing::info!("❌ Rate limiting storage size: {}", governor_limiter.len());
-        governor_limiter.retain_recent();
-    });
 
     let starknet_rpc = StarknetRpc::new(config.madara_rpc_url);
     let hyperlane_rpcs = HyperlaneValidatorsMapping::from_config(&config.evm_config).await?;

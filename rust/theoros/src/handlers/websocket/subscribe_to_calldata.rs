@@ -1,12 +1,10 @@
 use {
     crate::{
         configs::evm_config::EvmChainName,
+        constants::{DEFAULT_ACTIVE_CHAIN, HYPERLANE_VERSION, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION},
         types::{
             hyperlane::{CheckpointMatchEvent, DispatchUpdate},
-            pragma::{
-                calldata::{AsCalldata, HyperlaneMessage, Payload},
-                constants::{DEFAULT_ACTIVE_CHAIN, HYPERLANE_VERSION, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION},
-            },
+            pragma::calldata::{AsCalldata, HyperlaneMessage, Payload},
             rpc::RpcDataFeed,
         },
         AppState,
@@ -28,27 +26,15 @@ use {
     std::{
         collections::HashMap,
         net::SocketAddr,
-        sync::{
-            atomic::{AtomicUsize, Ordering},
-            Arc,
-        },
+        sync::{atomic::Ordering, Arc},
     },
     tokio::sync::{broadcast::Receiver, watch},
 };
 
+// TODO: add config for the client
+/// Configuration for a specific data feed.
 #[derive(Clone)]
 pub struct DataFeedClientConfig {}
-
-pub struct WsState {
-    pub subscriber_counter: AtomicUsize,
-}
-
-#[allow(clippy::new_without_default)]
-impl WsState {
-    pub fn new() -> Self {
-        Self { subscriber_counter: AtomicUsize::new(0) }
-    }
-}
 
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
@@ -97,7 +83,7 @@ async fn websocket_handler(stream: WebSocket, state: AppState) {
 
     let id = ws_state.subscriber_counter.fetch_add(1, Ordering::SeqCst);
 
-    let mut subscriber = Subscriber::new(id, Arc::new(state.clone()), feeds_receiver, receiver, sender);
+    let mut subscriber = Subscriber::new(id, Arc::new(state), feeds_receiver, receiver, sender);
 
     subscriber.run().await;
 }
@@ -145,7 +131,7 @@ impl Subscriber {
     pub async fn run(&mut self) {
         while !self.closed {
             if let Err(e) = self.handle_next().await {
-                tracing::debug!(subscriber = self.id, error = ?e, "Error Handling Subscriber Message.");
+                tracing::error!(subscriber = self.id, error = ?e, "Error Handling Subscriber Message.");
                 break;
             }
         }
@@ -203,7 +189,11 @@ impl Subscriber {
 
         let event = self.state.storage.dispatch_events().get(feed_id).await?.unwrap();
 
-        let validators = self.state.hyperlane_validators_mapping.get_rpc(self.active_chain).unwrap();
+        let validators = self
+            .state
+            .hyperlane_validators_mapping
+            .get_validators(self.active_chain)
+            .ok_or(anyhow!("Chain not supported"))?;
 
         let signatures = self.state.storage.checkpoints().get_validators_signatures(validators).await?;
 
@@ -236,7 +226,10 @@ impl Subscriber {
         };
 
         let message = serde_json::to_string(&ServerMessage::DataFeedUpdate {
-            data_feed: RpcDataFeed { id: feed_id.clone(), calldata: Some(hex::encode(hyperlane_message.as_bytes())) },
+            data_feed: RpcDataFeed {
+                feed_id: feed_id.clone(),
+                calldata: Some(hex::encode(hyperlane_message.as_bytes())),
+            },
         })?;
         self.sender.send(message.into()).await?;
 
@@ -309,15 +302,15 @@ impl Subscriber {
             Ok(ClientMessage::Subscribe { ids: feed_ids, chain_name }) => {
                 let stored_feed_ids = self.state.storage.feed_ids();
 
-                // If there is a single price id that is not found, we don't subscribe to any of the
-                // asked correct price feed ids and return an error to be more explicit and clear.
+                // If there is a single feed id that is not found, we don't subscribe to any of the
+                // asked feed ids and return an error to be more explicit and clear.
                 match stored_feed_ids.contains_vec(&feed_ids).await {
                     Some(missing_id) => {
                         // TODO: return multiple missing ids
                         self.sender
                             .send(
                                 serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Err {
-                                    error: format!("Data feed(s) with id(s) {:?} not found", missing_id),
+                                    error: format!("Can't subscribe: at least one of the requested feed ids is not supported ({:?})", missing_id),
                                 }))?
                                 .into(),
                             )

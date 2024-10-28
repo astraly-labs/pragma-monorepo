@@ -11,7 +11,7 @@ use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
 use crate::types::hyperlane::DispatchUpdate;
 use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload};
-use crate::types::pragma::constants::HYPERLANE_VERSION;
+use crate::constants::HYPERLANE_VERSION;
 use crate::AppState;
 
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
@@ -69,7 +69,7 @@ pub async fn get_calldata(
 
     let validators = state
         .hyperlane_validators_mapping
-        .get_rpc(chain_name)
+        .get_validators(chain_name)
         .ok_or(GetCalldataError::ChainNotSupported(raw_chain_name))?;
 
     let signatures = state

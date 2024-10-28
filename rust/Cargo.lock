@@ -3668,7 +3668,6 @@ dependencies = [
  "hex",
  "rusoto_core",
  "serde",
- "serde_json",
  "starknet 0.11.0",
  "strum",
  "strum_macros",
