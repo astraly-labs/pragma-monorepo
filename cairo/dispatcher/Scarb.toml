@@ -14,7 +14,7 @@ license-file = "../LICENSE.md"
 starknet = "2.8.2"
 
 # OpenZeppelin components & utilities
-openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", branch = "upgrade-edition-2024-07" }
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.17.0" }
 
 # Pragma Oracle
 pragma_lib = { git = "https://github.com/astraly-labs/pragma-lib", rev = "86d7ccd" }
@@ -31,7 +31,7 @@ pragma_dispatcher = { path = "crates/pragma_dispatcher" }
 pragma_maths = { path = "crates/pragma_maths" }
 
 # Test dependencies
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.30.0" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.31.0" }
 
 [workspace.tool.fmt]
 sort-module-level-items = true
