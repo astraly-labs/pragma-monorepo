@@ -44,12 +44,8 @@ impl Service for ApiService {
         join_set.spawn(async move {
             loop {
                 tokio::time::sleep(Duration::from_secs(60)).await;
-                tracing::info!("❌ Rate limiting storage size: {}", governor_limiter.len());
+                tracing::info!("✨ Rate limiting storage size: {}", governor_limiter.len());
                 governor_limiter.retain_recent();
-
-                // Check if we need to shut down
-                let _ = crate::EXIT.subscribe().changed().await;
-                tracing::info!("🛑 Shutting down cleanup task...");
             }
         });
 
@@ -65,10 +61,6 @@ impl Service for ApiService {
 
             tracing::info!("🧩 API server started at http://{}", socket_addr);
             axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-                .with_graceful_shutdown(async {
-                    let _ = crate::EXIT.subscribe().changed().await;
-                    tracing::info!("🛑 Shutting down API server...");
-                })
                 .await
                 .context("😱 API server stopped!")
         });

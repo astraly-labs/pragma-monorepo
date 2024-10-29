@@ -116,14 +116,6 @@ async fn main() -> Result<()> {
     let theoros =
         ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service).with(hyperlane_service);
 
-    // Listen for Ctrl+C so we can set the exit flag and wait for a graceful shutdown.
-    tokio::spawn(async move {
-        tracing::info!("Registered shutdown signal handler...");
-        tokio::signal::ctrl_c().await.unwrap();
-        tracing::info!("Shut down signal received, waiting for tasks...");
-        let _ = EXIT.send(true);
-    });
-
     theoros.start_and_drive_to_end().await?;
 
     // Ensure that the tracing provider is shutdown correctly
