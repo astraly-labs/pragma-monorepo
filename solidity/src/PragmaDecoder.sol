@@ -41,7 +41,7 @@ abstract contract PragmaDecoder {
         {
             bool valid;
             (hyMsg, valid,, index) = hyperlane.parseAndVerifyHyMsg(encodedHyMsg);
-            if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
+            if (!valid) revert ErrorsLib.InvalidHyperlaneSignatures();
         }
 
         if (!isValidDataSource(hyMsg.emitterChainId, hyMsg.emitterAddress)) {

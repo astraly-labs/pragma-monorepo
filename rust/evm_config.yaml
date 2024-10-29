@@ -3,4 +3,4 @@
 
 zircuit_testnet:
   rpc_url: "https://zircuit1-testnet.p2pify.com"
-  hyperlane_address: "0xb9aB8aDC69Ad3B96a8CdF5610e9bFEcc0415D662"
+  hyperlane_address: "0x98629B2B14E21248e99906A04B923eA5ae8B3Cc5"
