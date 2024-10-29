@@ -38,11 +38,12 @@ impl TheorosStorage {
         update_tx: Sender<CheckpointMatchEvent>,
     ) -> anyhow::Result<Self> {
         // Fetch the validators & their locations
-        let mut validators = ValidatorStorage::new();
         let initial_validators = rpc_client.get_announced_validators(hyperlane_validator_announce_address).await?;
         let initial_locations = rpc_client
             .get_announced_storage_locations(hyperlane_validator_announce_address, &initial_validators)
             .await?;
+
+        let mut validators = ValidatorStorage::new();
         validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
         // Fetch the registered feed ids
@@ -51,7 +52,7 @@ impl TheorosStorage {
 
         Ok(Self {
             feed_ids,
-            validators: ValidatorStorage::new(),
+            validators,
             checkpoints: ValidatorCheckpointStorage::new(),
             cached_events: EventCache::new(),
             dispatch_events: EventStorage::new(),

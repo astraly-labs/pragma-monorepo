@@ -98,12 +98,23 @@ impl S3Storage {
     fn checkpoint_key(index: u32) -> String {
         format!("checkpoint_{index}_with_id.json")
     }
+
+    fn latest_checkpoint_key() -> String {
+        format!("checkpoint_latest_index.json")
+    }
 }
 
 #[async_trait]
 impl FetchFromStorage for S3Storage {
-    async fn fetch(&self, index: u32) -> Result<Option<SignedCheckpointWithMessageId>> {
-        self.anonymously_read_from_bucket(S3Storage::checkpoint_key(index))
+    async fn fetch(&self, _index: u32) -> Result<Option<SignedCheckpointWithMessageId>> {
+        let latest_index: u32 = self
+            .anonymously_read_from_bucket(S3Storage::latest_checkpoint_key())
+            .await?
+            .map(|data| serde_json::from_slice(&data))
+            .transpose()
+            .unwrap().unwrap();
+
+        self.anonymously_read_from_bucket(S3Storage::checkpoint_key(latest_index))
             .await?
             .map(|data| serde_json::from_slice(&data))
             .transpose()

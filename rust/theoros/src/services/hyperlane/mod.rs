@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use pragma_utils::services::Service;
 use starknet::core::types::Felt;
 use tokio::task::JoinSet;
@@ -33,10 +35,13 @@ impl HyperlaneService {
         loop {
             let storage = self.state.storage.validators().all().await;
             for (validator, checkpoint) in storage {
-                tracing::debug!("Validator: {:?} - Storage: {:?}", validator, checkpoint);
                 let index = self.get_latest_index().await?;
                 let fetcher = checkpoint.build().await?;
                 let value = fetcher.fetch(index).await?;
+
+                tracing::info!("Index: {:?}", index);
+                tracing::info!("Fetcher: {:?}", fetcher);
+                tracing::info!("Value fetched: {:?}", value);
 
                 if let Some(checkpoint_value) = value {
                     tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
@@ -49,6 +54,7 @@ impl HyperlaneService {
                     tracing::debug!("No checkpoint value found");
                 }
             }
+            tokio::time::sleep(Duration::from_secs(1)).await;
         }
     }
 
