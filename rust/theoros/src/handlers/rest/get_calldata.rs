@@ -13,7 +13,7 @@ use crate::constants::{HYPERLANE_VERSION, PRAGMA_MAJOR_VERSION, PRAGMA_MINOR_VER
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
 use crate::types::hyperlane::DispatchUpdate;
-use crate::types::pragma::calldata::{AsCalldata, CalldataHeader, HyperlaneMessage, Payload};
+use crate::types::pragma::calldata::{AsCalldata, CalldataHeader, HyperlaneMessage, Payload, ValidatorSignature};
 use crate::AppState;
 
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
@@ -76,12 +76,12 @@ pub async fn get_calldata(
         .get_validators(chain_name)
         .ok_or(GetCalldataError::ChainNotSupported(raw_chain_name))?;
 
-    let signatures = state
-        .storage
-        .checkpoints()
-        .get_validators_signatures(validators)
-        .await
-        .map_err(|_| GetCalldataError::ValidatorNotFound)?;
+    // let signatures = state
+    //     .storage
+    //     .checkpoints()
+    //     .get_validators_signatures(validators)
+    //     .await
+    //     .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
     let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
 
@@ -103,7 +103,10 @@ pub async fn get_calldata(
     let hyperlane_message = HyperlaneMessage {
         hyperlane_version: HYPERLANE_VERSION,
         signers_len: 1_u8, // TODO
-        signatures: vec![*signatures.last().unwrap()],
+        signatures: vec![ValidatorSignature {
+            validator_index: 0,
+            signature: checkpoint_infos.signature.clone(),
+        }],
         nonce: event.nonce,
         timestamp: update.metadata.timestamp,
         emitter_chain_id: event.emitter_chain_id,
