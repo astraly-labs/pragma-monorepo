@@ -19,7 +19,7 @@ library ErrorsLib {
     // TODO: add signature
     error InvalidHyperlaneCheckpointRoot();
     // Signature is invalid.
-    error InvalidHyperlaneSignatures();
+    error InvalidHyperlaneSignatures(string);
     // Update data is invalid (e.g., deserialization error)
     // Signature: 0xe69ffece
     error InvalidUpdateData();
