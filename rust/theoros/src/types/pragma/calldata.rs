@@ -1,6 +1,8 @@
 use alloy::{primitives::U256, signers::Signature};
 use starknet::core::types::Felt;
 
+use crate::types::hyperlane::CheckpointWithMessageId;
+
 pub trait AsCalldata {
     fn as_bytes(&self) -> Vec<u8>;
 }
@@ -78,6 +80,7 @@ impl AsCalldata for ValidatorSignature {
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Payload {
+    pub checkpoint: CheckpointWithMessageId, 
     /// Merkle root of the checkpoint (computed by the merkle tree hook)
     pub checkpoint_root: U256,
     /// Number of updates

@@ -90,6 +90,7 @@ pub async fn get_calldata(
     };
 
     let payload = Payload {
+        checkpoint: checkpoint_infos.value.clone(), 
         checkpoint_root: U256::from_str(&checkpoint_infos.value.checkpoint.root).unwrap(),
         num_updates: 1,
         update_data_len: 1,
