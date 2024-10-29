@@ -1,16 +1,13 @@
 use std::time::Duration;
 
 use pragma_utils::services::Service;
-use starknet::core::types::Felt;
 use tokio::task::JoinSet;
 
-use crate::rpc::starknet::hyperlane::HyperlaneCalls;
 use crate::AppState;
 
 #[derive(Clone)]
 pub struct HyperlaneService {
     state: AppState,
-    merkle_tree_hook_address: Felt,
 }
 
 #[async_trait::async_trait]
@@ -27,17 +24,16 @@ impl Service for HyperlaneService {
 }
 
 impl HyperlaneService {
-    pub fn new(state: AppState, merkle_tree_hook_address: Felt) -> Self {
-        Self { state, merkle_tree_hook_address }
+    pub fn new(state: AppState) -> Self {
+        Self { state }
     }
 
     pub async fn run_forever(&self) -> anyhow::Result<()> {
         loop {
             let storage = self.state.storage.validators().all().await;
             for (validator, checkpoint) in storage {
-                let index = self.get_latest_index().await?;
                 let fetcher = checkpoint.build().await?;
-                let value = fetcher.fetch(index).await?;
+                let value = fetcher.fetch_latest().await?;
 
                 if let Some(checkpoint_value) = value {
                     tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
@@ -52,10 +48,5 @@ impl HyperlaneService {
             }
             tokio::time::sleep(Duration::from_secs(1)).await;
         }
-    }
-
-    pub async fn get_latest_index(&self) -> anyhow::Result<u32> {
-        let latest_checkpoint = self.state.starknet_rpc.get_latest_checkpoint(&self.merkle_tree_hook_address).await?;
-        Ok(latest_checkpoint[2].to_biguint().to_u32_digits()[0])
     }
 }

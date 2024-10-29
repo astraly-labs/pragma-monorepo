@@ -111,7 +111,7 @@ async fn main() -> Result<()> {
         config.indexer_starting_block,
     )?;
     let api_service = ApiService::new(state.clone(), &config.server_host, config.server_port);
-    let hyperlane_service = HyperlaneService::new(state.clone(), config.hyperlane_merkle_tree_hook_address);
+    let hyperlane_service = HyperlaneService::new(state.clone());
 
     let theoros =
         ServiceGroup::default().with(metrics_service).with(indexer_service).with(api_service).with(hyperlane_service);
