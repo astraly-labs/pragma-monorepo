@@ -12,6 +12,7 @@ import "../src/libraries/BytesLib.sol";
 import {TestUtils, PragmaHarness} from "./TestUtils.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "./mocks/PragmaUpgraded.sol";
+import "forge-std/console2.sol";
 
 contract PragmaHarnessTest is Test {
     PragmaHarness private pragmaHarness;
@@ -28,6 +29,18 @@ contract PragmaHarnessTest is Test {
         pragmaHarness = PragmaHarness(TestUtils.configurePragmaContract(dataType));
     }
 
+    function setupRaw() public{
+        pragmaHarness = PragmaHarness(TestUtils.configurePragmaRawContract());
+    }
+
+
+    function testUpdateRawFeed() public {
+        setupRaw();
+        // encoded update
+        bytes memory encodedUpdate = hex"0100000170030100cfb40f535d29e5f0fb582324b9891e1f6b77dbf7bd177fabf39ae58c6a9d2c6b1e67160d58d840693b1d7a302c7f1335ebd040813a4dce10e32ea4678a4a6a221b0002e34b000000006721616700611a3d0060240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc30536953cdd0dd5b8e24428e4fb6eab5c143daba15f62b24606e50d822508faef61f15d972266c4b555f5f1731ab2c70c59594467271089e59504352e5ef59c580002e3495dc30c8aed9a1c4a5f62d9ada57a36bfbc737f78c12b5d9966517e220ff3736801000100000000000000000000574254432f5553440000000000000000000000000000000000000000672161670007080000000000000000000006917d2b14ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000574254432f5553440000000067216167";
+        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
+        assertEq(numUpdates, 1, "Number of updates should be 1");
+    }
     function testUpdateDataInfoFromUpdateSpotMedian() public {
         _setUp(FeedType.SpotMedian);
         bytes32 feedId = bytes32(
