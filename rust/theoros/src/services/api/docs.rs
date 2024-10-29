@@ -14,6 +14,7 @@ use utoipauto::utoipauto;
 pub struct ApiDoc;
 
 impl ApiDoc {
+    #[allow(dead_code)]
     pub fn generate_openapi_json(output_path: PathBuf) -> Result<()> {
         let openapi = ApiDoc::openapi();
         let json = to_string_pretty(&openapi)?;
