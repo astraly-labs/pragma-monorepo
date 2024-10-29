@@ -1,3 +1,7 @@
+use alloy::primitives::U256;
+use starknet::core::types::Felt;
+use std::str::FromStr;
+
 use {
     crate::{
         configs::evm_config::EvmChainName,
@@ -195,6 +199,8 @@ impl Subscriber {
             .get_validators(self.active_chain)
             .ok_or(anyhow!("Chain not supported"))?;
 
+        tracing::info!("{:?}", validators);
+
         let signatures = self.state.storage.checkpoints().get_validators_signatures(validators).await?;
 
         let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
@@ -204,13 +210,13 @@ impl Subscriber {
         };
 
         let payload = Payload {
-            checkpoint_root: checkpoint_infos.value.checkpoint.root.clone(),
+            checkpoint_root: U256::from_str(&checkpoint_infos.value.checkpoint.root).unwrap(),
             num_updates: 1,
             update_data_len: 1,
             proof_len: 0,
             proof: vec![],
             update_data: update.to_bytes(),
-            feed_id: feed_id.clone(),
+            feed_id: U256::from_str(feed_id).unwrap(),
             publish_time: update.metadata.timestamp,
         };
 
@@ -221,7 +227,7 @@ impl Subscriber {
             nonce: event.nonce,
             timestamp: update.metadata.timestamp,
             emitter_chain_id: event.emitter_chain_id,
-            emitter_address: event.emitter_address,
+            emitter_address: Felt::from_dec_str(&event.emitter_address).unwrap(),
             payload,
         };
 

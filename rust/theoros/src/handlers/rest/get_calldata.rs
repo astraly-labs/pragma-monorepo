@@ -1,9 +1,11 @@
 use std::str::FromStr;
 
 use alloy::hex;
+use alloy::primitives::U256;
 use axum::extract::{Query, State};
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use starknet::core::types::Felt;
 use utoipa::{IntoParams, ToResponse, ToSchema};
 
 use crate::configs::evm_config::EvmChainName;
@@ -57,7 +59,9 @@ pub async fn get_calldata(
     };
 
     let checkpoints = state.storage.checkpoints().all().await;
-    let num_validators = checkpoints.keys().len();
+
+    // TODO: Not correct atm - should reflect the actual validators that signed the index
+    let _num_validators = checkpoints.keys().len();
 
     let event = state
         .storage
@@ -86,24 +90,24 @@ pub async fn get_calldata(
     };
 
     let payload = Payload {
-        checkpoint_root: checkpoint_infos.value.checkpoint.root.clone(),
+        checkpoint_root: U256::from_str(&checkpoint_infos.value.checkpoint.root).unwrap(),
         num_updates: 1,
         update_data_len: 1,
         proof_len: 0,
         proof: vec![],
         update_data: update.to_bytes(),
-        feed_id,
+        feed_id: U256::from_str(&feed_id).unwrap(),
         publish_time: update.metadata.timestamp,
     };
 
     let hyperlane_message = HyperlaneMessage {
         hyperlane_version: HYPERLANE_VERSION,
-        signers_len: num_validators as u8,
-        signatures,
+        signers_len: 1_u8, // TODO
+        signatures: vec![*signatures.last().unwrap()],
         nonce: event.nonce,
         timestamp: update.metadata.timestamp,
         emitter_chain_id: event.emitter_chain_id,
-        emitter_address: event.emitter_address,
+        emitter_address: Felt::from_dec_str(&event.emitter_address).unwrap(),
         payload,
     };
 

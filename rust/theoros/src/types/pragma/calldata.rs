@@ -1,4 +1,5 @@
-use alloy::signers::Signature;
+use alloy::{primitives::U256, signers::Signature};
+use starknet::core::types::Felt;
 
 pub trait AsCalldata {
     fn as_bytes(&self) -> Vec<u8>;
@@ -40,7 +41,7 @@ pub struct HyperlaneMessage {
     /// Chain ID of the emitter (pragma chain id)
     pub emitter_chain_id: u32,
     /// Address of the emitter (pragma chain mailbox address)
-    pub emitter_address: String,
+    pub emitter_address: Felt,
     pub payload: Payload,
 }
 
@@ -54,7 +55,7 @@ impl AsCalldata for HyperlaneMessage {
         bytes.extend_from_slice(&self.nonce.to_be_bytes());
         bytes.extend_from_slice(&self.timestamp.to_be_bytes());
         bytes.extend_from_slice(&self.emitter_chain_id.to_be_bytes());
-        bytes.extend_from_slice(self.emitter_address.as_bytes());
+        bytes.extend_from_slice(&self.emitter_address.to_bytes_be());
         bytes.extend_from_slice(&self.payload.as_bytes());
         bytes
     }
@@ -78,7 +79,7 @@ impl AsCalldata for ValidatorSignature {
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Payload {
     /// Merkle root of the checkpoint (computed by the merkle tree hook)
-    pub checkpoint_root: String,
+    pub checkpoint_root: U256,
     /// Number of updates
     pub num_updates: u8,
 
@@ -90,7 +91,7 @@ pub struct Payload {
 
     pub update_data: Vec<u8>,
     /// The id associated to the feed to be updated
-    pub feed_id: String,
+    pub feed_id: U256,
     pub publish_time: u64,
 }
 
@@ -99,7 +100,8 @@ pub struct Payload {
 impl AsCalldata for Payload {
     fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![];
-        bytes.extend_from_slice(self.checkpoint_root.as_bytes());
+        let root: [u8; 32] = self.checkpoint_root.to_be_bytes();
+        bytes.extend_from_slice(root.as_slice());
         bytes.push(self.num_updates);
         bytes.extend_from_slice(&self.update_data_len.to_be_bytes());
         bytes.extend_from_slice(&self.proof_len.to_be_bytes());
@@ -107,7 +109,8 @@ impl AsCalldata for Payload {
             bytes.extend_from_slice(proof.as_bytes());
         }
         bytes.extend_from_slice(&self.update_data);
-        bytes.extend_from_slice(self.feed_id.as_bytes());
+        let feed_id: [u8; 32] = self.feed_id.to_be_bytes();
+        bytes.extend_from_slice(feed_id.as_slice());
         bytes.extend_from_slice(&self.publish_time.to_be_bytes());
         bytes
     }
