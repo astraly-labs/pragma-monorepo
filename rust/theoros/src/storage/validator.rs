@@ -71,7 +71,7 @@ impl ValidatorStorage {
 
 /// Contains a mapping between the validators and their latest fetched checkpoint.
 #[derive(Debug, Default)]
-pub struct ValidatorCheckpointStorage(RwLock<HashMap<(Felt, U256), SignedCheckpointWithMessageId>>);
+pub struct ValidatorCheckpointStorage(pub RwLock<HashMap<(Felt, U256), SignedCheckpointWithMessageId>>);
 
 impl ValidatorCheckpointStorage {
     pub fn new() -> Self {

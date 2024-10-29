@@ -93,11 +93,10 @@ impl EventCache {
         checkpoint_storage: &ValidatorCheckpointStorage,
         event_storage: &EventStorage,
     ) -> Result<()> {
-        let cache = self.cache.read().await;
-        let mut to_remove = Vec::new();
+        let mut cache_write = self.cache.write().await;
 
-        for (message_id, dispatch_event) in cache.iter() {
-            if checkpoint_storage.contains_message_id(*message_id).await {
+        for (message_id, dispatch_event) in cache_write.clone().into_iter() {
+            if checkpoint_storage.contains_message_id(message_id).await {
                 // Store all updates in event
                 for update in dispatch_event.message.body.updates.iter() {
                     let feed_id = update.feed_id();
@@ -109,20 +108,10 @@ impl EventCache {
                     };
                     event_storage.add(feed_id, dispatch_update_infos).await?;
                 }
-                to_remove.push(*message_id);
+                cache_write.remove(&message_id);
                 tracing::debug!("Processed cached event with message ID: {:?}", message_id);
             }
         }
-
-        // Remove processed events from cache
-        if !to_remove.is_empty() {
-            let mut cache = self.cache.write().await;
-            for message_id in &to_remove {
-                cache.remove(message_id);
-            }
-            tracing::debug!("Removed {} processed events from cache", to_remove.len());
-        }
-
         Ok(())
     }
 

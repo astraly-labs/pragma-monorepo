@@ -85,13 +85,13 @@ pub struct Payload {
     pub checkpoint: CheckpointWithMessageId,
     /// Number of updates
     pub num_updates: u8,
-
     pub update_data_len: u16,
     /// Length of the proof
+    #[serde(skip)]
     pub proof_len: u16,
-
+    #[serde(skip)]
     pub proof: Vec<String>,
-
+    #[serde(skip)]
     pub update_data: Vec<u8>,
     /// The id associated to the feed to be updated
     pub feed_id: U256,

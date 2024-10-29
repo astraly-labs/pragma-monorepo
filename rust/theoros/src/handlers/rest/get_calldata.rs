@@ -59,11 +59,6 @@ pub async fn get_calldata(
         return Err(GetCalldataError::FeedNotFound(feed_id));
     };
 
-    let checkpoints = state.storage.checkpoints().all().await;
-
-    // TODO: Not correct atm - should reflect the actual validators that signed the index
-    let _num_validators = checkpoints.keys().len();
-
     let event = state
         .storage
         .dispatch_events()
@@ -84,7 +79,11 @@ pub async fn get_calldata(
     //     .await
     //     .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
-    let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
+    let checkpoints = state.storage.checkpoints().all().await;
+    let (x, checkpoint_infos) = checkpoints.iter().next().unwrap();
+
+    let (validator, _) = x;
+    tracing::info!("Validator: {:x}", validator);
 
     let update = match event.update {
         DispatchUpdate::SpotMedian { update, feed_id: _ } => update,
