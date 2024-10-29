@@ -210,7 +210,7 @@ impl Subscriber {
         };
 
         let payload = Payload {
-            checkpoint_root: U256::from_str(&checkpoint_infos.value.checkpoint.root).unwrap(),
+            checkpoint: checkpoint_infos.value.clone(),
             num_updates: 1,
             update_data_len: 1,
             proof_len: 0,

@@ -1,5 +1,6 @@
 use alloy::{primitives::U256, signers::Signature};
 use starknet::core::types::Felt;
+use std::str::FromStr;
 
 use crate::types::hyperlane::CheckpointWithMessageId;
 
@@ -80,9 +81,7 @@ impl AsCalldata for ValidatorSignature {
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub struct Payload {
-    pub checkpoint: CheckpointWithMessageId, 
-    /// Merkle root of the checkpoint (computed by the merkle tree hook)
-    pub checkpoint_root: U256,
+    pub checkpoint: CheckpointWithMessageId,
     /// Number of updates
     pub num_updates: u8,
 
@@ -103,8 +102,11 @@ pub struct Payload {
 impl AsCalldata for Payload {
     fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![];
-        let root: [u8; 32] = self.checkpoint_root.to_be_bytes();
+        bytes.extend_from_slice(self.checkpoint.checkpoint.merkle_tree_hook_address.to_be_bytes::<32>().as_slice());
+        let root: [u8; 32] = U256::from_str(&self.checkpoint.checkpoint.root).unwrap().to_be_bytes();
         bytes.extend_from_slice(root.as_slice());
+        bytes.extend_from_slice(self.checkpoint.checkpoint.index.to_be_bytes().as_slice());
+        bytes.extend_from_slice(self.checkpoint.message_id.to_be_bytes::<32>().as_slice());
         bytes.push(self.num_updates);
         bytes.extend_from_slice(&self.update_data_len.to_be_bytes());
         bytes.extend_from_slice(&self.proof_len.to_be_bytes());
