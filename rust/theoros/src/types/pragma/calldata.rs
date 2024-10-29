@@ -1,4 +1,5 @@
 use alloy::{primitives::U256, signers::Signature};
+use serde::{Deserialize, Serialize};
 use starknet::core::types::Felt;
 use std::str::FromStr;
 
@@ -8,8 +9,8 @@ pub trait AsCalldata {
     fn as_bytes(&self) -> Vec<u8>;
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
-pub struct CalldataHeader {
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+pub struct Calldata {
     /// Major version of Pragma (should only be updated if there are breaking changes)
     pub major_version: u8,
     /// Minor version of Pragma (should be updated for non-breaking changes)
@@ -22,7 +23,7 @@ pub struct CalldataHeader {
     pub hyperlane_msg: HyperlaneMessage,
 }
 
-impl AsCalldata for CalldataHeader {
+impl AsCalldata for Calldata {
     fn as_bytes(&self) -> Vec<u8> {
         let mut bytes = vec![self.major_version, self.minor_version, self.trailing_header_size];
         bytes.extend_from_slice(&self.hyperlane_msg_size.to_be_bytes());
@@ -31,7 +32,7 @@ impl AsCalldata for CalldataHeader {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct HyperlaneMessage {
     /// Version of the Hyperlane protocol
     pub hyperlane_version: u8,
@@ -64,7 +65,7 @@ impl AsCalldata for HyperlaneMessage {
     }
 }
 
-#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct ValidatorSignature {
     /// Index of the validator in the solidity mapping
     pub validator_index: u8,
@@ -79,7 +80,7 @@ impl AsCalldata for ValidatorSignature {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Payload {
     pub checkpoint: CheckpointWithMessageId,
     /// Number of updates

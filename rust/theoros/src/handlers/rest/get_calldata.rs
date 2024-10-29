@@ -13,15 +13,16 @@ use crate::constants::{HYPERLANE_VERSION, PRAGMA_MAJOR_VERSION, PRAGMA_MINOR_VER
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
 use crate::types::hyperlane::DispatchUpdate;
-use crate::types::pragma::calldata::{AsCalldata, CalldataHeader, HyperlaneMessage, Payload, ValidatorSignature};
+use crate::types::pragma::calldata::{AsCalldata, Calldata, HyperlaneMessage, Payload, ValidatorSignature};
 use crate::AppState;
 
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
 pub struct GetCalldataQuery {}
 
-#[derive(Debug, Default, Serialize, Deserialize, ToResponse, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToResponse, ToSchema)]
 pub struct GetCalldataResponse {
-    pub calldata: String,
+    pub calldata: Calldata,
+    pub encoded_calldata: String,
 }
 
 #[utoipa::path(
@@ -71,7 +72,7 @@ pub async fn get_calldata(
         .map_err(|_| GetCalldataError::DispatchNotFound)?
         .ok_or(GetCalldataError::DispatchNotFound)?;
 
-    let validators = state
+    let _validators = state
         .hyperlane_validators_mapping
         .get_validators(chain_name)
         .ok_or(GetCalldataError::ChainNotSupported(raw_chain_name))?;
@@ -103,10 +104,7 @@ pub async fn get_calldata(
     let hyperlane_message = HyperlaneMessage {
         hyperlane_version: HYPERLANE_VERSION,
         signers_len: 1_u8, // TODO
-        signatures: vec![ValidatorSignature {
-            validator_index: 0,
-            signature: checkpoint_infos.signature.clone(),
-        }],
+        signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
         nonce: event.nonce,
         timestamp: update.metadata.timestamp,
         emitter_chain_id: event.emitter_chain_id,
@@ -114,7 +112,7 @@ pub async fn get_calldata(
         payload,
     };
 
-    let calldata_header = CalldataHeader {
+    let calldata = Calldata {
         major_version: PRAGMA_MAJOR_VERSION,
         minor_version: PRAGMA_MINOR_VERSION,
         trailing_header_size: TRAILING_HEADER_SIZE,
@@ -122,7 +120,8 @@ pub async fn get_calldata(
         hyperlane_msg: hyperlane_message,
     };
 
-    let response = GetCalldataResponse { calldata: hex::encode(calldata_header.as_bytes()) };
+    let response =
+        GetCalldataResponse { calldata: calldata.clone(), encoded_calldata: hex::encode(calldata.as_bytes()) };
     tracing::info!("🌐 get_calldata - {:?}", started_at.elapsed());
     Ok(Json(response))
 }
