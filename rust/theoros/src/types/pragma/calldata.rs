@@ -13,15 +13,15 @@ pub struct CalldataHeader {
     /// Space reserved for future versions of Pragma
     pub trailing_header_size: u8,
     /// Size of the Hyperlane message in bytes
-    pub hyperlane_msg_size: u8,
+    pub hyperlane_msg_size: u16,
     /// Hyperlane message
     pub hyperlane_msg: HyperlaneMessage,
 }
 
 impl AsCalldata for CalldataHeader {
     fn as_bytes(&self) -> Vec<u8> {
-        let mut bytes =
-            vec![self.major_version, self.minor_version, self.trailing_header_size, self.hyperlane_msg_size];
+        let mut bytes = vec![self.major_version, self.minor_version, self.trailing_header_size];
+        bytes.extend_from_slice(&self.hyperlane_msg_size.to_be_bytes());
         bytes.extend_from_slice(&self.hyperlane_msg.as_bytes());
         bytes
     }

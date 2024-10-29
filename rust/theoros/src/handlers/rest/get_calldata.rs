@@ -7,11 +7,11 @@ use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToResponse, ToSchema};
 
 use crate::configs::evm_config::EvmChainName;
-use crate::constants::HYPERLANE_VERSION;
+use crate::constants::{HYPERLANE_VERSION, PRAGMA_MAJOR_VERSION, PRAGMA_MINOR_VERSION, TRAILING_HEADER_SIZE};
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
 use crate::types::hyperlane::DispatchUpdate;
-use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload};
+use crate::types::pragma::calldata::{AsCalldata, CalldataHeader, HyperlaneMessage, Payload};
 use crate::AppState;
 
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
@@ -106,7 +106,16 @@ pub async fn get_calldata(
         emitter_address: event.emitter_address,
         payload,
     };
-    let response = GetCalldataResponse { calldata: hex::encode(hyperlane_message.as_bytes()) };
+
+    let calldata_header = CalldataHeader {
+        major_version: PRAGMA_MAJOR_VERSION,
+        minor_version: PRAGMA_MINOR_VERSION,
+        trailing_header_size: TRAILING_HEADER_SIZE,
+        hyperlane_msg_size: hyperlane_message.as_bytes().len().try_into().unwrap(),
+        hyperlane_msg: hyperlane_message,
+    };
+
+    let response = GetCalldataResponse { calldata: hex::encode(calldata_header.as_bytes()) };
     tracing::info!("🌐 get_calldata - {:?}", started_at.elapsed());
     Ok(Json(response))
 }

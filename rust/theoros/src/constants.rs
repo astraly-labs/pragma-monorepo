@@ -4,6 +4,10 @@ use crate::configs::evm_config::EvmChainName;
 
 pub const HYPERLANE_VERSION: u8 = 3;
 
+pub const PRAGMA_MAJOR_VERSION: u8 = 1;
+pub const PRAGMA_MINOR_VERSION: u8 = 0;
+pub const TRAILING_HEADER_SIZE: u8 = 0;
+
 pub const PING_INTERVAL_DURATION: Duration = Duration::from_secs(30);
 pub const MAX_CLIENT_MESSAGE_SIZE: usize = 100 * 1024; // 100 KiB
 
