@@ -6,7 +6,6 @@ pragma experimental ABIEncoderV2;
 import {IHyperlane} from "./interfaces/IHyperlane.sol";
 import "./interfaces/PragmaStructs.sol";
 import "./libraries/BytesLib.sol";
-import "forge-std/console2.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
