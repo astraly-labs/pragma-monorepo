@@ -4,12 +4,15 @@ pragma solidity ^0.8.0;
 import "./BytesLib.sol";
 import "../interfaces/PragmaStructs.sol";
 import "./ErrorsLib.sol";
+import "forge-std/console2.sol";
 
 library DataParser {
     using BytesLib for bytes;
 
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
-        uint8 offset = 2; // type feed stored after asset class
+        uint8 offset = 2; // type of feed after the asset class
+        console2.logString("do we reach here");
+
         uint8 rawDataType = data.toUint8(offset);
         FeedType dataType = safeCastToFeedType(rawDataType);
 
@@ -44,8 +47,12 @@ library DataParser {
         Metadata memory metadata = StructsInitializers.initializeMetadata();
         uint256 index = startIndex;
 
-        metadata.feedId = bytes32(data.toUint256(index));
-        index += 32;
+        uint128 feedIdLow = data.toUint128(index);
+        index += 16;
+        uint128 feedIdHigh = data.toUint128(index);
+        index += 16;
+        
+        metadata.feedId = bytes32((uint256(feedIdHigh) << 128) | uint256(feedIdLow));
 
         metadata.timestamp = data.toUint64(index);
         index += 8;
@@ -60,6 +67,7 @@ library DataParser {
     }
 
     function parseSpotData(bytes memory data) internal pure returns (SpotMedian memory) {
+
         SpotMedian memory entry = StructsInitializers.initializeSpotMedian();
         uint256 index = 0;
 

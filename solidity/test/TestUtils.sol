@@ -90,7 +90,7 @@ library TestUtils {
         );
 
         return abi.encodePacked(
-            uint8(1), // version
+            uint8(3), // version
             signatures,
             uint32(0), // nonce
             uint64(block.timestamp), // timestamp
