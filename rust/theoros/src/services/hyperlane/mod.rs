@@ -9,7 +9,7 @@ use crate::{
     AppState,
 };
 
-const FETCH_INTERVAL: Duration = Duration::from_secs(1);
+const FETCH_INTERVAL: Duration = Duration::from_secs(2);
 
 #[derive(Clone)]
 pub struct HyperlaneService {
@@ -36,8 +36,6 @@ impl HyperlaneService {
 
     /// Every [FETCH_INTERVAL] seconds, fetch the latest checkpoint signed for all
     /// registered validators.
-    /// TODO: Currently we only fetch latest checkpoints. We should start from the first
-    /// indexed DispatchEvent? Maybe not
     pub async fn run_forever(&self) -> anyhow::Result<()> {
         loop {
             self.process_validator_checkpoints().await;
@@ -58,10 +56,10 @@ impl HyperlaneService {
         match fetcher.fetch_latest().await {
             Ok(Some(checkpoint)) => self.handle_checkpoint(validator, checkpoint).await,
             Ok(None) => {
-                tracing::debug!("🌉 [Hyperlane] No new checkpoint for validator {:x}", validator)
+                tracing::debug!("🌉 [Hyperlane] No new checkpoint for validator {:#x}", validator)
             }
             Err(e) => {
-                tracing::error!("🌉 [Hyperlane] Failed to fetch checkpoint for validator {:x}: {:?}", validator, e)
+                tracing::error!("🌉 [Hyperlane] Failed to fetch checkpoint for validator {:#x}: {:?}", validator, e)
             }
         }
     }
@@ -71,7 +69,7 @@ impl HyperlaneService {
 
         if self.state.storage.validators_checkpoints().exists(validator, message_id).await {
             tracing::debug!(
-                "🌉 [Hyperlane] Skipping duplicate checkpoint for validator {:x}: {:x}",
+                "🌉 [Hyperlane] Skipping duplicate checkpoint for validator {:#x}: {:#x}",
                 validator,
                 message_id
             );
@@ -79,12 +77,12 @@ impl HyperlaneService {
         }
 
         tracing::info!(
-            "🌉 [Hyperlane] Validator {:x} retrieved latest checkpoint for message {:x}",
+            "🌉 [Hyperlane] Validator {:#x} retrieved latest checkpoint for message {:#x}",
             validator,
             message_id
         );
         if let Err(e) = self.state.storage.validators_checkpoints().add(validator, message_id, checkpoint).await {
-            tracing::error!("🌉 [Hyperlane] Failed to store checkpoint for validator {:x}: {:?}", validator, e);
+            tracing::error!("🌉 [Hyperlane] Failed to store checkpoint for validator {:#x}: {:?}", validator, e);
         }
     }
 }

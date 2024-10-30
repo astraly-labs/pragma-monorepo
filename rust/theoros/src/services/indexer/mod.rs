@@ -173,18 +173,22 @@ impl IndexerService {
 
     /// Decodes a DispatchEvent from the Starknet event data.
     async fn decode_dispatch_event(&self, event_data: Vec<Felt>, block: &Block) -> anyhow::Result<()> {
+        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
+        let message_id = dispatch_event.id();
+
         match &block.header {
             Some(h) => {
-                tracing::info!("📨 [Indexer] Received a Dispatch event at block #{}", h.block_number);
+                tracing::info!(
+                    "📨 [Indexer] Received a Dispatch event at block #{} with message id: {:#x}",
+                    h.block_number,
+                    message_id
+                );
             }
             None => {
-                tracing::info!("📨 [Indexer] Received a Dispatch event");
+                tracing::info!("📨 [Indexer] Received a Dispatch event with message id: {:#x}", message_id);
             }
         };
 
-        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
-
-        let message_id = dispatch_event.id();
         for update in dispatch_event.message.body.updates.iter() {
             let feed_id = update.feed_id();
             // Check if there's a corresponding signed checkpoints among validators
