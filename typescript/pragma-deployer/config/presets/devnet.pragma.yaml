@@ -52,7 +52,7 @@ pragma_dispatcher:
 pragma:
   data_source_emitters:
     - chain_id: 6363709
-      address: "0x30e6665bda019371307edfebc413596903413337c5e8f06d2385144d126cf10"
+      address: "0x0060240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc3"
 
   valid_time_period_in_seconds: 3600 # 1 hour
   single_update_fee_in_wei: "0"

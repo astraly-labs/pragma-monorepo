@@ -1,13 +1,12 @@
 pub mod docs;
 pub mod router;
 
-use std::{net::SocketAddr, sync::Arc, time::Duration};
+use std::net::SocketAddr;
 
 use anyhow::{Context, Result};
 use docs::ApiDoc;
 use router::api_router;
 use tokio::{net::TcpListener, task::JoinSet};
-use tower_governor::governor::GovernorConfigBuilder;
 use tower_http::{
     cors::CorsLayer,
     trace::{DefaultMakeSpan, TraceLayer},
@@ -38,21 +37,6 @@ impl Service for ApiService {
         let port = self.port;
         let state = self.state.clone();
 
-        let governor_conf = Arc::new(GovernorConfigBuilder::default().per_second(4).burst_size(2).finish().unwrap());
-        let governor_limiter = governor_conf.limiter().clone();
-
-        join_set.spawn(async move {
-            loop {
-                tokio::time::sleep(Duration::from_secs(60)).await;
-                tracing::info!("❌ Rate limiting storage size: {}", governor_limiter.len());
-                governor_limiter.retain_recent();
-
-                // Check if we need to shut down
-                let _ = crate::EXIT.subscribe().changed().await;
-                tracing::info!("🛑 Shutting down cleanup task...");
-            }
-        });
-
         join_set.spawn(async move {
             let address = format!("{}:{}", host, port);
             let socket_addr: SocketAddr = address.parse()?;
@@ -65,10 +49,6 @@ impl Service for ApiService {
 
             tracing::info!("🧩 API server started at http://{}", socket_addr);
             axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>())
-                .with_graceful_shutdown(async {
-                    let _ = crate::EXIT.subscribe().changed().await;
-                    tracing::info!("🛑 Shutting down API server...");
-                })
                 .await
                 .context("😱 API server stopped!")
         });

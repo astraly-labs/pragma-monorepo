@@ -23,8 +23,8 @@ use crate::{
 ///   * a channel to dispatch updates to the clients.
 pub struct TheorosStorage {
     feed_ids: FeedIdsStorage,
-    validators: ValidatorStorage,
-    checkpoints: ValidatorCheckpointStorage,
+    validators: ValidatorsLocationStorage,
+    checkpoints: ValidatorsCheckpointsStorage,
     cached_events: EventCache,
     dispatch_events: EventStorage,
     pub feeds_channel: Sender<CheckpointMatchEvent>,
@@ -37,24 +37,23 @@ impl TheorosStorage {
         hyperlane_validator_announce_address: &Felt,
         update_tx: Sender<CheckpointMatchEvent>,
     ) -> anyhow::Result<Self> {
-        // Fetch the validators & their locations
-        let mut validators = ValidatorStorage::new();
         let initial_validators = rpc_client.get_announced_validators(hyperlane_validator_announce_address).await?;
         let initial_locations = rpc_client
             .get_announced_storage_locations(hyperlane_validator_announce_address, &initial_validators)
             .await?;
+
+        let mut validators = ValidatorsLocationStorage::default();
         validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
-        // Fetch the registered feed ids
         let supported_feed_ids = rpc_client.get_feed_ids(pragma_feeds_registry_address).await?;
         let feed_ids = FeedIdsStorage::from_rpc_response(supported_feed_ids);
 
         Ok(Self {
             feed_ids,
-            validators: ValidatorStorage::new(),
-            checkpoints: ValidatorCheckpointStorage::new(),
-            cached_events: EventCache::new(),
-            dispatch_events: EventStorage::new(),
+            validators,
+            checkpoints: ValidatorsCheckpointsStorage::default(),
+            cached_events: EventCache::default(),
+            dispatch_events: EventStorage::default(),
             feeds_channel: update_tx,
         })
     }
@@ -63,11 +62,11 @@ impl TheorosStorage {
         &self.feed_ids
     }
 
-    pub fn validators(&self) -> &ValidatorStorage {
+    pub fn validators_locations(&self) -> &ValidatorsLocationStorage {
         &self.validators
     }
 
-    pub fn checkpoints(&self) -> &ValidatorCheckpointStorage {
+    pub fn validators_checkpoints(&self) -> &ValidatorsCheckpointsStorage {
         &self.checkpoints
     }
 

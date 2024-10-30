@@ -18,7 +18,7 @@ async-trait = "0.1.81"
 bollard = "0.17.1"
 clap = { version = "4.5.16", features = ["derive", "env"] }
 chrono = { version = "0.4.38", features = ["serde"] }
-derive_more = {version = "1", features = ["deref", "deref_mut"]}
+derive_more = { version = "1", features = ["deref", "deref_mut"] }
 dirs = "5.0.1"
 dotenvy = "0.15.7"
 envy = "0.4.2"
@@ -51,7 +51,7 @@ strum = { version = "0.26.3", features = ["derive"] }
 strum_macros = { version = "0.26.4", features = [] }
 thiserror = "1.0.63"
 prometheus = "0.13.4"
-prometheus-client  = { version = "0.21.2" }
+prometheus-client = { version = "0.21.2" }
 hyper = { version = "0.14", features = ["server"] }
 tokio = { version = "1.39.3", features = [
   "rt",
@@ -60,7 +60,7 @@ tokio = { version = "1.39.3", features = [
   "signal",
 ] }
 toml = "0.8.19"
-tower_governor = {version = "0.4.3", features = ["axum", "tracing"]}
+tower_governor = { version = "0.4.3", features = ["axum", "tracing"] }
 scale-info = "2.11.3"
 scale = { package = "parity-scale-codec", version = "3.0.0", features = [
   "derive",

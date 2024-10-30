@@ -1,14 +1,19 @@
+use std::{sync::Arc, time::Duration};
+
 use pragma_utils::services::Service;
 use starknet::core::types::Felt;
 use tokio::task::JoinSet;
 
-use crate::rpc::starknet::hyperlane::HyperlaneCalls;
-use crate::AppState;
+use crate::{
+    types::hyperlane::{FetchFromStorage, SignedCheckpointWithMessageId},
+    AppState,
+};
+
+const FETCH_INTERVAL: Duration = Duration::from_secs(2);
 
 #[derive(Clone)]
 pub struct HyperlaneService {
     state: AppState,
-    merkle_tree_hook_address: Felt,
 }
 
 #[async_trait::async_trait]
@@ -25,35 +30,59 @@ impl Service for HyperlaneService {
 }
 
 impl HyperlaneService {
-    pub fn new(state: AppState, merkle_tree_hook_address: Felt) -> Self {
-        Self { state, merkle_tree_hook_address }
+    pub fn new(state: AppState) -> Self {
+        Self { state }
     }
 
+    /// Every [FETCH_INTERVAL] seconds, fetch the latest checkpoint signed for all
+    /// registered validators.
     pub async fn run_forever(&self) -> anyhow::Result<()> {
         loop {
-            let storage = self.state.storage.validators().all().await;
-            for (validator, checkpoint) in storage {
-                tracing::debug!("Validator: {:?} - Storage: {:?}", validator, checkpoint);
-                let index = self.get_latest_index().await?;
-                let fetcher = checkpoint.build().await?;
-                let value = fetcher.fetch(index).await?;
+            self.process_validator_checkpoints().await;
+            tokio::time::sleep(FETCH_INTERVAL).await;
+        }
+    }
 
-                if let Some(checkpoint_value) = value {
-                    tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
-                    self.state
-                        .storage
-                        .checkpoints()
-                        .add(validator, checkpoint_value.value.message_id, checkpoint_value)
-                        .await?;
-                } else {
-                    tracing::debug!("No checkpoint value found");
-                }
+    async fn process_validator_checkpoints(&self) {
+        let validators_locations = self.state.storage.validators_locations().all().await;
+        let futures = validators_locations
+            .into_iter()
+            .map(|(validator, fetcher)| self.process_single_validator(validator, fetcher));
+
+        futures::future::join_all(futures).await;
+    }
+
+    async fn process_single_validator(&self, validator: Felt, fetcher: Arc<Box<dyn FetchFromStorage>>) {
+        match fetcher.fetch_latest().await {
+            Ok(Some(checkpoint)) => self.handle_checkpoint(validator, checkpoint).await,
+            Ok(None) => {
+                tracing::debug!("🌉 [Hyperlane] No new checkpoint for validator {:#x}", validator)
+            }
+            Err(e) => {
+                tracing::error!("🌉 [Hyperlane] Failed to fetch checkpoint for validator {:#x}: {:?}", validator, e)
             }
         }
     }
 
-    pub async fn get_latest_index(&self) -> anyhow::Result<u32> {
-        let latest_checkpoint = self.state.starknet_rpc.get_latest_checkpoint(&self.merkle_tree_hook_address).await?;
-        Ok(latest_checkpoint[2].to_biguint().to_u32_digits()[0])
+    async fn handle_checkpoint(&self, validator: Felt, checkpoint: SignedCheckpointWithMessageId) {
+        let message_id = checkpoint.value.message_id;
+
+        if self.state.storage.validators_checkpoints().exists(validator, message_id).await {
+            tracing::debug!(
+                "🌉 [Hyperlane] Skipping duplicate checkpoint for validator {:#x}: {:#x}",
+                validator,
+                message_id
+            );
+            return;
+        }
+
+        tracing::info!(
+            "🌉 [Hyperlane] Validator {:#x} retrieved latest checkpoint for message {:#x}",
+            validator,
+            message_id
+        );
+        if let Err(e) = self.state.storage.validators_checkpoints().add(validator, message_id, checkpoint).await {
+            tracing::error!("🌉 [Hyperlane] Failed to store checkpoint for validator {:#x}: {:?}", validator, e);
+        }
     }
 }
