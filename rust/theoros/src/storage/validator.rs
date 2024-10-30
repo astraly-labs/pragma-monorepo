@@ -6,10 +6,7 @@ use anyhow::bail;
 use starknet::core::types::Felt;
 use tokio::sync::RwLock;
 
-use crate::types::{
-    hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent},
-    pragma::calldata::ValidatorSignature,
-};
+use crate::types::hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent};
 
 // TODO: make this code generic
 
@@ -112,21 +109,22 @@ impl ValidatorCheckpointStorage {
         false
     }
 
-    pub async fn get_validators_signatures(&self, validators: &[Felt]) -> anyhow::Result<Vec<ValidatorSignature>> {
+    pub async fn get_validators_signatures(
+        &self,
+        validators: &[Felt],
+        searched_message_id: U256,
+    ) -> anyhow::Result<Vec<SignedCheckpointWithMessageId>> {
         let checkpoints = self.0.read().await;
 
-        let validator_indices: HashMap<_, _> = validators.iter().enumerate().map(|(i, v)| (*v, i as u8)).collect();
+        let mut signatures = Vec::new();
+        // Iterate over the map with tuple key (validator, message_id)
+        for ((validator, message_id), checkpoint) in checkpoints.iter() {
+            // Only include if validator is in the provided list and message_id matches
+            if message_id == &searched_message_id && validators.contains(validator) {
+                signatures.push(checkpoint.clone());
+            }
+        }
 
-        let signers: anyhow::Result<Vec<_>> = checkpoints
-            .iter()
-            .map(|((validator, _), signed_checkpoint)| {
-                validator_indices
-                    .get(validator)
-                    .map(|&index| ValidatorSignature { validator_index: index, signature: signed_checkpoint.signature })
-                    .ok_or_else(|| anyhow::anyhow!("Validator not found: {}", validator))
-            })
-            .collect();
-
-        signers
+        Ok(signatures)
     }
 }

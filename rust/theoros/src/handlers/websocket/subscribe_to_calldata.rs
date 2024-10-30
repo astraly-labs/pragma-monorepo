@@ -2,6 +2,8 @@ use alloy::primitives::U256;
 use starknet::core::types::Felt;
 use std::str::FromStr;
 
+use crate::types::pragma::calldata::ValidatorSignature;
+
 use {
     crate::{
         configs::evm_config::EvmChainName,
@@ -199,9 +201,8 @@ impl Subscriber {
             .get_validators(self.active_chain)
             .ok_or(anyhow!("Chain not supported"))?;
 
-        tracing::info!("{:?}", validators);
-
-        let signatures = self.state.storage.checkpoints().get_validators_signatures(validators).await?;
+        let _signatures =
+            self.state.storage.checkpoints().get_validators_signatures(validators, event.message_id).await?;
 
         let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
 
@@ -223,7 +224,7 @@ impl Subscriber {
         let hyperlane_message = HyperlaneMessage {
             hyperlane_version: HYPERLANE_VERSION,
             signers_len: num_validators as u8,
-            signatures,
+            signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
             nonce: event.nonce,
             timestamp: update.metadata.timestamp,
             emitter_chain_id: event.emitter_chain_id,

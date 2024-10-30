@@ -15,6 +15,7 @@ pub struct DispatchUpdateInfos {
     pub emitter_chain_id: u32,
     pub emitter_address: String,
     pub nonce: u32,
+    pub message_id: U256,
 }
 
 // Event Storage
@@ -105,6 +106,7 @@ impl EventCache {
                         emitter_address: dispatch_event.message.header.sender.to_string(),
                         emitter_chain_id: dispatch_event.message.header.origin,
                         nonce: dispatch_event.message.header.nonce,
+                        message_id,
                     };
                     event_storage.add(feed_id, dispatch_update_infos).await?;
                 }

@@ -166,6 +166,7 @@ impl IndexerService {
                         emitter_address: dispatch_event.message.header.sender.to_string(),
                         emitter_chain_id: dispatch_event.message.header.origin,
                         nonce: dispatch_event.message.header.nonce,
+                        message_id,
                     };
                     // Check if there's a corresponding checkpoint
                     if self.state.storage.checkpoints().contains_message_id(message_id).await {

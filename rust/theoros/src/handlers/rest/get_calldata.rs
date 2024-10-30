@@ -12,6 +12,7 @@ use crate::configs::evm_config::EvmChainName;
 use crate::constants::{HYPERLANE_VERSION, PRAGMA_MAJOR_VERSION, PRAGMA_MINOR_VERSION, TRAILING_HEADER_SIZE};
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
+use crate::storage::DispatchUpdateInfos;
 use crate::types::hyperlane::DispatchUpdate;
 use crate::types::pragma::calldata::{AsCalldata, Calldata, HyperlaneMessage, Payload, ValidatorSignature};
 use crate::AppState;
@@ -59,7 +60,7 @@ pub async fn get_calldata(
         return Err(GetCalldataError::FeedNotFound(feed_id));
     };
 
-    let event = state
+    let event: DispatchUpdateInfos = state
         .storage
         .dispatch_events()
         .get(&feed_id)
@@ -67,23 +68,19 @@ pub async fn get_calldata(
         .map_err(|_| GetCalldataError::DispatchNotFound)?
         .ok_or(GetCalldataError::DispatchNotFound)?;
 
-    let _validators = state
+    let validators = state
         .hyperlane_validators_mapping
         .get_validators(chain_name)
         .ok_or(GetCalldataError::ChainNotSupported(raw_chain_name))?;
 
-    // let signatures = state
-    //     .storage
-    //     .checkpoints()
-    //     .get_validators_signatures(validators)
-    //     .await
-    //     .map_err(|_| GetCalldataError::ValidatorNotFound)?;
+    let checkpoints = state
+        .storage
+        .checkpoints()
+        .get_validators_signatures(validators, event.message_id)
+        .await
+        .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
-    let checkpoints = state.storage.checkpoints().all().await;
-    let (x, checkpoint_infos) = checkpoints.iter().next().unwrap();
-
-    let (validator, _) = x;
-    tracing::info!("Validator: {:x}", validator);
+    let checkpoint_infos = checkpoints.last().unwrap();
 
     let update = match event.update {
         DispatchUpdate::SpotMedian { update, feed_id: _ } => update,

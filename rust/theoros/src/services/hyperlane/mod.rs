@@ -33,6 +33,8 @@ impl HyperlaneService {
             let storage = self.state.storage.validators().all().await;
             for (validator, checkpoint) in storage {
                 let fetcher = checkpoint.build().await?;
+
+                // TODO: don't re-store over & over the same index for a given validator?
                 let value = fetcher.fetch_latest().await?;
 
                 if let Some(checkpoint_value) = value {
