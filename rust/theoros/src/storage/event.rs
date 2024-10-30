@@ -7,7 +7,7 @@ use pragma_utils::conversions::alloy::hex_str_to_u256;
 use tokio::sync::RwLock;
 
 use crate::types::hyperlane::DispatchUpdate;
-use crate::{storage::ValidatorCheckpointStorage, types::hyperlane::DispatchEvent};
+use crate::{storage::ValidatorsCheckpointStorage, types::hyperlane::DispatchEvent};
 
 #[derive(Debug, Clone)]
 pub struct DispatchUpdateInfos {
@@ -91,7 +91,7 @@ impl EventCache {
 
     pub async fn process_cached_events(
         &self,
-        checkpoint_storage: &ValidatorCheckpointStorage,
+        checkpoint_storage: &ValidatorsCheckpointStorage,
         event_storage: &EventStorage,
     ) -> Result<()> {
         let mut cache_write = self.cache.write().await;

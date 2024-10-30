@@ -9,15 +9,15 @@ use tokio::sync::RwLock;
 use crate::types::hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent};
 
 // TODO: Rename this. It should be clear that it is a Validator => StorageLocation mapping.
-// TODO: The ValidatorStorage should contain the builded Location, not the CheckpointStorage.
+// TODO: The ValidatorsLocationStorage should contain the builded Location, not the CheckpointStorage.
 // Currently, we are building it everytime in the Hyperlane service using: checkpoint.build()
 
 /// Contains a mapping between the validators and their storages used to
 /// retrieve checkpoints.
 #[derive(Debug, Default)]
-pub struct ValidatorStorage(RwLock<HashMap<Felt, CheckpointStorage>>);
+pub struct ValidatorsLocationStorage(RwLock<HashMap<Felt, CheckpointStorage>>);
 
-impl ValidatorStorage {
+impl ValidatorsLocationStorage {
     /// Fills the [HashMap] with the initial state fetched from the RPC.
     pub async fn fill_with_initial_state(
         &mut self,
@@ -68,9 +68,9 @@ impl ValidatorStorage {
 
 /// Contains a mapping between the validators and their latest fetched checkpoint.
 #[derive(Debug, Default)]
-pub struct ValidatorCheckpointStorage(pub RwLock<HashMap<(Felt, U256), SignedCheckpointWithMessageId>>);
+pub struct ValidatorsCheckpointStorage(pub RwLock<HashMap<(Felt, U256), SignedCheckpointWithMessageId>>);
 
-impl ValidatorCheckpointStorage {
+impl ValidatorsCheckpointStorage {
     pub fn new() -> Self {
         Self(RwLock::new(HashMap::default()))
     }

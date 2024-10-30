@@ -23,8 +23,8 @@ use crate::{
 ///   * a channel to dispatch updates to the clients.
 pub struct TheorosStorage {
     feed_ids: FeedIdsStorage,
-    validators: ValidatorStorage,
-    checkpoints: ValidatorCheckpointStorage,
+    validators: ValidatorsLocationStorage,
+    checkpoints: ValidatorsCheckpointStorage,
     cached_events: EventCache,
     dispatch_events: EventStorage,
     pub feeds_channel: Sender<CheckpointMatchEvent>,
@@ -43,7 +43,7 @@ impl TheorosStorage {
             .get_announced_storage_locations(hyperlane_validator_announce_address, &initial_validators)
             .await?;
 
-        let mut validators = ValidatorStorage::default();
+        let mut validators = ValidatorsLocationStorage::default();
         validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
         // Fetch the registered feed ids
@@ -53,7 +53,7 @@ impl TheorosStorage {
         Ok(Self {
             feed_ids,
             validators,
-            checkpoints: ValidatorCheckpointStorage::new(),
+            checkpoints: ValidatorsCheckpointStorage::new(),
             cached_events: EventCache::new(),
             dispatch_events: EventStorage::new(),
             feeds_channel: update_tx,
@@ -64,11 +64,11 @@ impl TheorosStorage {
         &self.feed_ids
     }
 
-    pub fn validators(&self) -> &ValidatorStorage {
+    pub fn validators(&self) -> &ValidatorsLocationStorage {
         &self.validators
     }
 
-    pub fn checkpoints(&self) -> &ValidatorCheckpointStorage {
+    pub fn checkpoints(&self) -> &ValidatorsCheckpointStorage {
         &self.checkpoints
     }
 
