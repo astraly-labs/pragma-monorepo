@@ -108,6 +108,11 @@ impl EventCache {
     }
 
     /// TODO, explain + re-assert the existence of this.
+    /// Should probably be used in the context of the Hyperlane service:
+    /// * each validators try to query the signatures for the cached events
+    /// * store signature for each successful queries
+    /// * if at least one signature is retrieved, remove from the cache
+    ///   (hyperlane service query the latest events only, they should)
     pub async fn process_cached_events(
         &self,
         checkpoint_storage: &ValidatorsCheckpointsStorage,

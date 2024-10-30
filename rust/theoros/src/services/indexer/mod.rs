@@ -108,6 +108,7 @@ impl IndexerService {
             match stream.try_next().await {
                 Ok(Some(response)) => {
                     self.process_batch(response).await?;
+                    // This should be done in Hyperlane service? Currently poisoning the thread.
                     self.state
                         .storage
                         .cached_events()
@@ -173,6 +174,9 @@ impl IndexerService {
 
     /// Decodes a DispatchEvent from the Starknet event data.
     async fn decode_dispatch_event(&self, event_data: Vec<Felt>, block: &Block) -> anyhow::Result<()> {
+        // TODO: If we index from a toooooo far block, just ignore?
+        // What's the point of fetching storing etc for old events? Since they get
+        // overriten anyway? (we only store the latest update for a given feed)
         let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
         let message_id = dispatch_event.id();
 
