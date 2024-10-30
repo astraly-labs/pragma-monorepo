@@ -20,11 +20,11 @@ use futures::{
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Receiver;
 
-use crate::configs::evm_config::EvmChainName;
 use crate::constants::{DEFAULT_ACTIVE_CHAIN, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
-use crate::handlers::build_calldata::build_calldata;
-use crate::types::{calldata::AsCalldata, hyperlane::CheckpointMatchEvent, rpc::RpcDataFeed};
+use crate::types::calldata::AsCalldata;
+use crate::types::{hyperlane::CheckpointMatchEvent, rpc::RpcDataFeed};
 use crate::AppState;
+use crate::{configs::evm_config::EvmChainName, types::calldata::Calldata};
 
 // TODO: add config for the client
 /// Configuration for a specific data feed.
@@ -169,7 +169,7 @@ impl Subscriber {
         // TODO: add support for multiple feeds
         let feed_id = feed_ids.first().unwrap();
 
-        let calldata = build_calldata(self.state.as_ref(), self.active_chain, feed_id.to_owned()).await?;
+        let calldata = Calldata::build_from(self.state.as_ref(), self.active_chain, feed_id.to_owned()).await?;
 
         let message = serde_json::to_string(&ServerMessage::DataFeedUpdate {
             data_feed: RpcDataFeed { feed_id: feed_id.clone(), calldata: Some(hex::encode(calldata.as_bytes())) },

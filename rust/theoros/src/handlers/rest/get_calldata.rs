@@ -9,7 +9,6 @@ use utoipa::{IntoParams, ToResponse, ToSchema};
 use crate::configs::evm_config::EvmChainName;
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
-use crate::handlers::build_calldata::build_calldata;
 use crate::types::calldata::{AsCalldata, Calldata};
 use crate::AppState;
 
@@ -56,7 +55,7 @@ pub async fn get_calldata(
         return Err(GetCalldataError::FeedNotFound(feed_id));
     };
 
-    let calldata = build_calldata(&state, chain_name, feed_id).await?;
+    let calldata = Calldata::build_from(&state, chain_name, feed_id).await?;
 
     let response =
         GetCalldataResponse { calldata: calldata.clone(), encoded_calldata: hex::encode(calldata.as_bytes()) };
