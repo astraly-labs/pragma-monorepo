@@ -1,5 +1,5 @@
 
-FROM rust:1.81.0-slim-bookworm AS build
+FROM public.ecr.aws/docker/library/rust:1.81.0-slim-bookworm AS build
 
 ARG PACKAGE_NAME=theoros
 
@@ -15,7 +15,7 @@ COPY ./rust .
 
 RUN cargo build --release --package ${PACKAGE_NAME}
 
-FROM debian:bookworm-slim
+FROM public.ecr.aws/docker/library/debian:bookworm-slim
 
 RUN apt-get update && apt-get install -y --no-install-recommends  \
     libssl-dev wget ca-certificates&& \
