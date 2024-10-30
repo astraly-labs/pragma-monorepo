@@ -199,6 +199,7 @@ impl FromStarknetEventData for DispatchMessageBody {
     }
 }
 
+// TODO: Should be a trait?
 #[derive(Debug, Clone)]
 pub enum DispatchUpdate {
     SpotMedian { update: SpotMedianUpdate, feed_id: String },

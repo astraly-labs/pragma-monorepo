@@ -27,6 +27,7 @@ pub trait HyperlaneCalls {
     /// Retrieves the latest checkpoint (root, index) tuple from the merkle tree hook contract.
     /// The index is the latest checkpoint index.
     /// The root is the latest checkpoint root.
+    #[allow(unused)]
     async fn get_latest_checkpoint(&self, merkle_tree_hook_address: &Felt) -> anyhow::Result<Vec<Felt>>;
 }
 

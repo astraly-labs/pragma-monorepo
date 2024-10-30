@@ -7,19 +7,18 @@ use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToResponse, ToSchema};
 
 use crate::configs::evm_config::EvmChainName;
-use crate::constants::HYPERLANE_VERSION;
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
-use crate::types::hyperlane::DispatchUpdate;
-use crate::types::pragma::calldata::{AsCalldata, HyperlaneMessage, Payload};
+use crate::types::calldata::{AsCalldata, Calldata};
 use crate::AppState;
 
 #[derive(Default, Deserialize, IntoParams, ToSchema)]
 pub struct GetCalldataQuery {}
 
-#[derive(Debug, Default, Serialize, Deserialize, ToResponse, ToSchema)]
+#[derive(Debug, Serialize, Deserialize, ToResponse, ToSchema)]
 pub struct GetCalldataResponse {
-    pub calldata: String,
+    pub calldata: Calldata,
+    pub encoded_calldata: String,
 }
 
 #[utoipa::path(
@@ -56,57 +55,10 @@ pub async fn get_calldata(
         return Err(GetCalldataError::FeedNotFound(feed_id));
     };
 
-    let checkpoints = state.storage.checkpoints().all().await;
-    let num_validators = checkpoints.keys().len();
+    let calldata = Calldata::build_from(&state, chain_name, feed_id).await?;
 
-    let event = state
-        .storage
-        .dispatch_events()
-        .get(&feed_id)
-        .await
-        .map_err(|_| GetCalldataError::DispatchNotFound)?
-        .ok_or(GetCalldataError::DispatchNotFound)?;
-
-    let validators = state
-        .hyperlane_validators_mapping
-        .get_validators(chain_name)
-        .ok_or(GetCalldataError::ChainNotSupported(raw_chain_name))?;
-
-    let signatures = state
-        .storage
-        .checkpoints()
-        .get_validators_signatures(validators)
-        .await
-        .map_err(|_| GetCalldataError::ValidatorNotFound)?;
-
-    let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
-
-    let update = match event.update {
-        DispatchUpdate::SpotMedian { update, feed_id: _ } => update,
-    };
-
-    let payload = Payload {
-        checkpoint_root: checkpoint_infos.value.checkpoint.root.clone(),
-        num_updates: 1,
-        update_data_len: 1,
-        proof_len: 0,
-        proof: vec![],
-        update_data: update.to_bytes(),
-        feed_id,
-        publish_time: update.metadata.timestamp,
-    };
-
-    let hyperlane_message = HyperlaneMessage {
-        hyperlane_version: HYPERLANE_VERSION,
-        signers_len: num_validators as u8,
-        signatures,
-        nonce: event.nonce,
-        timestamp: update.metadata.timestamp,
-        emitter_chain_id: event.emitter_chain_id,
-        emitter_address: event.emitter_address,
-        payload,
-    };
-    let response = GetCalldataResponse { calldata: hex::encode(hyperlane_message.as_bytes()) };
+    let response =
+        GetCalldataResponse { calldata: calldata.clone(), encoded_calldata: hex::encode(calldata.as_bytes()) };
     tracing::info!("🌐 get_calldata - {:?}", started_at.elapsed());
     Ok(Json(response))
 }

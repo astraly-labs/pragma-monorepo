@@ -5,7 +5,7 @@ use alloy::providers::{Identity, ProviderBuilder, RootProvider};
 use alloy::transports::http::{Client, Http};
 use alloy::{providers::fillers::BlobGasFiller, sol};
 use anyhow::Result;
-use pragma_utils::bytes::pad_right_to_32_bytes;
+use pragma_utils::bytes::pad_left_to_32_bytes;
 use starknet::core::types::Felt;
 use url::Url;
 
@@ -44,7 +44,7 @@ impl HyperlaneClient {
             if address._0 == Address::ZERO {
                 break;
             }
-            validators.push(Felt::from_bytes_be(&pad_right_to_32_bytes(&address._0.into_array())));
+            validators.push(Felt::from_bytes_be(&pad_left_to_32_bytes(&address._0.into_array())));
             index += 1;
         }
 

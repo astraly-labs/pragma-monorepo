@@ -27,6 +27,8 @@ use super::SignedCheckpointWithMessageId;
 pub trait FetchFromStorage: Debug + Send + Sync {
     /// Attempt to fetch the signed (checkpoint, messageId) tuple at this index
     async fn fetch(&self, index: u32) -> Result<Option<SignedCheckpointWithMessageId>>;
+    /// Attemps to fetch the latest (checkpoint, messageId) tuple
+    async fn fetch_latest(&self) -> Result<Option<SignedCheckpointWithMessageId>>;
     /// Return the announcement storage location for this syncer
     fn announcement_location(&self) -> String;
 }
