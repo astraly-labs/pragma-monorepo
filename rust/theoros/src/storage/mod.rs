@@ -24,7 +24,7 @@ use crate::{
 pub struct TheorosStorage {
     feed_ids: FeedIdsStorage,
     validators: ValidatorsLocationStorage,
-    checkpoints: ValidatorsCheckpointStorage,
+    checkpoints: ValidatorsCheckpointsStorage,
     cached_events: EventCache,
     dispatch_events: EventStorage,
     pub feeds_channel: Sender<CheckpointMatchEvent>,
@@ -51,7 +51,7 @@ impl TheorosStorage {
         Ok(Self {
             feed_ids,
             validators,
-            checkpoints: ValidatorsCheckpointStorage::default(),
+            checkpoints: ValidatorsCheckpointsStorage::default(),
             cached_events: EventCache::default(),
             dispatch_events: EventStorage::default(),
             feeds_channel: update_tx,
@@ -62,11 +62,11 @@ impl TheorosStorage {
         &self.feed_ids
     }
 
-    pub fn validators(&self) -> &ValidatorsLocationStorage {
+    pub fn validators_locations(&self) -> &ValidatorsLocationStorage {
         &self.validators
     }
 
-    pub fn checkpoints(&self) -> &ValidatorsCheckpointStorage {
+    pub fn validators_checkpoints(&self) -> &ValidatorsCheckpointsStorage {
         &self.checkpoints
     }
 

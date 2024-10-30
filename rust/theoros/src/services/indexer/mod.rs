@@ -111,7 +111,10 @@ impl IndexerService {
                     self.state
                         .storage
                         .cached_events()
-                        .process_cached_events(self.state.storage.checkpoints(), self.state.storage.dispatch_events())
+                        .process_cached_events(
+                            self.state.storage.validators_checkpoints(),
+                            self.state.storage.dispatch_events(),
+                        )
                         .await?;
                 }
                 Ok(None) => continue,
@@ -174,11 +177,10 @@ impl IndexerService {
         let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
 
         let message_id = dispatch_event.id();
-
         for update in dispatch_event.message.body.updates.iter() {
             let feed_id = update.feed_id();
             // Check if there's a corresponding checkpoint
-            if self.state.storage.checkpoints().contains_message_id(message_id).await {
+            if self.state.storage.validators_checkpoints().contains_message_id(message_id).await {
                 tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
                 // If found, store the event directly
                 let dispatch_update_infos = DispatchUpdateInfos {
@@ -208,7 +210,7 @@ impl IndexerService {
         tracing::info!("📨 [Indexer] Received a ValidatorAnnouncement event");
         let validator_announcement_event = ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
             .context("Failed to parse ValidatorAnnouncement")?;
-        let validators = &mut self.state.storage.validators();
+        let validators = &mut self.state.storage.validators_locations();
         validators.add_from_announcement_event(validator_announcement_event).await?;
         Ok(())
     }

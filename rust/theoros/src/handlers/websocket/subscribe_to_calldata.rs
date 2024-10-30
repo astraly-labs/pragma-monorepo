@@ -186,7 +186,7 @@ impl Subscriber {
 
         // TODO: refactor this code as it's reused from rest endpoint
 
-        let checkpoints = self.state.storage.checkpoints().all().await;
+        let checkpoints = self.state.storage.validators_checkpoints().all().await;
         let num_validators = checkpoints.keys().len();
 
         let event = self.state.storage.dispatch_events().get(feed_id).await?.unwrap();
@@ -197,8 +197,12 @@ impl Subscriber {
             .get_validators(self.active_chain)
             .ok_or(anyhow!("Chain not supported"))?;
 
-        let _signatures =
-            self.state.storage.checkpoints().get_validators_signed_checkpoints(validators, event.message_id).await?;
+        let _signatures = self
+            .state
+            .storage
+            .validators_checkpoints()
+            .get_validators_signed_checkpoints(validators, event.message_id)
+            .await?;
 
         let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
 

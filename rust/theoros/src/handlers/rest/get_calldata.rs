@@ -75,7 +75,7 @@ pub async fn get_calldata(
 
     let checkpoints = state
         .storage
-        .checkpoints()
+        .validators_checkpoints()
         .get_validators_signed_checkpoints(validators, event.message_id)
         .await
         .map_err(|_| GetCalldataError::ValidatorNotFound)?;

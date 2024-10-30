@@ -30,7 +30,7 @@ impl HyperlaneService {
 
     pub async fn run_forever(&self) -> anyhow::Result<()> {
         loop {
-            let storage = self.state.storage.validators().all().await;
+            let storage = self.state.storage.validators_locations().all().await;
             for (validator, checkpoint) in storage {
                 let fetcher = checkpoint.build().await?;
 
@@ -41,7 +41,7 @@ impl HyperlaneService {
                     tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
                     self.state
                         .storage
-                        .checkpoints()
+                        .validators_checkpoints()
                         .add(validator, checkpoint_value.value.message_id, checkpoint_value)
                         .await?;
                 } else {
