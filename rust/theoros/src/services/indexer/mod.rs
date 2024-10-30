@@ -20,7 +20,7 @@ use crate::{
     AppState,
 };
 
-const INDEXING_STREAM_CHUNK_SIZE: usize = 256;
+const INDEXING_STREAM_CHUNK_SIZE: usize = 1;
 
 lazy_static::lazy_static! {
     // Pragma Dispatcher
@@ -90,6 +90,7 @@ impl IndexerService {
         Ok(indexer_service)
     }
 
+    /// Runs the indexer forever.
     pub async fn run_forever(mut self) -> Result<()> {
         let (config_client, config_stream) = configuration::channel(INDEXING_STREAM_CHUNK_SIZE);
 
@@ -145,67 +146,86 @@ impl IndexerService {
         Ok(())
     }
 
-    /// Decodes a starknet [Event] into either a:
-    ///     * [DispatchEvent] and stores it into the events storage,
-    ///     * [ValidatorAnnouncementEvent] and stores it into the validators storage.
+    /// Decodes a starknet [Event].
     async fn process_event(&self, event: Event, block: &Block) -> Result<()> {
         let event_selector = event.keys.first().context("No event selector")?;
         let event_data: Vec<Felt> = event.data.iter().map(apibara_field_as_felt).collect();
         match event_selector {
-            // Dispatch from the Hyperlane Mailbox
             selector if selector == &*DISPATCH_EVENT_SELECTOR => {
-                tracing::info!("📨 [Indexer] Received a Dispatch event");
-                let dispatch_event =
-                    DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
-
-                let message_id = dispatch_event.id();
-
-                for update in dispatch_event.message.body.updates.iter() {
-                    let feed_id = update.feed_id();
-                    // Check if there's a corresponding checkpoint
-                    if self.state.storage.checkpoints().contains_message_id(message_id).await {
-                        tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
-                        // If found, store the event directly
-                        let dispatch_update_infos = DispatchUpdateInfos {
-                            update: update.clone(),
-                            emitter_address: dispatch_event.message.header.sender.to_string(),
-                            emitter_chain_id: dispatch_event.message.header.origin,
-                            nonce: dispatch_event.message.header.nonce,
-                            message_id,
-                        };
-                        self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos.clone()).await?;
-                        let _ = self.state.storage.feeds_channel.send(CheckpointMatchEvent::New {
-                            block_number: block.clone().header.unwrap().block_number,
-                        });
-                    } else {
-                        tracing::debug!("No checkpoint found, caching dispatch event");
-                        // If no checkpoint found, add to cache
-                        self.state.storage.cached_events().add(message_id, &dispatch_event).await;
-                    }
-                }
+                self.decode_dispatch_event(event_data, block).await?;
             }
-            // Validator Announcement from the Hyperlane Validator Announce contract
             selector if selector == &*VALIDATOR_ANNOUNCEMENT_SELECTOR => {
-                tracing::info!("📨 [Indexer] Received a ValidatorAnnouncement event");
-                let validator_announcement_event = ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
-                    .context("Failed to parse ValidatorAnnouncement")?;
-                let validators = &mut self.state.storage.validators();
-                validators.add_from_announcement_event(validator_announcement_event).await?;
+                self.decode_validator_announce_event(event_data).await?;
             }
-            // Add feed id from the Pragma Feeds Registry
             selector if selector == &*NEW_FEED_ID_EVENT_SELECTOR => {
-                let feed_id = event_data[1].to_hex_string();
-                tracing::info!("📨 [Indexer] Received a NewFeedId event for: {}", feed_id);
-                self.state.storage.feed_ids().add(feed_id).await;
+                self.decode_new_feed_id_event(event_data).await?;
             }
-            // Remove feed id from the Pragma Feeds Registry
             selector if selector == &*REMOVED_FEED_ID_EVENT_SELECTOR => {
-                let feed_id = event_data[1].to_hex_string();
-                tracing::info!("📨 [Indexer] Received a RemovedFeedId event for: {}", feed_id);
-                self.state.storage.feed_ids().remove(&feed_id).await;
+                self.decode_removed_feed_id_event(event_data).await?;
             }
-            _ => panic!("😱 Unexpected event selector - should never happen."),
+            _ => panic!("😱 Unexpected event selector - should never happen!"),
         }
+        Ok(())
+    }
+
+    /// Decodes a DispatchEvent from the Starknet event data.
+    async fn decode_dispatch_event(&self, event_data: Vec<Felt>, block: &Block) -> anyhow::Result<()> {
+        tracing::info!("📨 [Indexer] Received a Dispatch event");
+        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
+
+        let message_id = dispatch_event.id();
+
+        for update in dispatch_event.message.body.updates.iter() {
+            let feed_id = update.feed_id();
+            // Check if there's a corresponding checkpoint
+            if self.state.storage.checkpoints().contains_message_id(message_id).await {
+                tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
+                // If found, store the event directly
+                let dispatch_update_infos = DispatchUpdateInfos {
+                    update: update.clone(),
+                    emitter_address: dispatch_event.message.header.sender.to_string(),
+                    emitter_chain_id: dispatch_event.message.header.origin,
+                    nonce: dispatch_event.message.header.nonce,
+                    message_id,
+                };
+                self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos.clone()).await?;
+                let _ = self
+                    .state
+                    .storage
+                    .feeds_channel
+                    .send(CheckpointMatchEvent::New { block_number: block.clone().header.unwrap().block_number });
+            } else {
+                tracing::debug!("No checkpoint found, caching dispatch event");
+                // If no checkpoint found, add to cache
+                self.state.storage.cached_events().add(message_id, &dispatch_event).await;
+            }
+        }
+        Ok(())
+    }
+
+    /// Decodes a ValidatorAnnouncementEvent from the Starknet event data.
+    async fn decode_validator_announce_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
+        tracing::info!("📨 [Indexer] Received a ValidatorAnnouncement event");
+        let validator_announcement_event = ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
+            .context("Failed to parse ValidatorAnnouncement")?;
+        let validators = &mut self.state.storage.validators();
+        validators.add_from_announcement_event(validator_announcement_event).await?;
+        Ok(())
+    }
+
+    /// Decodes a NewFeedId event from the Starknet event data.
+    async fn decode_new_feed_id_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
+        let feed_id = event_data[1].to_hex_string();
+        tracing::info!("📨 [Indexer] Received a NewFeedId event for: {}", feed_id);
+        self.state.storage.feed_ids().add(feed_id).await;
+        Ok(())
+    }
+
+    /// Decodes a RemovedFeedId event from the Starknet event data.
+    async fn decode_removed_feed_id_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
+        let feed_id = event_data[1].to_hex_string();
+        tracing::info!("📨 [Indexer] Received a RemovedFeedId event for: {}", feed_id);
+        self.state.storage.feed_ids().remove(&feed_id).await;
         Ok(())
     }
 
