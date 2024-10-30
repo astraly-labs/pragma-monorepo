@@ -1,5 +1,5 @@
 path: "/"
-container_port: "3000,8080"
+container_port: 3000,8080
 health_check_path: "/"
 container_environment:
   - region: "eu-west-3"
