@@ -287,4 +287,31 @@ library TestUtils {
             new TransparentUpgradeableProxy(address(pragmaImpl), address(this), initData);
         return address(proxy);
     }
+
+    function configurePragmaRawContract() internal returns (address) {
+        address[] memory validatorSets = new address[](1);
+        validatorSets[0] = address(0xF6311461A6d8b44cb3F62b2FCd47570A28443ca0);
+        IHyperlane hyperlane = IHyperlane(setUpHyperlane(uint8(validatorSets.length), validatorSets));
+        uint32[] memory chainIds = new uint32[](1);
+        chainIds[0] = 6363709;
+
+        bytes32[] memory emitterAddresses = new bytes32[](1);
+        emitterAddresses[0] = bytes32(uint256(0x60240F2BCCEF7E64F920EEC05C5BFFFBC48C6CEAA4EFCA8748772B60CBAFC3));
+
+        PragmaHarness pragmaImpl = new PragmaHarness();
+
+        bytes memory initData = abi.encodeWithSelector(
+            pragmaImpl.initialize.selector,
+            address(hyperlane),
+            address(this),
+            chainIds,
+            emitterAddresses,
+            120,
+            0.1 ether
+        );
+
+        TransparentUpgradeableProxy proxy =
+            new TransparentUpgradeableProxy(address(pragmaImpl), address(this), initData);
+        return address(proxy);
+    }
 }

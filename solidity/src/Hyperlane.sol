@@ -6,9 +6,14 @@ pragma experimental ABIEncoderV2;
 import {IHyperlane} from "./interfaces/IHyperlane.sol";
 import "./interfaces/PragmaStructs.sol";
 import "./libraries/BytesLib.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
 contract Hyperlane is IHyperlane {
     using BytesLib for bytes;
+
+    using ECDSA for bytes32;
+    using MessageHashUtils for bytes32;
 
     address[] public _validators;
 
@@ -19,9 +24,9 @@ contract Hyperlane is IHyperlane {
     function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         public
         view
-        returns (HyMsg memory hyMsg, bool valid, string memory reason, uint256 index)
+        returns (HyMsg memory hyMsg, bool valid, string memory reason, uint256 index, bytes32 checkpointRoot)
     {
-        (hyMsg, index) = parseHyMsg(encodedHyMsg);
+        (hyMsg, index, checkpointRoot) = parseHyMsg(encodedHyMsg);
         (valid, reason) = verifyHyMsg(hyMsg);
     }
 
@@ -58,14 +63,19 @@ contract Hyperlane is IHyperlane {
 
             require(i == 0 || sig.validatorIndex > lastIndex, "signature indices must be ascending");
             lastIndex = sig.validatorIndex;
-            if (ecrecover(hash, sig.v, sig.r, sig.s) != validators[sig.validatorIndex]) {
+            bytes memory signature = abi.encodePacked(sig.r, sig.s, sig.v);
+            if (!_verify(hash, signature, validators[sig.validatorIndex])) {
                 return (false, "HyMsg signature invalid");
             }
         }
         return (true, "");
     }
 
-    function parseHyMsg(bytes calldata encodedHyMsg) public pure returns (HyMsg memory hyMsg, uint256 index) {
+    function parseHyMsg(bytes calldata encodedHyMsg)
+        public
+        pure
+        returns (HyMsg memory hyMsg, uint256 index, bytes32 checkPointRoot)
+    {
         hyMsg.version = encodedHyMsg.toUint8(index);
         index += 1;
         require(hyMsg.version == 3, "unsupported version");
@@ -79,16 +89,13 @@ contract Hyperlane is IHyperlane {
             index += 1;
 
             hyMsg.signatures[i].r = encodedHyMsg.toBytes32(index);
+
             index += 32;
             hyMsg.signatures[i].s = encodedHyMsg.toBytes32(index);
             index += 32;
             hyMsg.signatures[i].v = encodedHyMsg.toUint8(index);
             index += 1;
         }
-
-        // Hash the body
-        bytes memory body = encodedHyMsg.slice(index, encodedHyMsg.length - index);
-        hyMsg.hash = keccak256(abi.encodePacked(keccak256(body)));
 
         // Parse the rest of the message
         hyMsg.nonce = encodedHyMsg.toUint32(index);
@@ -122,5 +129,8 @@ contract Hyperlane is IHyperlane {
 
         hyMsg.payload = encodedHyMsg.slice(index, encodedHyMsg.length - index);
     }
-}
 
+    function _verify(bytes32 data, bytes memory signature, address account) internal pure returns (bool) {
+        return data.toEthSignedMessageHash().recover(signature) == account;
+    }
+}

@@ -36,12 +36,13 @@ abstract contract PragmaDecoder {
     function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         internal
         view
-        returns (HyMsg memory hyMsg, uint256 index)
+        returns (HyMsg memory hyMsg, uint256 index, bytes32 checkpointRoot)
     {
         {
             bool valid;
-            (hyMsg, valid,, index) = hyperlane.parseAndVerifyHyMsg(encodedHyMsg);
-            if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
+            string memory reason;
+            (hyMsg, valid, reason, index, checkpointRoot) = hyperlane.parseAndVerifyHyMsg(encodedHyMsg);
+            if (!valid) revert ErrorsLib.InvalidHyperlaneSignatures(reason);
         }
 
         if (!isValidDataSource(hyMsg.emitterChainId, hyMsg.emitterAddress)) {
@@ -109,8 +110,9 @@ abstract contract PragmaDecoder {
             {
                 bytes memory encodedPayload;
                 {
-                    (HyMsg memory hyMsg, uint256 index) =
+                    (HyMsg memory hyMsg, uint256 index, bytes32 root) =
                         parseAndVerifyHyMsg(UnsafeCalldataBytesLib.slice(encoded, offset, hyMsgSize));
+                    checkpointRoot = root;
                     encodedPayload = hyMsg.payload;
                     offset += index;
                 }
@@ -118,14 +120,12 @@ abstract contract PragmaDecoder {
                 uint256 payloadOffset = 0;
 
                 {
-                    checkpointRoot = UnsafeBytesLib.toBytes32(encodedPayload, payloadOffset);
-                    payloadOffset += 32;
-
                     // We don't check equality to enable future compatibility.
                     if (payloadOffset > encodedPayload.length) {
                         revert ErrorsLib.InvalidUpdateData();
                     }
                     numUpdates = UnsafeBytesLib.toUint8(encodedPayload, payloadOffset);
+                    offset += encodedOffset + 1;
                     payloadOffset += 1;
                 }
             }
@@ -138,6 +138,7 @@ abstract contract PragmaDecoder {
         returns (bool valid, uint256 endOffset)
     {
         // TODO: The proof is ignored for now until we figure out how to get it from Hyperlane.
+
         // (valid, endOffset) = MerkleTree.isProofValid(encodedProof, offset, root, leafData);
         return (true, offset);
     }
@@ -150,26 +151,24 @@ abstract contract PragmaDecoder {
             bytes calldata encodedUpdate;
             bytes calldata encodedProof;
             bytes calldata fulldataFeed;
-            bytes calldata payload = UnsafeCalldataBytesLib.slice(encoded, offset, encoded.length - offset);
-            uint256 payloadOffset = 33; // skip checkpoint root and num Updates
-            uint16 updateSize = UnsafeCalldataBytesLib.toUint16(payload, payloadOffset);
-            payloadOffset += 2;
-            uint16 proofSize = UnsafeCalldataBytesLib.toUint16(payload, payloadOffset);
-            payloadOffset += 2;
-            offset += payloadOffset + updateSize;
+            uint16 updateDataLength = UnsafeCalldataBytesLib.toUint16(encoded, offset); // TODO: useless
+            offset += 2;
+            uint16 proofSize = UnsafeCalldataBytesLib.toUint16(encoded, offset);
+            offset += 2;
             {
-                encodedProof = UnsafeCalldataBytesLib.slice(payload, payloadOffset, proofSize);
-                payloadOffset += proofSize;
-                encodedUpdate = UnsafeCalldataBytesLib.slice(payload, payloadOffset, updateSize);
-                fulldataFeed = UnsafeCalldataBytesLib.slice(payload, payloadOffset, payload.length - payloadOffset);
-                payloadOffset += updateSize;
+                encodedProof = UnsafeCalldataBytesLib.slice(encoded, offset, proofSize);
+                uint256 encodedUpdateIndex = offset + proofSize;
+                encodedUpdate =
+                    UnsafeCalldataBytesLib.slice(encoded, encodedUpdateIndex, encoded.length - 40 - encodedUpdateIndex); // 32 bytes for feedId, 8 bytes for publishTime
+                fulldataFeed =
+                    UnsafeCalldataBytesLib.slice(encoded, encodedUpdateIndex, encoded.length - encodedUpdateIndex);
             }
+            // bool valid;
+            // (valid, offset) = _isProofValid(encoded, offset, checkpointRoot, encodedUpdate);
+            // if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
 
-            bool valid;
-            (valid, endOffset) = _isProofValid(encodedProof, offset, checkpointRoot, encodedUpdate);
-            if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
             (parsedData, feedId, publishTime) = parseDataFeed(fulldataFeed);
-            endOffset += 40;
+            endOffset = offset + fulldataFeed.length;
         }
     }
 
@@ -179,7 +178,6 @@ abstract contract PragmaDecoder {
         returns (ParsedData memory parsedData, bytes32 feedId, uint64 publishTime)
     {
         parsedData = DataParser.parse(encodedDataFeed);
-
         // Assuming feedId and publishTime are appended at the end of encodedDataFeed
         uint256 offset = encodedDataFeed.length - 40; // 32 bytes for feedId, 8 bytes for publishTime
         feedId = bytes32(UnsafeCalldataBytesLib.toUint256(encodedDataFeed, offset));
@@ -202,13 +200,15 @@ abstract contract PragmaDecoder {
                 ParsedData memory parsedData;
                 bytes32 feedId;
                 uint64 publishTime;
-                (offset, parsedData, feedId, publishTime) = extractDataInfoFromUpdate(encoded, offset, checkpointRoot);
+                (offset, parsedData, feedId, publishTime) =
+                    extractDataInfoFromUpdate(updateData, offset, checkpointRoot);
                 updateLatestDataInfoIfNecessary(feedId, parsedData, publishTime);
             }
         }
         // We check that the offset is at the end of the encoded data.
         // If not it means the data is not encoded correctly.
-        if (offset != encoded.length) revert ErrorsLib.InvalidUpdateData();
+
+        if (offset != updateData.length) revert ErrorsLib.InvalidUpdateData();
     }
 
     function updateLatestDataInfoIfNecessary(bytes32 feedId, ParsedData memory parsedData, uint64 publishTime)

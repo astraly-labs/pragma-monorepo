@@ -15,7 +15,6 @@ library DataParser {
 
         uint8 rawDataType = data.toUint8(offset);
         FeedType dataType = safeCastToFeedType(rawDataType);
-
         ParsedData memory parsedData = StructsInitializers.initializeParsedData();
         parsedData.dataType = dataType;
         if (dataType == FeedType.SpotMedian) {
@@ -73,10 +72,19 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.price = data.toUint256(index);
-        index += 32;
+        uint128 priceLow = data.toUint128(index);
+        index += 16;
+        uint128 priceHigh = data.toUint128(index);
+        index += 16;
 
-        entry.volume = data.toUint256(index);
+        entry.price = (uint256(priceHigh) << 128) | uint256(priceLow);
+
+        uint128 volumeLow = data.toUint128(index);
+        index += 16;
+        uint128 volumeHigh = data.toUint128(index);
+        index += 16;
+
+        entry.volume = (uint256(volumeHigh) << 128) | uint256(volumeLow);
 
         return entry;
     }

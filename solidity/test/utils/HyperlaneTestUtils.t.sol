@@ -162,7 +162,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         address[] memory addresses;
         IHyperlane hyperlane = IHyperlane(setUpHyperlane(0, addresses));
         // Parse the message
-        (HyMsg memory parsedMsg,) = hyperlane.parseHyMsg(encodedHyMsg);
+        (HyMsg memory parsedMsg,,) = hyperlane.parseHyMsg(encodedHyMsg);
 
         // Verify parsed fields
         assertEq(parsedMsg.version, 3, "Incorrect version");
