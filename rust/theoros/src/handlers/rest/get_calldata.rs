@@ -80,6 +80,7 @@ pub async fn get_calldata(
         .await
         .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
+    // TODO: We only have one validator for now
     let checkpoint_infos = checkpoints.last().unwrap();
 
     let update = match event.update {
@@ -93,17 +94,20 @@ pub async fn get_calldata(
         proof_len: 0,
         proof: vec![],
         update_data: update.to_bytes(),
+        // TODO: Store directly a U256.
         feed_id: U256::from_str(&feed_id).unwrap(),
         publish_time: update.metadata.timestamp,
     };
 
     let hyperlane_message = HyperlaneMessage {
         hyperlane_version: HYPERLANE_VERSION,
-        signers_len: 1_u8, // TODO
+        // TODO: signers_len & signatures should work for multiple validators
+        signers_len: 1_u8,
         signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
         nonce: event.nonce,
         timestamp: update.metadata.timestamp,
         emitter_chain_id: event.emitter_chain_id,
+        // TODO: Store directly a Felt.
         emitter_address: Felt::from_dec_str(&event.emitter_address).unwrap(),
         payload,
     };

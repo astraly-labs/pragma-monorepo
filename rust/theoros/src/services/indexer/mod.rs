@@ -173,7 +173,15 @@ impl IndexerService {
 
     /// Decodes a DispatchEvent from the Starknet event data.
     async fn decode_dispatch_event(&self, event_data: Vec<Felt>, block: &Block) -> anyhow::Result<()> {
-        tracing::info!("📨 [Indexer] Received a Dispatch event");
+        match &block.header {
+            Some(h) => {
+                tracing::info!("📨 [Indexer] Received a Dispatch event at block #{}", h.block_number);
+            }
+            None => {
+                tracing::info!("📨 [Indexer] Received a Dispatch event");
+            }
+        };
+
         let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
 
         let message_id = dispatch_event.id();
