@@ -32,7 +32,7 @@ WORKDIR /home/pragma
 EXPOSE 3000
 EXPOSE 8080
 
-COPY infra/theores/entrypoint.sh /home/pragma/entrypoint.sh
+COPY infra/theoros/entrypoint.sh /home/pragma/entrypoint.sh
 # Copy artifacts from other images
 COPY --from=build /app/target/release/theoros /usr/local/bin/
 
