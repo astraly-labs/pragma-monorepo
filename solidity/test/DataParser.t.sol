@@ -171,7 +171,7 @@ contract DataParserTest is Test {
                 ///CRYPTO
                 uint8(4), //PERP
                 uint8(0), //VARIANT
-                bytes32("BTC/USD")
+                uint96(0x4254432f555344)
             )
         );
         bytes memory data = abi.encodePacked(
@@ -191,7 +191,7 @@ contract DataParserTest is Test {
         assertEq(result.perp.metadata.timestamp, 1625097600);
         assertEq(result.perp.metadata.numberOfSources, 3);
         assertEq(result.perp.metadata.decimals, 8);
-        assertEq(result.perp.metadata.feedId, feedId);
+        assertEq(result.perp.metadata.feedId, 0x000000000000000000000000000000000000040000000000004254432f555344);
         assertEq(result.perp.markPrice, 35000 ether);
         assertEq(result.perp.fundingRate, 0.001 ether);
         assertEq(result.perp.openInterest, 1000 ether);
