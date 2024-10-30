@@ -44,9 +44,6 @@ library DataParser {
         Metadata memory metadata = StructsInitializers.initializeMetadata();
         uint256 index = startIndex;
 
-        metadata.feedId = bytes32(data.toUint256(index));
-        index += 32;
-
         metadata.timestamp = data.toUint64(index);
         index += 8;
 
@@ -55,6 +52,10 @@ library DataParser {
 
         metadata.decimals = uint8(data.toUint8(index));
         index += 1;
+
+        // TODO: add feed id
+        index += 8;
+
 
         return (metadata, index);
     }
@@ -65,10 +66,11 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.price = data.toUint256(index);
-        index += 32;
+        entry.price = data.toUint64(index);
+        index += 4;
 
-        entry.volume = data.toUint256(index);
+        // TODO: fix this
+        // entry.volume = data.toUint16(index);
 
         return entry;
     }

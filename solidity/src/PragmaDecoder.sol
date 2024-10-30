@@ -15,6 +15,7 @@ import "./libraries/BytesLib.sol";
 import "./libraries/MerkleTree.sol";
 import "./libraries/UnsafeCalldataBytesLib.sol";
 import "./libraries/UnsafeBytesLib.sol";
+import "forge-std/console2.sol";
 
 abstract contract PragmaDecoder {
     using BytesLib for bytes;
@@ -36,12 +37,12 @@ abstract contract PragmaDecoder {
     function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         internal
         view
-        returns (HyMsg memory hyMsg, uint256 index)
+        returns (HyMsg memory hyMsg, uint256 index, bytes32 checkpointRoot)
     {
         {
             bool valid;
             string memory reason;
-            (hyMsg, valid, reason, index) = hyperlane.parseAndVerifyHyMsg(encodedHyMsg);
+            (hyMsg, valid, reason, index, checkpointRoot) = hyperlane.parseAndVerifyHyMsg(encodedHyMsg);
             if (!valid) revert ErrorsLib.InvalidHyperlaneSignatures(reason);
         }
 
@@ -109,9 +110,10 @@ abstract contract PragmaDecoder {
 
             {
                 bytes memory encodedPayload;
-                {
-                    (HyMsg memory hyMsg, uint256 index) =
+                {   
+                    (HyMsg memory hyMsg, uint256 index, bytes32 root) =
                         parseAndVerifyHyMsg(UnsafeCalldataBytesLib.slice(encoded, offset, hyMsgSize));
+                    checkpointRoot = root;
                     encodedPayload = hyMsg.payload;
                     offset += index;
                 }
@@ -119,9 +121,6 @@ abstract contract PragmaDecoder {
                 uint256 payloadOffset = 0;
 
                 {
-                    checkpointRoot = UnsafeBytesLib.toBytes32(encodedPayload, payloadOffset);
-                    payloadOffset += 32;
-
                     // We don't check equality to enable future compatibility.
                     if (payloadOffset > encodedPayload.length) {
                         revert ErrorsLib.InvalidUpdateData();
@@ -198,6 +197,8 @@ abstract contract PragmaDecoder {
         bytes calldata encoded;
 
         (offset, checkpointRoot, numUpdates, encoded) = extractCheckpointRootAndNumUpdates(updateData, encodedOffset);
+        console2.logString("numUpdates:");
+        console2.logUint(numUpdates);
         unchecked {
             for (uint256 i = 0; i < numUpdates; i++) {
                 ParsedData memory parsedData;

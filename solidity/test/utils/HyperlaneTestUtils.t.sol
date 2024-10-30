@@ -92,7 +92,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         assertEq(hyMsg.payload, TEST_PAYLOAD);
         // parseAndVerifyHyMsg() returns an empty signatures array for gas savings since it's not used
         // after its been verified. parseHyMsg() returns the full signatures array.
-        (hyMsg,) = hyperlane.parseHyMsg(updateData);
+        (hyMsg,,) = hyperlane.parseHyMsg(updateData);
         assertEq(hyMsg.signatures.length, TEST_NUM_SIGNERS);
     }
 
@@ -112,7 +112,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
             TEST_NONCE, TEST_UPDATE_TIMESTAMP, TEST_EMITTER_CHAIN_ID, TEST_EMITTER_ADDR, TEST_PAYLOAD, TEST_NUM_SIGNERS
         );
 
-        (HyMsg memory hyMsg, bool valid, string memory reason,) = hyperlane.parseAndVerifyHyMsg(updateData);
+        (HyMsg memory hyMsg, bool valid, string memory reason,,) = hyperlane.parseAndVerifyHyMsg(updateData);
         assertHyMsgMatchesTestValues(hyMsg, valid, reason, updateData, hyperlane);
     }
 
@@ -142,7 +142,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         address[] memory addresses;
         IHyperlane hyperlane = IHyperlane(setUpHyperlane(0, addresses));
         // Parse the message
-        (HyMsg memory parsedMsg,) = hyperlane.parseHyMsg(encodedHyMsg);
+        (HyMsg memory parsedMsg,,) = hyperlane.parseHyMsg(encodedHyMsg);
 
         // Verify parsed fields
         assertEq(parsedMsg.version, 1, "Incorrect version");

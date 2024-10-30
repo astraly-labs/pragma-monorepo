@@ -93,6 +93,7 @@ struct Perp {
     uint256 volume;
 }
 
+// TODO: move metadata in this struct
 struct ParsedData {
     FeedType dataType;
     SpotMedian spot;
