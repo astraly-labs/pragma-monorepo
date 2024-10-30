@@ -271,10 +271,10 @@ impl SpotMedianUpdate {
         let decimals = u8::from_be_bytes(data.drain(..1).collect::<Vec<u8>>().try_into().unwrap());
         let price_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap()); // U256
         let price_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
-        let price = U256::from_words(price_low, price_high);
+        let price = U256::from_words(price_high, price_low);
         let volume_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap()); // U256
         let volume_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
-        let volume = U256::from_words(volume_low, volume_high);
+        let volume = U256::from_words(volume_high,volume_low);
 
         Ok(Self {
             pair_id: U256::from(0_u8), // This will get populated later
@@ -294,8 +294,8 @@ impl SpotMedianUpdate {
         bytes.extend_from_slice(&self.metadata.num_sources_aggregated.to_be_bytes());
         bytes.extend_from_slice(&self.metadata.decimals.to_be_bytes());
 
-        bytes.extend_from_slice(&self.price.low().to_be_bytes());
         bytes.extend_from_slice(&self.price.high().to_be_bytes());
+        bytes.extend_from_slice(&self.price.low().to_be_bytes());
 
         bytes.extend_from_slice(&self.volume.low().to_be_bytes());
         bytes.extend_from_slice(&self.volume.high().to_be_bytes());
