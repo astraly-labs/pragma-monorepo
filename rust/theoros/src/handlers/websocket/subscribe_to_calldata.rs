@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use std::{
     collections::HashMap,
     net::SocketAddr,
@@ -6,7 +5,6 @@ use std::{
 };
 
 use alloy::hex;
-use alloy::primitives::U256;
 use anyhow::{anyhow, Result};
 use axum::{
     extract::{
@@ -20,17 +18,12 @@ use futures::{
     SinkExt, StreamExt,
 };
 use serde::{Deserialize, Serialize};
-use starknet::core::types::Felt;
 use tokio::sync::broadcast::Receiver;
 
 use crate::configs::evm_config::EvmChainName;
-use crate::constants::{DEFAULT_ACTIVE_CHAIN, HYPERLANE_VERSION, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
-use crate::types::calldata::ValidatorSignature;
-use crate::types::{
-    calldata::{AsCalldata, HyperlaneMessage, Payload},
-    hyperlane::{CheckpointMatchEvent, DispatchUpdate},
-    rpc::RpcDataFeed,
-};
+use crate::constants::{DEFAULT_ACTIVE_CHAIN, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
+use crate::handlers::build_calldata::build_calldata;
+use crate::types::{calldata::AsCalldata, hyperlane::CheckpointMatchEvent, rpc::RpcDataFeed};
 use crate::AppState;
 
 // TODO: add config for the client
@@ -173,69 +166,16 @@ impl Subscriber {
         tracing::debug!(subscriber = self.id, n = event.block_number(), "Handling Data Feeds Update.");
         // Retrieve the updates for subscribed feed ids at the given slot
         let feed_ids = self.data_feeds_with_config.keys().cloned().collect::<Vec<_>>();
-
         // TODO: add support for multiple feeds
         let feed_id = feed_ids.first().unwrap();
 
-        // TODO: refactor this code as it's reused from rest endpoint
-
-        let checkpoints = self.state.storage.validators_checkpoints().all().await;
-        let num_validators = checkpoints.keys().len();
-
-        let event = self.state.storage.dispatch_events().get(feed_id).await?.unwrap();
-
-        let validators = self
-            .state
-            .hyperlane_validators_mapping
-            .get_validators(self.active_chain)
-            .ok_or(anyhow!("Chain not supported"))?;
-
-        let _signatures = self
-            .state
-            .storage
-            .validators_checkpoints()
-            .get_validators_signed_checkpoints(validators, event.message_id)
-            .await?;
-
-        let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
-
-        let update = match event.update {
-            DispatchUpdate::SpotMedian { update, feed_id: _ } => update,
-        };
-
-        let payload = Payload {
-            checkpoint: checkpoint_infos.value.clone(),
-            num_updates: 1,
-            update_data_len: 1,
-            proof_len: 0,
-            proof: vec![],
-            update_data: update.to_bytes(),
-            feed_id: U256::from_str(feed_id).unwrap(),
-            publish_time: update.metadata.timestamp,
-        };
-
-        let hyperlane_message = HyperlaneMessage {
-            hyperlane_version: HYPERLANE_VERSION,
-            signers_len: num_validators as u8,
-            signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
-            nonce: event.nonce,
-            timestamp: update.metadata.timestamp,
-            emitter_chain_id: event.emitter_chain_id,
-            emitter_address: Felt::from_dec_str(&event.emitter_address).unwrap(),
-            payload,
-        };
+        let calldata = build_calldata(self.state.as_ref(), self.active_chain, feed_id.to_owned()).await?;
 
         let message = serde_json::to_string(&ServerMessage::DataFeedUpdate {
-            data_feed: RpcDataFeed {
-                feed_id: feed_id.clone(),
-                calldata: Some(hex::encode(hyperlane_message.as_bytes())),
-            },
+            data_feed: RpcDataFeed { feed_id: feed_id.clone(), calldata: Some(hex::encode(calldata.as_bytes())) },
         })?;
         self.sender.send(message.into()).await?;
-
         // TODO: success metric
-
-        // self.sender.flush().await?;
         Ok(())
     }
 
@@ -248,11 +188,6 @@ impl Subscriber {
                 // to subscribers list will be closed and it will eventually get
                 // removed.
                 tracing::trace!(id = self.id, "📨 [CLOSE]");
-                // self.ws_state
-                //     .metrics
-                //     .interactions
-                //     .get_or_create(&Labels { interaction: Interaction::CloseConnection, status: Status::Success })
-                //     .inc();
 
                 // Send the close message to gracefully shut down the connection
                 // Otherwise the client might get an abnormal Websocket closure
@@ -268,13 +203,6 @@ impl Subscriber {
                 return Ok(());
             }
             Message::Pong(_) => {
-                // This metric can be used to monitor the number of active connections
-                // self.ws_state
-                //     .metrics
-                //     .interactions
-                //     .get_or_create(&Labels { interaction: Interaction::ClientHeartbeat, status: Status::Success })
-                //     .inc();
-
                 self.responded_to_ping = true;
                 return Ok(());
             }
@@ -282,11 +210,6 @@ impl Subscriber {
 
         match maybe_client_message {
             Err(e) => {
-                // self.ws_state
-                //     .metrics
-                //     .interactions
-                //     .get_or_create(&Labels { interaction: Interaction::ClientMessage, status: Status::Error })
-                //     .inc();
                 tracing::error!("😶‍🌫️ Client disconnected/error occurred. Closing the channel.");
                 self.sender
                     .send(
@@ -301,6 +224,8 @@ impl Subscriber {
 
             Ok(ClientMessage::Subscribe { ids: feed_ids, chain_name }) => {
                 let stored_feed_ids = self.state.storage.feed_ids();
+
+                // TODO: Assert that the chain is supported?
 
                 // If there is a single feed id that is not found, we don't subscribe to any of the
                 // asked feed ids and return an error to be more explicit and clear.
@@ -331,12 +256,6 @@ impl Subscriber {
                 }
             }
         }
-
-        // self.ws_state
-        //     .metrics
-        //     .interactions
-        //     .get_or_create(&Labels { interaction: Interaction::ClientMessage, status: Status::Success })
-        //     .inc();
 
         self.sender
             .send(serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Success))?.into())
