@@ -157,21 +157,22 @@ impl IndexerService {
                 tracing::info!("📨 [Indexer] Received a Dispatch event");
                 let dispatch_event =
                     DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
+
                 let message_id = dispatch_event.id();
 
                 for update in dispatch_event.message.body.updates.iter() {
                     let feed_id = update.feed_id();
-                    let dispatch_update_infos = DispatchUpdateInfos {
-                        update: update.clone(),
-                        emitter_address: dispatch_event.message.header.sender.to_string(),
-                        emitter_chain_id: dispatch_event.message.header.origin,
-                        nonce: dispatch_event.message.header.nonce,
-                        message_id,
-                    };
                     // Check if there's a corresponding checkpoint
                     if self.state.storage.checkpoints().contains_message_id(message_id).await {
                         tracing::info!("Found corresponding checkpoint for message ID: {:?}", message_id);
                         // If found, store the event directly
+                        let dispatch_update_infos = DispatchUpdateInfos {
+                            update: update.clone(),
+                            emitter_address: dispatch_event.message.header.sender.to_string(),
+                            emitter_chain_id: dispatch_event.message.header.origin,
+                            nonce: dispatch_event.message.header.nonce,
+                            message_id,
+                        };
                         self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos.clone()).await?;
                         let _ = self.state.storage.feeds_channel.send(CheckpointMatchEvent::New {
                             block_number: block.clone().header.unwrap().block_number,

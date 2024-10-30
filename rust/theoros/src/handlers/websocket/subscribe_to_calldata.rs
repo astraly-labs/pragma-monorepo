@@ -202,7 +202,7 @@ impl Subscriber {
             .ok_or(anyhow!("Chain not supported"))?;
 
         let _signatures =
-            self.state.storage.checkpoints().get_validators_signatures(validators, event.message_id).await?;
+            self.state.storage.checkpoints().get_validators_signed_checkpoints(validators, event.message_id).await?;
 
         let (_, checkpoint_infos) = checkpoints.iter().next().unwrap();
 

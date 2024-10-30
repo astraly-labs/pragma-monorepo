@@ -43,7 +43,7 @@ impl TheorosStorage {
             .get_announced_storage_locations(hyperlane_validator_announce_address, &initial_validators)
             .await?;
 
-        let mut validators = ValidatorStorage::new();
+        let mut validators = ValidatorStorage::default();
         validators.fill_with_initial_state(initial_validators, initial_locations).await?;
 
         // Fetch the registered feed ids
