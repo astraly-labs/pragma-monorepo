@@ -64,7 +64,6 @@ impl IndexerService {
     ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
             .with_starting_block(starting_block)
-            .with_finality(DataFinality::DataStatusPending)
             .with_filter(|mut filter| {
                 filter
                     .with_header(HeaderFilter::weak())
@@ -84,7 +83,8 @@ impl IndexerService {
                             .with_keys(vec![NEW_FEED_ID_EVENT_SELECTOR.clone(), REMOVED_FEED_ID_EVENT_SELECTOR.clone()])
                     })
                     .build()
-            });
+            })
+            .with_finality(DataFinality::DataStatusPending);
 
         let indexer_service = Self { state, uri: apibara_uri, stream_config, reached_pending_block: false };
         Ok(indexer_service)
@@ -127,8 +127,8 @@ impl IndexerService {
     async fn process_batch(&mut self, batch: DataMessage<Block>) -> Result<()> {
         match batch {
             DataMessage::Data { cursor: _, end_cursor: _, finality, batch } => {
-                if finality == DataFinality::DataStatusPending && !self.reached_pending_block {
-                    self.log_pending_block_reached(batch.last());
+                if matches!(finality, DataFinality::DataStatusPending) && !self.reached_pending_block {
+                    tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block!");
                     self.reached_pending_block = true;
                 }
                 for block in batch {
@@ -166,7 +166,7 @@ impl IndexerService {
             selector if selector == &*REMOVED_FEED_ID_EVENT_SELECTOR => {
                 self.decode_removed_feed_id_event(event_data).await?;
             }
-            _ => panic!("😱 Unexpected event selector - should never happen!"),
+            _ => unreachable!(),
         }
         Ok(())
     }
@@ -223,20 +223,5 @@ impl IndexerService {
         tracing::info!("📨 [Indexer] Received a RemovedFeedId event for: {}", feed_id);
         self.state.storage.feed_ids().remove(&feed_id).await;
         Ok(())
-    }
-
-    /// Logs that we successfully reached current pending block
-    fn log_pending_block_reached(&self, last_block_in_batch: Option<&Block>) {
-        let maybe_block_number = if let Some(last_block) = last_block_in_batch {
-            last_block.header.as_ref().map(|header| header.block_number)
-        } else {
-            None
-        };
-
-        if let Some(block_number) = maybe_block_number {
-            tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block #{}!", block_number);
-        } else {
-            tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block!",);
-        }
     }
 }
