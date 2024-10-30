@@ -18,6 +18,18 @@ pub struct DispatchUpdateInfos {
     pub message_id: U256,
 }
 
+impl DispatchUpdateInfos {
+    pub fn new(message_id: U256, event: &DispatchEvent, update: &DispatchUpdate) -> Self {
+        DispatchUpdateInfos {
+            update: update.clone(),
+            emitter_address: event.message.header.sender.to_string(),
+            emitter_chain_id: event.message.header.origin,
+            nonce: event.message.header.nonce,
+            message_id,
+        }
+    }
+}
+
 /// Contains a mapping between a feed_id and the latest dispatch update.
 #[derive(Debug, Default)]
 pub struct EventStorage {
@@ -105,20 +117,13 @@ impl EventCache {
 
         for (message_id, dispatch_event) in cache_write.clone().into_iter() {
             if checkpoint_storage.contains_message_id(message_id).await {
-                // Store all updates in event
                 for update in dispatch_event.message.body.updates.iter() {
                     let feed_id = update.feed_id();
-                    let dispatch_update_infos = DispatchUpdateInfos {
-                        update: update.clone(),
-                        emitter_address: dispatch_event.message.header.sender.to_string(),
-                        emitter_chain_id: dispatch_event.message.header.origin,
-                        nonce: dispatch_event.message.header.nonce,
-                        message_id,
-                    };
+                    let dispatch_update_infos = DispatchUpdateInfos::new(message_id, &dispatch_event, update);
                     event_storage.add(feed_id, dispatch_update_infos).await?;
                 }
                 cache_write.remove(&message_id);
-                tracing::debug!("Processed cached event with message ID: {:?}", message_id);
+                tracing::debug!("Processed cached event with message ID: {:x}", message_id);
             }
         }
         Ok(())

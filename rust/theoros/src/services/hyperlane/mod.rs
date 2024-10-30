@@ -31,21 +31,17 @@ impl HyperlaneService {
     pub async fn run_forever(&self) -> anyhow::Result<()> {
         loop {
             let storage = self.state.storage.validators_locations().all().await;
-            for (validator, checkpoint) in storage {
-                let fetcher = checkpoint.build().await?;
+            // Should probably happens in parallel for every validators?
+            for (validator, fetcher) in storage {
+                let maybe_checkpoint = fetcher.fetch_latest().await?;
 
-                // TODO: don't re-store over & over the same index for a given validator?
-                let value = fetcher.fetch_latest().await?;
-
-                if let Some(checkpoint_value) = value {
-                    tracing::info!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
+                if let Some(checkpoint_value) = maybe_checkpoint {
+                    tracing::debug!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
                     self.state
                         .storage
                         .validators_checkpoints()
                         .add(validator, checkpoint_value.value.message_id, checkpoint_value)
                         .await?;
-                } else {
-                    tracing::debug!("No checkpoint value found");
                 }
             }
             tokio::time::sleep(Duration::from_secs(1)).await;

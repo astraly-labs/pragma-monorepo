@@ -1,12 +1,14 @@
-use std::collections::HashMap;
 use std::str::FromStr;
+use std::{collections::HashMap, sync::Arc};
 
 use alloy::primitives::U256;
 use anyhow::bail;
 use starknet::core::types::Felt;
 use tokio::sync::RwLock;
 
-use crate::types::hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent};
+use crate::types::hyperlane::{
+    CheckpointStorage, FetchFromStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent,
+};
 
 // TODO: Rename this. It should be clear that it is a Validator => StorageLocation mapping.
 // TODO: The ValidatorsLocationStorage should contain the builded Location, not the CheckpointStorage.
@@ -15,7 +17,7 @@ use crate::types::hyperlane::{CheckpointStorage, SignedCheckpointWithMessageId, 
 /// Contains a mapping between the validators and their storages used to
 /// retrieve checkpoints.
 #[derive(Debug, Default)]
-pub struct ValidatorsLocationStorage(RwLock<HashMap<Felt, CheckpointStorage>>);
+pub struct ValidatorsLocationStorage(RwLock<HashMap<Felt, Arc<Box<dyn FetchFromStorage>>>>);
 
 impl ValidatorsLocationStorage {
     /// Fills the [HashMap] with the initial state fetched from the RPC.
@@ -35,7 +37,8 @@ impl ValidatorsLocationStorage {
                 continue;
             }
             let storage = CheckpointStorage::from_str(&location[location.len() - 1])?;
-            all_storages.insert(validator, storage);
+            let storage_fetcher = storage.build().await?;
+            all_storages.insert(validator, Arc::new(storage_fetcher));
         }
 
         Ok(())
@@ -43,8 +46,9 @@ impl ValidatorsLocationStorage {
 
     /// Adds or updates the [CheckpointStorage] for the given validator
     pub async fn add(&self, validator: Felt, storage: CheckpointStorage) -> anyhow::Result<()> {
+        let storage_fetcher = storage.build().await?;
         let mut all_storages = self.0.write().await;
-        all_storages.insert(validator, storage);
+        all_storages.insert(validator, Arc::new(storage_fetcher));
         Ok(())
     }
 
@@ -60,8 +64,8 @@ impl ValidatorsLocationStorage {
         Ok(())
     }
 
-    /// Returns all the storages for each validator
-    pub async fn all(&self) -> HashMap<Felt, CheckpointStorage> {
+    /// Returns all registered mappings between validators & their location storage.
+    pub async fn all(&self) -> HashMap<Felt, Arc<Box<dyn FetchFromStorage>>> {
         self.0.read().await.clone()
     }
 }
@@ -89,8 +93,8 @@ impl ValidatorsCheckpointsStorage {
     }
 
     /// Returns the checkpoint for the given validator and message Id
-    pub async fn get(&self, validator: Felt, message_id: U256) -> Option<SignedCheckpointWithMessageId> {
-        self.0.read().await.get(&(validator, message_id)).cloned()
+    pub async fn get(&self, validator: &Felt, message_id: U256) -> Option<SignedCheckpointWithMessageId> {
+        self.0.read().await.get(&(*validator, message_id)).cloned()
     }
 
     // Check if any of the validators has a checkpoint signed for the provided message id.
