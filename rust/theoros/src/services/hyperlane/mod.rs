@@ -1,9 +1,15 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use pragma_utils::services::Service;
+use starknet::core::types::Felt;
 use tokio::task::JoinSet;
 
-use crate::AppState;
+use crate::{
+    types::hyperlane::{FetchFromStorage, SignedCheckpointWithMessageId},
+    AppState,
+};
+
+const FETCH_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(Clone)]
 pub struct HyperlaneService {
@@ -28,23 +34,57 @@ impl HyperlaneService {
         Self { state }
     }
 
+    /// Every [FETCH_INTERVAL] seconds, fetch the latest checkpoint signed for all
+    /// registered validators.
+    /// TODO: Currently we only fetch latest checkpoints. We should start from the first
+    /// indexed DispatchEvent? Maybe not
     pub async fn run_forever(&self) -> anyhow::Result<()> {
         loop {
-            let storage = self.state.storage.validators_locations().all().await;
-            // Should probably happens in parallel for every validators?
-            for (validator, fetcher) in storage {
-                let maybe_checkpoint = fetcher.fetch_latest().await?;
+            self.process_validator_checkpoints().await;
+            tokio::time::sleep(FETCH_INTERVAL).await;
+        }
+    }
 
-                if let Some(checkpoint_value) = maybe_checkpoint {
-                    tracing::debug!("Retrieved latest checkpoint with hash: {:?}", checkpoint_value.value.message_id);
-                    self.state
-                        .storage
-                        .validators_checkpoints()
-                        .add(validator, checkpoint_value.value.message_id, checkpoint_value)
-                        .await?;
-                }
+    async fn process_validator_checkpoints(&self) {
+        let validators_locations = self.state.storage.validators_locations().all().await;
+        let futures = validators_locations
+            .into_iter()
+            .map(|(validator, fetcher)| self.process_single_validator(validator, fetcher));
+
+        futures::future::join_all(futures).await;
+    }
+
+    async fn process_single_validator(&self, validator: Felt, fetcher: Arc<Box<dyn FetchFromStorage>>) {
+        match fetcher.fetch_latest().await {
+            Ok(Some(checkpoint)) => self.handle_checkpoint(validator, checkpoint).await,
+            Ok(None) => {
+                tracing::debug!("🌉 [Hyperlane] No new checkpoint for validator {:x}", validator)
             }
-            tokio::time::sleep(Duration::from_secs(1)).await;
+            Err(e) => {
+                tracing::error!("🌉 [Hyperlane] Failed to fetch checkpoint for validator {:x}: {:?}", validator, e)
+            }
+        }
+    }
+
+    async fn handle_checkpoint(&self, validator: Felt, checkpoint: SignedCheckpointWithMessageId) {
+        let message_id = checkpoint.value.message_id;
+
+        if self.state.storage.validators_checkpoints().exists(validator, message_id).await {
+            tracing::debug!(
+                "🌉 [Hyperlane] Skipping duplicate checkpoint for validator {:x}: {:x}",
+                validator,
+                message_id
+            );
+            return;
+        }
+
+        tracing::info!(
+            "🌉 [Hyperlane] Validator {:x} retrieved latest checkpoint for message {:x}",
+            validator,
+            message_id
+        );
+        if let Err(e) = self.state.storage.validators_checkpoints().add(validator, message_id, checkpoint).await {
+            tracing::error!("🌉 [Hyperlane] Failed to store checkpoint for validator {:x}: {:?}", validator, e);
         }
     }
 }

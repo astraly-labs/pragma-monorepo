@@ -109,6 +109,11 @@ impl ValidatorsCheckpointsStorage {
         false
     }
 
+    // Check if the given validator has a checkpoint for the given message_id.
+    pub async fn exists(&self, validator: Felt, message_id: U256) -> bool {
+        self.0.read().await.contains_key(&(validator, message_id))
+    }
+
     // For the provided list of validators, returns all their signed checkpoints for the
     // provided message_id.
     pub async fn get_validators_signed_checkpoints(
