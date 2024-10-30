@@ -288,11 +288,10 @@ library TestUtils {
         return address(proxy);
     }
 
-    function configurePragmaRawContract() internal returns (address){
+    function configurePragmaRawContract() internal returns (address) {
         address[] memory validatorSets = new address[](1);
-        validatorSets[0] = address(0xF6311461A6d8b44cb3F62b2FCd47570A28443ca0); 
-        IHyperlane hyperlane =
-            IHyperlane(setUpHyperlane(uint8(validatorSets.length), validatorSets));
+        validatorSets[0] = address(0xF6311461A6d8b44cb3F62b2FCd47570A28443ca0);
+        IHyperlane hyperlane = IHyperlane(setUpHyperlane(uint8(validatorSets.length), validatorSets));
         uint32[] memory chainIds = new uint32[](1);
         chainIds[0] = 6363709;
 

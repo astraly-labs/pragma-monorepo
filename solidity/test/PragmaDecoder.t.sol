@@ -12,7 +12,6 @@ import "../src/libraries/BytesLib.sol";
 import {TestUtils, PragmaHarness} from "./TestUtils.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "./mocks/PragmaUpgraded.sol";
-import "forge-std/console2.sol";
 
 contract PragmaHarnessTest is Test {
     PragmaHarness private pragmaHarness;
@@ -29,18 +28,19 @@ contract PragmaHarnessTest is Test {
         pragmaHarness = PragmaHarness(TestUtils.configurePragmaContract(dataType));
     }
 
-    function setupRaw() public{
+    function setupRaw() public {
         pragmaHarness = PragmaHarness(TestUtils.configurePragmaRawContract());
     }
-
 
     function testUpdateRawFeed() public {
         setupRaw();
         // encoded update
-        bytes memory encodedUpdate = hex"0100000170030100cfb40f535d29e5f0fb582324b9891e1f6b77dbf7bd177fabf39ae58c6a9d2c6b1e67160d58d840693b1d7a302c7f1335ebd040813a4dce10e32ea4678a4a6a221b0002e34b000000006721616700611a3d0060240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc30536953cdd0dd5b8e24428e4fb6eab5c143daba15f62b24606e50d822508faef61f15d972266c4b555f5f1731ab2c70c59594467271089e59504352e5ef59c580002e3495dc30c8aed9a1c4a5f62d9ada57a36bfbc737f78c12b5d9966517e220ff3736801000100000000000000000000574254432f5553440000000000000000000000000000000000000000672161670007080000000000000000000006917d2b14ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000574254432f5553440000000067216167";
+        bytes memory encodedUpdate =
+            hex"0100000170030100c1ec5070f1a4868b8e6bfa5bbd31ac77605c5af1a739bc4e7758d4ca1d88fa8835c1460646b647c4c4403b324c2297a04d70b84888dc873021f80d6d70ed015e1c00031b8b0000000067225b1100611a3d0060240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc30536953cdd0dd5b8e24428e4fb6eab5c143daba15f62b24606e50d822508faefd53032e26a3b1d1510dfe82a2ab8d6c0fc0f010dcdd3c410ba2f9fdad3479b1400031b8b15704e0efd1955cfe1c1182ba083bd5309707bdd795397cbbbb106cfc9b29bb001000100000000000000000000004254432f555344000000000000000000000000000000000000000067225b1100080800000000000000000000068aa5cb9d63000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004254432f5553440000000067225b11";
         uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
         assertEq(numUpdates, 1, "Number of updates should be 1");
     }
+
     function testUpdateDataInfoFromUpdateSpotMedian() public {
         _setUp(FeedType.SpotMedian);
         bytes32 feedId = bytes32(

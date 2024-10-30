@@ -22,26 +22,16 @@ contract Hyperlane is IHyperlane {
         _validators = validators;
     }
 
-    function parseAndVerifyHyMsg(
-        bytes calldata encodedHyMsg
-    )
+    function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         public
         view
-        returns (
-            HyMsg memory hyMsg,
-            bool valid,
-            string memory reason,
-            uint256 index,
-            bytes32 checkpointRoot
-        )
+        returns (HyMsg memory hyMsg, bool valid, string memory reason, uint256 index, bytes32 checkpointRoot)
     {
         (hyMsg, index, checkpointRoot) = parseHyMsg(encodedHyMsg);
         (valid, reason) = verifyHyMsg(hyMsg);
     }
 
-    function verifyHyMsg(
-        HyMsg memory hyMsg
-    ) public view returns (bool valid, string memory reason) {
+    function verifyHyMsg(HyMsg memory hyMsg) public view returns (bool valid, string memory reason) {
         // TODO: fetch validators from calldata/storage
         address[] memory validators = _validators;
         if (validators.length == 0) {
@@ -50,18 +40,11 @@ contract Hyperlane is IHyperlane {
 
         // We're using a fixed point number transformation with 1 decimal to deal with rounding.
         // we check that we have will be able to reach a quorum with the current signatures
-        if (
-            (((validators.length * 10) / 3) * 2) / 10 + 1 >
-            hyMsg.signatures.length
-        ) {
+        if ((((validators.length * 10) / 3) * 2) / 10 + 1 > hyMsg.signatures.length) {
             return (false, "no quorum");
         }
         // Verify signatures
-        (bool signaturesValid, string memory invalidReason) = verifySignatures(
-            hyMsg.hash,
-            hyMsg.signatures,
-            validators
-        );
+        (bool signaturesValid, string memory invalidReason) = verifySignatures(hyMsg.hash, hyMsg.signatures, validators);
         if (!signaturesValid) {
             return (false, invalidReason);
         }
@@ -69,20 +52,17 @@ contract Hyperlane is IHyperlane {
         return (true, "");
     }
 
-    function verifySignatures(
-        bytes32 hash,
-        Signature[] memory signatures,
-        address[] memory validators
-    ) public pure returns (bool valid, string memory reason) {
+    function verifySignatures(bytes32 hash, Signature[] memory signatures, address[] memory validators)
+        public
+        pure
+        returns (bool valid, string memory reason)
+    {
         uint8 lastIndex = 0;
         // TODO: break on quorum
         for (uint256 i = 0; i < signatures.length; i++) {
             Signature memory sig = signatures[i];
 
-            require(
-                i == 0 || sig.validatorIndex > lastIndex,
-                "signature indices must be ascending"
-            );
+            require(i == 0 || sig.validatorIndex > lastIndex, "signature indices must be ascending");
             lastIndex = sig.validatorIndex;
             bytes memory signature = abi.encodePacked(sig.r, sig.s, sig.v);
             if (!_verify(hash, signature, validators[sig.validatorIndex])) {
@@ -92,9 +72,11 @@ contract Hyperlane is IHyperlane {
         return (true, "");
     }
 
-    function parseHyMsg(
-        bytes calldata encodedHyMsg
-    ) public pure returns (HyMsg memory hyMsg, uint256 index, bytes32 checkPointRoot) {
+    function parseHyMsg(bytes calldata encodedHyMsg)
+        public
+        pure
+        returns (HyMsg memory hyMsg, uint256 index, bytes32 checkPointRoot)
+    {
         hyMsg.version = encodedHyMsg.toUint8(index);
         index += 1;
         require(hyMsg.version == 3, "unsupported version");
@@ -114,10 +96,6 @@ contract Hyperlane is IHyperlane {
             index += 32;
             hyMsg.signatures[i].v = encodedHyMsg.toUint8(index);
             index += 1;
-            console2.logString("Signature");
-            console2.logBytes32(hyMsg.signatures[i].r);
-            console2.logBytes32(hyMsg.signatures[i].s);
-            console2.logUint(hyMsg.signatures[i].v);
         }
 
         // Parse the rest of the message
@@ -136,13 +114,7 @@ contract Hyperlane is IHyperlane {
         bytes32 merkeTreeHookAddress = encodedHyMsg.toBytes32(index);
         index += 32;
 
-        bytes32 domainHash = keccak256(
-            abi.encodePacked(
-                hyMsg.emitterChainId,
-                merkeTreeHookAddress,
-                "HYPERLANE"
-            )
-        );
+        bytes32 domainHash = keccak256(abi.encodePacked(hyMsg.emitterChainId, merkeTreeHookAddress, "HYPERLANE"));
 
         bytes32 root = encodedHyMsg.toBytes32(index);
         checkPointRoot = root;
@@ -154,29 +126,13 @@ contract Hyperlane is IHyperlane {
         bytes32 messageId = encodedHyMsg.toBytes32(index);
         index += 32;
 
-        console2.logString("messageId:");
-        console2.logBytes32(messageId);
-
         // Hash the configuration
-        hyMsg.hash = keccak256(
-            abi.encodePacked(domainHash, root, checkpointIndex, messageId)
-        );
-
-        console2.logString("hash:");
-        console2.logBytes32(hyMsg.hash);
+        hyMsg.hash = keccak256(abi.encodePacked(domainHash, root, checkpointIndex, messageId));
 
         hyMsg.payload = encodedHyMsg.slice(index, encodedHyMsg.length - index);
     }
 
-    function _verify(
-        bytes32 data,
-        bytes memory signature,
-        address account
-    ) internal pure returns (bool) {
-        console2.logString("found address");
-        console2.logAddress(data.toEthSignedMessageHash().recover(signature));
-        console2.logString("expected address");
-        console2.logAddress(account);
+    function _verify(bytes32 data, bytes memory signature, address account) internal pure returns (bool) {
         return data.toEthSignedMessageHash().recover(signature) == account;
     }
 }

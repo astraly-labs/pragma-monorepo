@@ -23,5 +23,8 @@ interface IHyperlane {
     /// @dev message should be encoded following the specs (TODO: add docs)
     /// @param encodedHyMsg The encoded Hyperlane message.
     /// @return hyMsg The parsed Hyperlane message.
-    function parseHyMsg(bytes calldata encodedHyMsg) external pure returns (HyMsg memory hyMsg, uint256 index, bytes32 checkpointRoot);
+    function parseHyMsg(bytes calldata encodedHyMsg)
+        external
+        pure
+        returns (HyMsg memory hyMsg, uint256 index, bytes32 checkpointRoot);
 }

@@ -9,10 +9,9 @@ library DataParser {
     using BytesLib for bytes;
 
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
-        uint8 offset = 2; // type feed stored after asset class
+        uint8 offset = 2; // type of feed after the asset class
         uint8 rawDataType = data.toUint8(offset);
         FeedType dataType = safeCastToFeedType(rawDataType);
-
         ParsedData memory parsedData = StructsInitializers.initializeParsedData();
         parsedData.dataType = dataType;
         if (dataType == FeedType.SpotMedian) {
@@ -44,6 +43,13 @@ library DataParser {
         Metadata memory metadata = StructsInitializers.initializeMetadata();
         uint256 index = startIndex;
 
+        uint128 feedIdLow = data.toUint128(index);
+        index += 16;
+        uint128 feedIdHigh = data.toUint128(index);
+        index += 16;
+
+        metadata.feedId = bytes32((uint256(feedIdHigh) << 128) | uint256(feedIdLow));
+
         metadata.timestamp = data.toUint64(index);
         index += 8;
 
@@ -52,10 +58,6 @@ library DataParser {
 
         metadata.decimals = uint8(data.toUint8(index));
         index += 1;
-
-        // TODO: add feed id
-        index += 8;
-
 
         return (metadata, index);
     }
@@ -66,11 +68,19 @@ library DataParser {
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        entry.price = data.toUint64(index);
-        index += 4;
+        uint128 priceLow = data.toUint128(index);
+        index += 16;
+        uint128 priceHigh = data.toUint128(index);
+        index += 16;
 
-        // TODO: fix this
-        // entry.volume = data.toUint16(index);
+        entry.price = (uint256(priceHigh) << 128) | uint256(priceLow);
+
+        uint128 volumeLow = data.toUint128(index);
+        index += 16;
+        uint128 volumeHigh = data.toUint128(index);
+        index += 16;
+
+        entry.volume = (uint256(volumeHigh) << 128) | uint256(volumeLow);
 
         return entry;
     }
