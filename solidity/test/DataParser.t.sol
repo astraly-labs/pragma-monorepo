@@ -13,7 +13,7 @@ contract DataParserTest is Test {
                 ///CRYPTO
                 uint8(0), //SPOT
                 uint8(0), //VARIANT
-                uint96(0x4254432f555344)
+                bytes32("BTC/USD")
             )
         );
         bytes memory data = abi.encodePacked(
@@ -21,16 +21,14 @@ contract DataParserTest is Test {
             uint64(1625097600), // timestamp
             uint16(3),
             uint8(8),
-            uint128(35000 ether), // price.low
-            uint128(0), // price.high
-            uint128(100 ether), // volume.low
-            uint128(0)  // volume.high
+            uint256(35000 ether), // price
+            uint256(100 ether) // volume
         );
 
         ParsedData memory result = DataParser.parse(data);
 
         assert(result.dataType == FeedType.SpotMedian);
-        assertEq(result.spot.metadata.feedId, 0x000000000000000000000000000000000000000000000000004254432f555344);
+        assertEq(result.spot.metadata.feedId, feedId);
         assertEq(result.spot.metadata.timestamp, 1625097600);
         assertEq(result.spot.metadata.numberOfSources, 3);
         assertEq(result.spot.metadata.decimals, 8);
@@ -45,7 +43,7 @@ contract DataParserTest is Test {
                 ///CRYPTO
                 uint8(1), //TWAP
                 uint8(0), //VARIANT
-                uint96(0x4254432f555344)
+                bytes32("ETH/USD")
             )
         );
         bytes memory data = abi.encodePacked(
@@ -67,7 +65,7 @@ contract DataParserTest is Test {
         assertEq(result.twap.metadata.timestamp, 1625097600);
         assertEq(result.twap.metadata.numberOfSources, 3);
         assertEq(result.twap.metadata.decimals, 8);
-        assertEq(result.twap.metadata.feedId, 0x000000000000000000000000000000000000010000000000004254432f555344);
+        assertEq(result.twap.metadata.feedId, feedId);
         assertEq(result.twap.twapPrice, 2000 ether);
         assertEq(result.twap.timePeriod, 3600);
         assertEq(result.twap.startPrice, 1950 ether);
@@ -83,7 +81,7 @@ contract DataParserTest is Test {
                 ///CRYPTO
                 uint8(2), //RV
                 uint8(0), //VARIANT
-                uint96(0x4254432f555344)
+                bytes32("BTC/USD")
             )
         );
         bytes memory data = abi.encodePacked(
@@ -106,7 +104,7 @@ contract DataParserTest is Test {
         assertEq(result.rv.metadata.timestamp, 1625097600);
         assertEq(result.rv.metadata.numberOfSources, 3);
         assertEq(result.rv.metadata.decimals, 8);
-        assertEq(result.rv.metadata.feedId, 0x000000000000000000000000000000000000020000000000004254432f555344);
+        assertEq(result.rv.metadata.feedId, feedId);
         assertEq(result.rv.volatility, 0.5 ether);
         assertEq(result.rv.timePeriod, 86400);
         assertEq(result.rv.startPrice, 34000 ether);
@@ -123,7 +121,7 @@ contract DataParserTest is Test {
                 ///CRYPTO
                 uint8(3), //Option
                 uint8(0), //VARIANT
-                uint96(0x4254432f555344)
+                bytes32("ETH/USD")
             )
         );
         bytes memory data = abi.encodePacked(
@@ -150,7 +148,7 @@ contract DataParserTest is Test {
         assertEq(result.options.metadata.timestamp, 1625097600);
         assertEq(result.options.metadata.numberOfSources, 3);
         assertEq(result.options.metadata.decimals, 8);
-        assertEq(result.options.metadata.feedId, 0x000000000000000000000000000000000000030000000000004254432f555344);
+        assertEq(result.options.metadata.feedId, feedId);
         assertEq(result.options.strikePrice, 2500 ether);
         assertEq(result.options.impliedVolatility, 0.5 ether);
         assertEq(result.options.timeToExpiry, 604800);
@@ -171,7 +169,7 @@ contract DataParserTest is Test {
                 ///CRYPTO
                 uint8(4), //PERP
                 uint8(0), //VARIANT
-                uint96(0x4254432f555344)
+                bytes32("BTC/USD")
             )
         );
         bytes memory data = abi.encodePacked(
@@ -191,7 +189,7 @@ contract DataParserTest is Test {
         assertEq(result.perp.metadata.timestamp, 1625097600);
         assertEq(result.perp.metadata.numberOfSources, 3);
         assertEq(result.perp.metadata.decimals, 8);
-        assertEq(result.perp.metadata.feedId, 0x000000000000000000000000000000000000040000000000004254432f555344);
+        assertEq(result.perp.metadata.feedId, feedId);
         assertEq(result.perp.markPrice, 35000 ether);
         assertEq(result.perp.fundingRate, 0.001 ether);
         assertEq(result.perp.openInterest, 1000 ether);

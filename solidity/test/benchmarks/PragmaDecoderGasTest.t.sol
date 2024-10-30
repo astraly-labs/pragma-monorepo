@@ -28,7 +28,13 @@ contract PragmaDecoderGasTest is Test {
 
     function testGasAllUpdates() public {
         string[5] memory updateTypes = ["SpotMedian", "TWAP", "RealizedVolatility", "Options", "Perpetuals"];
-        string[5] memory currencies = ["ETH/USD", "BTC/USD", "ETH/USD", "ETH/USD", "ETH/USD"];
+        uint256[5] memory currencies = [
+            uint256(0x4554482f555344),
+            uint256(0x4254432f555344),
+            uint256(0x4254432f555344),
+            uint256(0x4254432f555344),
+            uint256(0x4254432f555344)
+        ];
         for (uint256 i = 0; i < updateTypes.length; i++) {
             FeedType dataType = FeedType(i);
             _setUp(dataType);

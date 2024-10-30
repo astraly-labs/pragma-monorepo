@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import "./BytesLib.sol";
 import "../interfaces/PragmaStructs.sol";
 import "./ErrorsLib.sol";
-import "forge-std/console2.sol";
 
 library DataParser {
     using BytesLib for bytes;
@@ -45,13 +44,8 @@ library DataParser {
         Metadata memory metadata = StructsInitializers.initializeMetadata();
         uint256 index = startIndex;
 
-        uint128 feedIdLow = data.toUint128(index);
-        console2.logUint(feedIdLow);
-        index += 16;
-        uint128 feedIdHigh = data.toUint128(index);
-        index += 16;
-        
-        metadata.feedId = bytes32((uint256(feedIdHigh) << 128) | uint256(feedIdLow));
+        metadata.feedId = bytes32(data.toUint256(index));
+        index += 32;
 
         metadata.timestamp = data.toUint64(index);
         index += 8;
@@ -66,25 +60,16 @@ library DataParser {
     }
 
     function parseSpotData(bytes memory data) internal pure returns (SpotMedian memory) {
-
         SpotMedian memory entry = StructsInitializers.initializeSpotMedian();
         uint256 index = 0;
 
         (entry.metadata, index) = parseMetadata(data, index);
 
-        uint128 priceLow = data.toUint128(index);
-        index += 16;
-        uint128 priceHigh = data.toUint128(index);
-        index += 16;
+        entry.price = data.toUint256(index);
+        index += 32;
 
-        entry.price = (uint256(priceHigh) << 128) | uint256(priceLow);
-
-        uint128 volumeLow = data.toUint128(index);
-        index += 16;
-        uint128 volumeHigh = data.toUint128(index);
-        index += 16;
-
-        entry.volume = (uint256(volumeHigh) << 128) | uint256(volumeLow);
+        entry.volume = data.toUint256(index);
+        index += 32;
 
         return entry;
     }

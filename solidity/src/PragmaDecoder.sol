@@ -151,7 +151,7 @@ abstract contract PragmaDecoder {
             bytes calldata encodedUpdate;
             bytes calldata encodedProof;
             bytes calldata fulldataFeed;
-            uint16 updateDataLength = UnsafeCalldataBytesLib.toUint16(encoded, offset); // TODO: useless
+
             offset += 2;
             uint16 proofSize = UnsafeCalldataBytesLib.toUint16(encoded, offset);
             offset += 2;
@@ -166,7 +166,7 @@ abstract contract PragmaDecoder {
             // bool valid;
             // (valid, offset) = _isProofValid(encoded, offset, checkpointRoot, encodedUpdate);
             // if (!valid) revert ErrorsLib.InvalidHyperlaneCheckpointRoot();
-
+            offset += proofSize;
             (parsedData, feedId, publishTime) = parseDataFeed(fulldataFeed);
             endOffset = offset + fulldataFeed.length;
         }
@@ -207,7 +207,6 @@ abstract contract PragmaDecoder {
         }
         // We check that the offset is at the end of the encoded data.
         // If not it means the data is not encoded correctly.
-
         if (offset != updateData.length) revert ErrorsLib.InvalidUpdateData();
     }
 

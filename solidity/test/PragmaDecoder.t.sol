@@ -53,8 +53,6 @@ contract PragmaHarnessTest is Test {
             )
         );
 
-        console2.logString("Prince"); 
-        console2.logBytes32(feedId);
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.SpotMedian, feedId);
         uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
@@ -77,9 +75,8 @@ contract PragmaHarnessTest is Test {
                 uint16(0),
                 ///CRYPTO
                 uint8(1), //TWAP
-                uint8(0), // VARIANT
-                uint128(0),
-                uint128(0x4254432f555344)
+                uint8(0), // VARIANT,
+                uint256(0x4254432f555344)
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Twap, feedId);
@@ -109,7 +106,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(2), //RV
                 uint8(0), //VARIANT
-                bytes32("ETH/USD")
+                uint256(0x4254432f555344)
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.RealizedVolatility, feedId);
@@ -138,7 +135,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(3), //Options
                 uint8(0),
-                bytes32("ETH/USD")
+                uint256(0x4254432f555344)
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Options, feedId);
@@ -173,7 +170,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(4), //Perp
                 uint8(0), //VARIANT
-                bytes32("ETH/USD")
+                uint256(0x4254432f555344)
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Perpetuals, feedId);
