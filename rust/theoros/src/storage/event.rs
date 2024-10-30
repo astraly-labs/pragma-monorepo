@@ -18,19 +18,14 @@ pub struct DispatchUpdateInfos {
     pub message_id: U256,
 }
 
-// Event Storage
-
+/// Contains a mapping between a feed_id and the latest dispatch update.
 #[derive(Debug, Default)]
 pub struct EventStorage {
     events: RwLock<HashMap<U256, DispatchUpdateInfos>>,
 }
 
 impl EventStorage {
-    /// Creates a new `EventStorage` with the specified maximum size.
-    pub fn new() -> Self {
-        Self { events: RwLock::new(HashMap::new()) }
-    }
-
+    /// Insert the latest dispatch update for a feed_id.
     pub async fn add(&self, feed_id: String, event: DispatchUpdateInfos) -> Result<()> {
         let mut events = self.events.write().await;
         let feed_id = hex_str_to_u256(&feed_id)?;
@@ -38,12 +33,20 @@ impl EventStorage {
         Ok(())
     }
 
+    /// Retrieves the latest dispatch update for a feed_id;
     pub async fn get(&self, feed_id: &str) -> Result<Option<DispatchUpdateInfos>> {
         let events = self.events.read().await;
         let feed_id = hex_str_to_u256(feed_id)?;
         Ok(events.get(&feed_id).cloned())
     }
 
+    /// Returns the current mapping as a Vec.
+    pub async fn as_vec(&self) -> Result<Vec<(U256, DispatchUpdateInfos)>> {
+        let events = self.events.read().await;
+        Ok(events.iter().map(|(k, v)| (*k, v.clone())).collect())
+    }
+
+    /// TODO, explain + re-assert the existence of this.
     /// Retrieves multiple events by their feed IDs.
     /// Returns a tuple of (found_events, first_missing_feed_id).
     /// If all feed IDs are found, first_missing_feed_id will be None.
@@ -65,30 +68,34 @@ impl EventStorage {
 
         Ok((result, missing_feed_id))
     }
-
-    pub async fn all(&self) -> Result<Vec<(U256, DispatchUpdateInfos)>> {
-        let events = self.events.read().await;
-        Ok(events.iter().map(|(k, v)| (*k, v.clone())).collect())
-    }
 }
 
-// Event cache
-
+/// Contains a Mapping between message ids and the corresponding Event.
 #[derive(Clone, Default)]
 pub struct EventCache {
     cache: Arc<RwLock<HashMap<U256, DispatchEvent>>>,
 }
 
 impl EventCache {
-    pub fn new() -> Self {
-        Self { cache: Arc::new(RwLock::new(HashMap::new())) }
-    }
-
+    /// Insert a new mapping between a message_id & an Event.
     pub async fn add(&self, message_id: U256, event: &DispatchEvent) {
         let mut cache = self.cache.write().await;
         cache.insert(message_id, event.clone());
     }
 
+    /// Returns the number of mappings stored.
+    pub async fn len(&self) -> usize {
+        self.cache.read().await.len()
+    }
+
+    /// Returns the mappings as a Vec.
+    /// Will contain a tuple, first element being the message_id and second the Event.
+    pub async fn as_vec(&self) -> Vec<(U256, DispatchEvent)> {
+        let cache = self.cache.read().await;
+        cache.iter().map(|(k, v)| (*k, v.clone())).collect()
+    }
+
+    /// TODO, explain + re-assert the existence of this.
     pub async fn process_cached_events(
         &self,
         checkpoint_storage: &ValidatorsCheckpointStorage,
@@ -115,14 +122,5 @@ impl EventCache {
             }
         }
         Ok(())
-    }
-
-    pub async fn cache_size(&self) -> usize {
-        self.cache.read().await.len()
-    }
-
-    pub async fn all(&self) -> Vec<(U256, DispatchEvent)> {
-        let cache = self.cache.read().await;
-        cache.iter().map(|(k, v)| (*k, v.clone())).collect()
     }
 }
