@@ -21,7 +21,7 @@ use futures::{
 };
 use serde::{Deserialize, Serialize};
 use starknet::core::types::Felt;
-use tokio::sync::{broadcast::Receiver, watch};
+use tokio::sync::broadcast::Receiver;
 
 use crate::configs::evm_config::EvmChainName;
 use crate::constants::{DEFAULT_ACTIVE_CHAIN, HYPERLANE_VERSION, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
@@ -102,7 +102,6 @@ pub struct Subscriber {
     data_feeds_with_config: HashMap<String, DataFeedClientConfig>,
     active_chain: EvmChainName,
     ping_interval: tokio::time::Interval,
-    exit: watch::Receiver<bool>,
     responded_to_ping: bool,
 }
 
@@ -124,7 +123,6 @@ impl Subscriber {
             data_feeds_with_config: HashMap::new(),
             active_chain: DEFAULT_ACTIVE_CHAIN,
             ping_interval: tokio::time::interval(PING_INTERVAL_DURATION),
-            exit: crate::EXIT.subscribe(),
             responded_to_ping: true,
         }
     }
@@ -167,11 +165,6 @@ impl Subscriber {
                 self.responded_to_ping = false;
                 self.sender.send(Message::Ping(vec![])).await?;
                 Ok(())
-            },
-            _ = self.exit.changed() => {
-                self.sender.close().await?;
-                self.closed = true;
-                Err(anyhow!("Application is shutting down. Closing connection."))
             }
         }
     }

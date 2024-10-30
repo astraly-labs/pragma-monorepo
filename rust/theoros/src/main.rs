@@ -15,7 +15,6 @@ use anyhow::Result;
 use clap::Parser;
 use prometheus::Registry;
 use storage::TheorosStorage;
-use tokio::sync::watch;
 use tracing::Level;
 
 use pragma_utils::{
@@ -29,6 +28,7 @@ use services::{ApiService, HyperlaneService, IndexerService, MetricsService};
 
 const LOG_LEVEL: Level = Level::INFO;
 
+#[derive(Clone)]
 pub struct AppState {
     pub starknet_rpc: Arc<StarknetRpc>,
     pub hyperlane_validators_mapping: Arc<HyperlaneValidatorsMapping>,
@@ -46,30 +46,6 @@ impl WsState {
     pub fn new() -> Self {
         Self { subscriber_counter: AtomicUsize::new(0) }
     }
-}
-
-impl Clone for AppState {
-    fn clone(&self) -> Self {
-        Self {
-            starknet_rpc: self.starknet_rpc.clone(),
-            hyperlane_validators_mapping: self.hyperlane_validators_mapping.clone(),
-            storage: self.storage.clone(),
-            metrics_registry: self.metrics_registry.clone(),
-            ws: self.ws.clone(),
-        }
-    }
-}
-
-lazy_static::lazy_static! {
-    /// A static exit flag to indicate to running threads that we're shutting down. This is used to
-    /// gracefully shut down the application.
-    ///
-    /// We make this global based such that:
-    /// - It's easy to access from anywhere in the application.
-    /// - No need to carefully pass it around.
-    /// - Sender does not require an async context to operate.
-    /// - All receivers will be notified when the flag is set.
-    pub static ref EXIT: watch::Sender<bool> = watch::channel(false).0;
 }
 
 #[tokio::main]

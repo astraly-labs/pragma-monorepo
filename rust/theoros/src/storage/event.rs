@@ -126,6 +126,7 @@ impl EventCache {
                     let feed_id = update.feed_id();
                     let dispatch_update_infos = DispatchUpdateInfos::new(message_id, &dispatch_event, update);
                     event_storage.add(feed_id, dispatch_update_infos).await?;
+                    // TODO: Emit the websocket notification
                 }
                 cache_write.remove(&message_id);
                 tracing::debug!("Processed cached event with message ID: {:x}", message_id);

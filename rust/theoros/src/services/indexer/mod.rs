@@ -183,13 +183,13 @@ impl IndexerService {
         match &block.header {
             Some(h) => {
                 tracing::info!(
-                    "📨 [Indexer] Received a Dispatch event at block #{} with message id: {:#x}",
+                    "📨 [Indexer] Received a Dispatch event at block #{}, message_id={:#x}",
                     h.block_number,
                     message_id
                 );
             }
             None => {
-                tracing::info!("📨 [Indexer] Received a Dispatch event with message id: {:#x}", message_id);
+                tracing::info!("📨 [Indexer] Received a Dispatch event, message_id={:#x}", message_id);
             }
         };
 
