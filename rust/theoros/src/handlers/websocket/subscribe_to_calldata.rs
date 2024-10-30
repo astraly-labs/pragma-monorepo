@@ -1,41 +1,37 @@
-use alloy::primitives::U256;
-use starknet::core::types::Felt;
 use std::str::FromStr;
-
-use crate::types::pragma::calldata::ValidatorSignature;
-
-use {
-    crate::{
-        configs::evm_config::EvmChainName,
-        constants::{DEFAULT_ACTIVE_CHAIN, HYPERLANE_VERSION, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION},
-        types::{
-            hyperlane::{CheckpointMatchEvent, DispatchUpdate},
-            pragma::calldata::{AsCalldata, HyperlaneMessage, Payload},
-            rpc::RpcDataFeed,
-        },
-        AppState,
-    },
-    alloy::hex,
-    anyhow::{anyhow, Result},
-    axum::{
-        extract::{
-            ws::{Message, WebSocket, WebSocketUpgrade},
-            ConnectInfo, State as AxumState,
-        },
-        response::IntoResponse,
-    },
-    futures::{
-        stream::{SplitSink, SplitStream},
-        SinkExt, StreamExt,
-    },
-    serde::{Deserialize, Serialize},
-    std::{
-        collections::HashMap,
-        net::SocketAddr,
-        sync::{atomic::Ordering, Arc},
-    },
-    tokio::sync::{broadcast::Receiver, watch},
+use std::{
+    collections::HashMap,
+    net::SocketAddr,
+    sync::{atomic::Ordering, Arc},
 };
+
+use alloy::hex;
+use alloy::primitives::U256;
+use anyhow::{anyhow, Result};
+use axum::{
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        ConnectInfo, State as AxumState,
+    },
+    response::IntoResponse,
+};
+use futures::{
+    stream::{SplitSink, SplitStream},
+    SinkExt, StreamExt,
+};
+use serde::{Deserialize, Serialize};
+use starknet::core::types::Felt;
+use tokio::sync::{broadcast::Receiver, watch};
+
+use crate::configs::evm_config::EvmChainName;
+use crate::constants::{DEFAULT_ACTIVE_CHAIN, HYPERLANE_VERSION, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
+use crate::types::calldata::ValidatorSignature;
+use crate::types::{
+    calldata::{AsCalldata, HyperlaneMessage, Payload},
+    hyperlane::{CheckpointMatchEvent, DispatchUpdate},
+    rpc::RpcDataFeed,
+};
+use crate::AppState;
 
 // TODO: add config for the client
 /// Configuration for a specific data feed.

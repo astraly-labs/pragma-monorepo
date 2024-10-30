@@ -13,8 +13,8 @@ use crate::constants::{HYPERLANE_VERSION, PRAGMA_MAJOR_VERSION, PRAGMA_MINOR_VER
 use crate::errors::GetCalldataError;
 use crate::extractors::PathExtractor;
 use crate::storage::DispatchUpdateInfos;
+use crate::types::calldata::{AsCalldata, Calldata, HyperlaneMessage, Payload, ValidatorSignature};
 use crate::types::hyperlane::DispatchUpdate;
-use crate::types::pragma::calldata::{AsCalldata, Calldata, HyperlaneMessage, Payload, ValidatorSignature};
 use crate::AppState;
 
 #[derive(Default, Deserialize, IntoParams, ToSchema)]

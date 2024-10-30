@@ -1,3 +1,5 @@
+// TODO:
+// Create tests for this module. It should produces the same than abi.encodePack
 use alloy::{primitives::U256, signers::Signature};
 use serde::{Deserialize, Serialize};
 use starknet::core::types::Felt;
@@ -97,8 +99,6 @@ pub struct Payload {
     pub feed_id: U256,
     pub publish_time: u64,
 }
-
-// TODO: these should be tested and follow the abi.encodePacked spec
 
 impl AsCalldata for Payload {
     fn as_bytes(&self) -> Vec<u8> {
