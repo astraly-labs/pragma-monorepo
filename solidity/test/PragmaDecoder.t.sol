@@ -49,9 +49,12 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(0), //SPOT
                 uint8(0), //VARIANT
-                bytes32("ETH/USD")
+                uint256(0x4554482f555344)
             )
         );
+
+        console2.logString("Prince"); 
+        console2.logBytes32(feedId);
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.SpotMedian, feedId);
         uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
@@ -75,7 +78,8 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(1), //TWAP
                 uint8(0), // VARIANT
-                bytes32("BTC/USD")
+                uint128(0),
+                uint128(0x4254432f555344)
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Twap, feedId);

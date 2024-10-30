@@ -100,7 +100,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         assertEq(hyMsg.payload, TEST_PAYLOAD, "Payload does not correspond");
         // parseAndVerifyHyMsg() returns an empty signatures array for gas savings since it's not used
         // after its been verified. parseHyMsg() returns the full signatures array.
-        (hyMsg,) = hyperlane.parseHyMsg(updateData);
+        (hyMsg,,) = hyperlane.parseHyMsg(updateData);
         assertEq(hyMsg.signatures.length, TEST_NUM_SIGNERS, "Num signers does not correspond");
     }
 
@@ -120,7 +120,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
             TEST_NONCE, TEST_UPDATE_TIMESTAMP, TEST_EMITTER_CHAIN_ID, TEST_EMITTER_ADDR, TEST_MERKLE_TREE_ADDRESS, TEST_ROOT, TEST_CHECKPOINT_INDEX, TEST_MESSAGE_ID, TEST_PAYLOAD, TEST_NUM_SIGNERS
         );
 
-        (HyMsg memory hyMsg, bool valid, string memory reason,) = hyperlane.parseAndVerifyHyMsg(updateData);
+        (HyMsg memory hyMsg, bool valid, string memory reason,,) = hyperlane.parseAndVerifyHyMsg(updateData);
         console2.logBytes32(hyMsg.hash);
         assertHyMsgMatchesTestValues(hyMsg, valid, reason, updateData, hyperlane);
     }

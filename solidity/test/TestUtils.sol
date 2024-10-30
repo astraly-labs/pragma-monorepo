@@ -96,6 +96,10 @@ library TestUtils {
             uint64(block.timestamp), // timestamp
             uint32(1), // emitterChainId
             bytes32(uint256(0x1234)), // emitterAddress
+            bytes32(uint256(0x12311)), // merkle tree hook address
+            bytes32(uint256(123)), // root
+            uint32(1211), // checkpoint index
+            bytes32(uint256(0x654)),// message id,
             payload
         );
     }
@@ -204,12 +208,13 @@ library TestUtils {
     function configurePragmaContract(FeedType dataType) internal returns (address) {
         address[][] memory validatorSets = new address[][](5);
         // SPOT MEDIAN
+    
         validatorSets[0] = new address[](5);
-        validatorSets[0][0] = address(0x005fed8c9ac5f77b556502f23d3f081d85cd0ef7d3);
-        validatorSets[0][1] = address(0x00c59779fbbd88dcd3f406355f7e35a3b9a8441903);
-        validatorSets[0][2] = address(0x00e86a95ee11bdd5f55e87c3d994ec07f45cb37af1);
-        validatorSets[0][3] = address(0x00b2f7780f23b8e55171435bf1ea42a785c65e3593);
-        validatorSets[0][4] = address(0x00229160af0c289b6e1d4d5663e734ad9c512dd42e);
+        validatorSets[0][0] = address(0x00a3e52c15301fd39e37d2ee14ee4f3e6d6021089b);
+        validatorSets[0][1] = address(0x009917bfaeb054a5022729fa6c27a6152cf50ab839);
+        validatorSets[0][2] = address(0x00838a6911ce686633f6b1c3ffd228b9daac5c0765);
+        validatorSets[0][3] = address(0x00755a3a9641af958cd99991f92c7ff1b983d3fc77);
+        validatorSets[0][4] = address(0x0057763e019988e1ef5b3277440ebab3e1d8a43883);
 
         // TWAP
 

@@ -11,7 +11,6 @@ library DataParser {
 
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
         uint8 offset = 2; // type of feed after the asset class
-        console2.logString("do we reach here");
 
         uint8 rawDataType = data.toUint8(offset);
         FeedType dataType = safeCastToFeedType(rawDataType);
@@ -47,6 +46,7 @@ library DataParser {
         uint256 index = startIndex;
 
         uint128 feedIdLow = data.toUint128(index);
+        console2.logUint(feedIdLow);
         index += 16;
         uint128 feedIdHigh = data.toUint128(index);
         index += 16;
