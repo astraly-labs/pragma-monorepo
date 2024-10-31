@@ -77,8 +77,9 @@ impl HyperlaneService {
         }
 
         tracing::info!(
-            "🌉 [Hyperlane] Validator {:#x} retrieved latest checkpoint for message {:#x}",
+            "🌉 [Hyperlane] Validator {:#x} retrieved latest checkpoint for message [#{}] {:#x}",
             validator,
+            checkpoint.value.checkpoint.index,
             message_id
         );
         if let Err(e) = self.state.storage.validators_checkpoints().add(validator, message_id, checkpoint).await {

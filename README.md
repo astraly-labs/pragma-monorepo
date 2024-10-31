@@ -1,4 +1,4 @@
-# Pragma
+# Pragma V2
 
 [![GitHub Actions][gha-badge]][gha] [![codecov](https://codecov.io/gh/astraly-labs/pragma-monorepo/branch/main/graph/badge.svg?)](https://codecov.io/gh/astraly-labs/pragma-monorepo) [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
 
@@ -11,14 +11,6 @@
 [license-badge]: https://img.shields.io/badge/License-Apache-blue.svg
 
 ## Rust
-
-<a href="./rust/pragma-cli/">Pragma CLI</a>
-
-CLI used to interact with the Pragma protocol.
-
-- Register yourself as a data provider
-- Schedule new data feeds
-- Connect pragma to your protocol
 
 <a href="./rust/theoros/">Theoros</a>
 
@@ -37,22 +29,6 @@ Solidity contracts & libraries.
 - Set of contracts used to store data relayed from Pragma chain using Hyperlane.
 - SDK that can be used by EVM protocols looking to integrate Pragma.
 
-## Local Development
+## Typescript
 
-### Foundry
-
-First ensure you have Foundry installed on your machine.
-
-Run the following to install `foundryup`:
-
-```bash
-curl -L https://foundry.paradigm.xyz | bash
-```
-
-Then run `foundryup` to install `forge`, `cast`, `anvil` and `chisel`.
-
-```bash
-foundryup
-```
-
-Check out the [Foundry Book](https://book.getfoundry.sh/getting-started/installation) for more information.
+(TODO: akhercha)

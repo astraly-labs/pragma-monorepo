@@ -179,17 +179,19 @@ impl IndexerService {
         // overriten anyway? (we only store the latest update for a given feed)
         let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
         let message_id = dispatch_event.id();
+        let nonce = dispatch_event.message.header.nonce;
 
         match &block.header {
             Some(h) => {
                 tracing::info!(
-                    "📨 [Indexer] Received a Dispatch event at block #{}, message_id={:#x}",
+                    "📨 [Indexer] Received a Dispatch event at block #{}, (#{}) message_id={:#x}",
                     h.block_number,
+                    nonce,
                     message_id
                 );
             }
             None => {
-                tracing::info!("📨 [Indexer] Received a Dispatch event, message_id={:#x}", message_id);
+                tracing::info!("📨 [Indexer] Received a Dispatch event, (#{}) message_id={:#x}", nonce, message_id);
             }
         };
 

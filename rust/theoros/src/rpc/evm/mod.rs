@@ -35,10 +35,6 @@ impl HyperlaneValidatorsMapping {
         self.0.get(&chain_name)
     }
 
-    pub fn validators(&self) -> &HashMap<EvmChainName, Vec<Felt>> {
-        &self.0
-    }
-
     /// Get all configured chains names
     pub fn chain_names(&self) -> Vec<EvmChainName> {
         self.0.keys().cloned().collect()

@@ -87,16 +87,6 @@ impl ValidatorsCheckpointsStorage {
         Ok(())
     }
 
-    /// Returns all the checkpoints for each validator
-    pub async fn all(&self) -> HashMap<(Felt, U256), SignedCheckpointWithMessageId> {
-        self.0.read().await.clone()
-    }
-
-    /// Returns the checkpoint for the given validator and message Id
-    pub async fn get(&self, validator: &Felt, message_id: U256) -> Option<SignedCheckpointWithMessageId> {
-        self.0.read().await.get(&(*validator, message_id)).cloned()
-    }
-
     // Check if any of the validators has a checkpoint signed for the provided message id.
     pub async fn contains_message_id(&self, message_id: U256) -> bool {
         let all_checkpoints = self.0.read().await;

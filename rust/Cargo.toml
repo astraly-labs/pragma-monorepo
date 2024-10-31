@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["pragma-cli", "theoros", "pragma-utils", "pragma-feeds"]
+members = ["theoros", "pragma-utils", "pragma-feeds"]
 
 [workspace.package]
 version = "0.1.0"
@@ -88,7 +88,6 @@ apibara-sdk = { git = "https://github.com/apibara/dna", rev = "9caa385" }
 # Pragma packages
 pragma-utils = { path = "pragma-utils" }
 pragma-feeds = { path = "pragma-feeds" }
-pragma-cli = { path = "pragma-cli" }
 theoros = { path = "theoros" }
 
 # Tests dependencies

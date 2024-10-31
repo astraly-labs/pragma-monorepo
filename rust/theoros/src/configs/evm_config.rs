@@ -68,19 +68,9 @@ impl EvmConfig {
         Ok(config)
     }
 
-    /// Get configuration for a specific chain
-    pub fn chain_config(&self, chain_name: EvmChainName) -> Option<&EvmChainConfig> {
-        self.chains.get(&chain_name)
-    }
-
     /// Get all configured chains
     pub fn chains(&self) -> &HashMap<EvmChainName, EvmChainConfig> {
         &self.chains
-    }
-
-    /// Get all configured chains names
-    pub fn chain_names(&self) -> Vec<EvmChainName> {
-        self.chains.keys().cloned().collect()
     }
 }
 
@@ -118,25 +108,5 @@ impl FromStr for EvmChainName {
             "zksync_testnet" => Ok(Self::ZksyncTestnet),
             _ => Err(ParseChainError(s.to_string())),
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const EXAMPLE_CONFIG: &str = r#"
-        zircuit_testnet:
-            rpc_url: "https://zircuit1-testnet.p2pify.com"
-            hyperlane_address: "0xb9aB8aDC69Ad3B96a8CdF5610e9bFEcc0415D662"
-    "#;
-
-    #[test]
-    fn test_parse_config() {
-        let config: EvmConfig = serde_yaml::from_str(EXAMPLE_CONFIG).unwrap();
-
-        let zircuit_config = config.chain_config(EvmChainName::ZircuitTestnet).unwrap();
-        assert_eq!(zircuit_config.rpc_url, "https://zircuit1-testnet.p2pify.com");
-        assert_eq!(zircuit_config.hyperlane_address, "0xb9aB8aDC69Ad3B96a8CdF5610e9bFEcc0415D662");
     }
 }

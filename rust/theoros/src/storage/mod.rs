@@ -16,11 +16,11 @@ use crate::{
 
 /// Theoros storage that contains:
 ///   * a set of all available feed ids,
-///   * a mapping of all the validators and their fetchers.
-///   * a mapping of all the validators and their latest fetched checkpoints.
-///   * an event cache,
-///   * an events storage containing the most recents [DispatchEvent] events indexed.
-///   * a channel to dispatch updates to the clients.
+///   * a mapping of all the validators and their fetchers,
+///   * a mapping of all the validators and their latest fetched checkpoints for a given message_id,
+///   * an event cache, used to store events that have not been signed yet,
+///   * an events storage containing the most recent [`DispatchUpdateInfos`] per feed_id,
+///   * (websocket) a channel to dispatch updates to the clients.
 pub struct TheorosStorage {
     feed_ids: FeedIdsStorage,
     validators: ValidatorsLocationStorage,
@@ -35,7 +35,6 @@ impl TheorosStorage {
         rpc_client: &StarknetRpc,
         pragma_feeds_registry_address: &Felt,
         hyperlane_validator_announce_address: &Felt,
-        update_tx: Sender<CheckpointMatchEvent>,
     ) -> anyhow::Result<Self> {
         let initial_validators = rpc_client.get_announced_validators(hyperlane_validator_announce_address).await?;
         let initial_locations = rpc_client
@@ -47,6 +46,8 @@ impl TheorosStorage {
 
         let supported_feed_ids = rpc_client.get_feed_ids(pragma_feeds_registry_address).await?;
         let feed_ids = FeedIdsStorage::from_rpc_response(supported_feed_ids);
+
+        let (update_tx, _) = tokio::sync::broadcast::channel(1000);
 
         Ok(Self {
             feed_ids,

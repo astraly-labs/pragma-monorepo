@@ -11,7 +11,7 @@ use crate::{
     errors::GetCalldataError,
     storage::DispatchUpdateInfos,
     types::hyperlane::CheckpointWithMessageId,
-    AppState,
+    types::state::AppState,
 };
 
 use super::hyperlane::DispatchUpdate;

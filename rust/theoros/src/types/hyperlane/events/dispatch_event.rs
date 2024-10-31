@@ -14,8 +14,11 @@ const SPOT_MEDIAN_UPDATE_SIZE: usize = 107;
 
 #[derive(Debug, Clone)]
 pub struct DispatchEvent {
+    #[allow(unused)]
     pub sender: U256,
+    #[allow(unused)]
     pub destination_domain: u32,
+    #[allow(unused)]
     pub recipient_address: U256,
     pub message: DispatchMessage,
 }
@@ -218,14 +221,14 @@ impl DispatchUpdate {
         let raw_feed_type = u16::from_be_bytes(data.drain(..2).collect::<Vec<u8>>().try_into().unwrap());
         let feed_type = FeedType::try_from(raw_feed_type)?;
 
-        let pair_id_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
+        let pair_id_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
         let mut padded_data = [0u8; 16];
         let extracted_data = data.drain(..12).collect::<Vec<u8>>();
         padded_data[4..].copy_from_slice(&extracted_data);
-        let pair_id_high = u128::from_be_bytes(padded_data);
-        let pair_id = U256::from_words(pair_id_high, pair_id_low);
+        let pair_id_low = u128::from_be_bytes(padded_data);
+        let pair_id = U256::from_words(pair_id_low, pair_id_high);
 
-        let feed_id = build_feed_id(raw_asset_class, raw_feed_type, pair_id_low, pair_id_high);
+        let feed_id = build_feed_id(raw_asset_class, raw_feed_type, pair_id_high, pair_id_low);
 
         let update = match feed_type {
             FeedType::UniqueSpotMedian => {
@@ -271,10 +274,10 @@ impl SpotMedianUpdate {
         let decimals = u8::from_be_bytes(data.drain(..1).collect::<Vec<u8>>().try_into().unwrap());
         let price_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap()); // U256
         let price_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
-        let price = U256::from_words(price_high, price_low);
+        let price = U256::from_words(price_low, price_high);
         let volume_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap()); // U256
         let volume_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
-        let volume = U256::from_words(volume_high, volume_low);
+        let volume = U256::from_words(volume_low, volume_high);
 
         Ok(Self {
             pair_id: U256::from(0_u8), // This will get populated later
@@ -297,8 +300,8 @@ impl SpotMedianUpdate {
         bytes.extend_from_slice(&self.price.high().to_be_bytes());
         bytes.extend_from_slice(&self.price.low().to_be_bytes());
 
-        bytes.extend_from_slice(&self.volume.low().to_be_bytes());
         bytes.extend_from_slice(&self.volume.high().to_be_bytes());
+        bytes.extend_from_slice(&self.volume.low().to_be_bytes());
         bytes
     }
 }

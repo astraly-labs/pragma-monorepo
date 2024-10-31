@@ -51,35 +51,6 @@ impl EventStorage {
         let feed_id = hex_str_to_u256(feed_id)?;
         Ok(events.get(&feed_id).cloned())
     }
-
-    /// Returns the current mapping as a Vec.
-    pub async fn as_vec(&self) -> Result<Vec<(U256, DispatchUpdateInfos)>> {
-        let events = self.events.read().await;
-        Ok(events.iter().map(|(k, v)| (*k, v.clone())).collect())
-    }
-
-    /// TODO, explain + re-assert the existence of this.
-    /// Retrieves multiple events by their feed IDs.
-    /// Returns a tuple of (found_events, first_missing_feed_id).
-    /// If all feed IDs are found, first_missing_feed_id will be None.
-    pub async fn get_vec(&self, feed_ids: &[String]) -> Result<(Vec<DispatchUpdateInfos>, Option<String>)> {
-        let events = self.events.read().await;
-        let mut result = Vec::with_capacity(feed_ids.len());
-        let mut missing_feed_id = None;
-
-        for feed_id in feed_ids {
-            let u256_feed_id = hex_str_to_u256(feed_id)?;
-            match events.get(&u256_feed_id) {
-                Some(event) => result.push(event.clone()),
-                None => {
-                    missing_feed_id = Some(feed_id.clone());
-                    break;
-                }
-            }
-        }
-
-        Ok((result, missing_feed_id))
-    }
 }
 
 /// Contains a Mapping between message ids and the corresponding Event.
@@ -93,18 +64,6 @@ impl EventCache {
     pub async fn add(&self, message_id: U256, event: &DispatchEvent) {
         let mut cache = self.cache.write().await;
         cache.insert(message_id, event.clone());
-    }
-
-    /// Returns the number of mappings stored.
-    pub async fn len(&self) -> usize {
-        self.cache.read().await.len()
-    }
-
-    /// Returns the mappings as a Vec.
-    /// Will contain a tuple, first element being the message_id and second the Event.
-    pub async fn as_vec(&self) -> Vec<(U256, DispatchEvent)> {
-        let cache = self.cache.read().await;
-        cache.iter().map(|(k, v)| (*k, v.clone())).collect()
     }
 
     /// TODO, explain + re-assert the existence of this.

@@ -7,10 +7,6 @@ use tokio::sync::RwLock;
 pub struct FeedIdsStorage(Arc<RwLock<HashSet<String>>>);
 
 impl FeedIdsStorage {
-    pub fn new() -> Self {
-        Self(Arc::new(RwLock::new(HashSet::new())))
-    }
-
     pub fn from_rpc_response(feed_ids: Vec<String>) -> Self {
         Self(Arc::new(RwLock::new(feed_ids.into_iter().collect())))
     }
@@ -42,27 +38,6 @@ impl FeedIdsStorage {
     pub async fn len(&self) -> usize {
         let feed_ids = self.0.read().await;
         feed_ids.len()
-    }
-
-    /// Returns true if the storage is empty.
-    pub async fn is_empty(&self) -> bool {
-        let feed_ids = self.0.read().await;
-        feed_ids.is_empty()
-    }
-
-    /// Returns a clone of the inner HashSet.
-    pub async fn clone_inner(&self) -> HashSet<String> {
-        let feed_ids = self.0.read().await;
-        feed_ids.clone()
-    }
-
-    /// Performs an operation on the inner HashSet while holding the write lock.
-    pub async fn with_inner<F, R>(&self, f: F) -> R
-    where
-        F: FnOnce(&mut HashSet<String>) -> R,
-    {
-        let mut feed_ids = self.0.write().await;
-        f(&mut feed_ids)
     }
 
     /// Returns an iterator over the feed IDs.
