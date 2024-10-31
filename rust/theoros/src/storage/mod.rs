@@ -1,33 +1,29 @@
-pub mod event;
+pub mod checkpoints;
 pub mod feed_id;
+pub mod updates;
 pub mod validator;
 
-pub use event::*;
+pub use checkpoints::*;
 pub use feed_id::*;
-use tokio::sync::broadcast::Sender;
+pub use updates::*;
 pub use validator::*;
 
 use starknet::core::types::Felt;
+use tokio::sync::broadcast::Sender;
 
 use crate::{
     rpc::starknet::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc},
-    types::hyperlane::CheckpointMatchEvent,
+    types::hyperlane::CheckpointSignedEvent,
 };
 
-/// Theoros storage that contains:
-///   * a set of all available feed ids,
-///   * a mapping of all the validators and their fetchers,
-///   * a mapping of all the validators and their latest fetched checkpoints for a given message_id,
-///   * an event cache, used to store events that have not been signed yet,
-///   * an events storage containing the most recent [`DispatchUpdateInfos`] per feed_id,
-///   * (websocket) a channel to dispatch updates to the clients.
 pub struct TheorosStorage {
     feed_ids: FeedIdsStorage,
-    validators: ValidatorsLocationStorage,
-    checkpoints: ValidatorsCheckpointsStorage,
-    cached_events: EventCache,
-    dispatch_events: EventStorage,
-    pub feeds_channel: Sender<CheckpointMatchEvent>,
+    validators_fetchers: ValidatorsFetchersStorage,
+    signed_checkpoints: SignedCheckpointsStorage,
+    unsigned_checkpoints: UnsignedCheckpointsStorage,
+    latest_update_per_feed: LatestUpdatePerFeedStorage,
+    // websocket notifications
+    feeds_updated_tx: Sender<CheckpointSignedEvent>,
 }
 
 impl TheorosStorage {
@@ -41,21 +37,19 @@ impl TheorosStorage {
             .get_announced_storage_locations(hyperlane_validator_announce_address, &initial_validators)
             .await?;
 
-        let mut validators = ValidatorsLocationStorage::default();
-        validators.fill_with_initial_state(initial_validators, initial_locations).await?;
+        let mut validators_fetchers = ValidatorsFetchersStorage::default();
+        validators_fetchers.fill_with_initial_state(initial_validators, initial_locations).await?;
 
         let supported_feed_ids = rpc_client.get_feed_ids(pragma_feeds_registry_address).await?;
         let feed_ids = FeedIdsStorage::from_rpc_response(supported_feed_ids);
 
-        let (update_tx, _) = tokio::sync::broadcast::channel(1000);
-
         Ok(Self {
             feed_ids,
-            validators,
-            checkpoints: ValidatorsCheckpointsStorage::default(),
-            cached_events: EventCache::default(),
-            dispatch_events: EventStorage::default(),
-            feeds_channel: update_tx,
+            validators_fetchers,
+            signed_checkpoints: SignedCheckpointsStorage::default(),
+            unsigned_checkpoints: UnsignedCheckpointsStorage::default(),
+            latest_update_per_feed: LatestUpdatePerFeedStorage::default(),
+            feeds_updated_tx: tokio::sync::broadcast::channel(1024).0,
         })
     }
 
@@ -63,19 +57,23 @@ impl TheorosStorage {
         &self.feed_ids
     }
 
-    pub fn validators_locations(&self) -> &ValidatorsLocationStorage {
-        &self.validators
+    pub fn validators_fetchers(&self) -> &ValidatorsFetchersStorage {
+        &self.validators_fetchers
     }
 
-    pub fn validators_checkpoints(&self) -> &ValidatorsCheckpointsStorage {
-        &self.checkpoints
+    pub fn signed_checkpoints(&self) -> &SignedCheckpointsStorage {
+        &self.signed_checkpoints
     }
 
-    pub fn dispatch_events(&self) -> &EventStorage {
-        &self.dispatch_events
+    pub fn latest_update_per_feed(&self) -> &LatestUpdatePerFeedStorage {
+        &self.latest_update_per_feed
     }
 
-    pub fn cached_events(&self) -> &EventCache {
-        &self.cached_events
+    pub fn unsigned_checkpoints(&self) -> &UnsignedCheckpointsStorage {
+        &self.unsigned_checkpoints
+    }
+
+    pub fn feeds_updated_tx(&self) -> &Sender<CheckpointSignedEvent> {
+        &self.feeds_updated_tx
     }
 }

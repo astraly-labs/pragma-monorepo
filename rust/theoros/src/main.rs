@@ -61,9 +61,9 @@ async fn main() -> Result<()> {
         config.hyperlane_mailbox_address,
         config.hyperlane_validator_announce_address,
         config.pragma_feeds_registry_address,
-        config.indexer_starting_block,
+        state.starknet_rpc.block_number().await?,
     )?;
-    let hyperlane_service = HyperlaneService::new(state.clone());
+    let hyperlane_service = HyperlaneService::new(state.storage.clone());
     let api_service = ApiService::new(state.clone(), &config.server_host, config.server_port);
 
     ServiceGroup::default()

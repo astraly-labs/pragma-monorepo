@@ -1,6 +1,7 @@
 // TODO:
 // Create tests for this module. It should produces the same than abi.encodePack
 use alloy::{primitives::U256, signers::Signature};
+use pragma_utils::conversions::alloy::hex_str_to_u256;
 use serde::{Deserialize, Serialize};
 use starknet::core::types::Felt;
 use std::str::FromStr;
@@ -9,12 +10,9 @@ use crate::{
     configs::evm_config::EvmChainName,
     constants::{HYPERLANE_VERSION, PRAGMA_MAJOR_VERSION, PRAGMA_MINOR_VERSION, TRAILING_HEADER_SIZE},
     errors::GetCalldataError,
-    storage::DispatchUpdateInfos,
-    types::hyperlane::CheckpointWithMessageId,
+    types::hyperlane::{CheckpointWithMessageId, DispatchUpdate, DispatchUpdateInfos},
     types::state::AppState,
 };
-
-use super::hyperlane::DispatchUpdate;
 
 pub trait AsCalldata {
     fn as_bytes(&self) -> Vec<u8>;
@@ -40,10 +38,10 @@ impl Calldata {
         chain_name: EvmChainName,
         feed_id: String,
     ) -> Result<Calldata, GetCalldataError> {
-        let event: DispatchUpdateInfos = state
+        let update_info: DispatchUpdateInfos = state
             .storage
-            .dispatch_events()
-            .get(&feed_id)
+            .latest_update_per_feed()
+            .get(&hex_str_to_u256(&feed_id).unwrap())
             .await
             .map_err(|_| GetCalldataError::DispatchNotFound)?
             .ok_or(GetCalldataError::DispatchNotFound)?;
@@ -55,15 +53,15 @@ impl Calldata {
 
         let checkpoints = state
             .storage
-            .validators_checkpoints()
-            .get_validators_signed_checkpoints(validators, event.message_id)
+            .signed_checkpoints()
+            .get(validators, update_info.nonce)
             .await
             .map_err(|_| GetCalldataError::ValidatorNotFound)?;
 
         // TODO: We only have one validator for now
         let checkpoint_infos = checkpoints.last().unwrap();
 
-        let update = match event.update {
+        let update = match update_info.update {
             DispatchUpdate::SpotMedian { update, feed_id: _ } => update,
         };
 
@@ -74,7 +72,6 @@ impl Calldata {
             proof_len: 0,
             proof: vec![],
             update_data: update.to_bytes(),
-            // TODO: Store directly a U256.
             feed_id: U256::from_str(&feed_id).unwrap(),
             publish_time: update.metadata.timestamp,
         };
@@ -84,11 +81,10 @@ impl Calldata {
             // TODO: signers_len & signatures should work for multiple validators
             signers_len: 1_u8,
             signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
-            nonce: event.nonce,
+            nonce: update_info.nonce,
             timestamp: update.metadata.timestamp,
-            emitter_chain_id: event.emitter_chain_id,
-            // TODO: Store directly a Felt.
-            emitter_address: Felt::from_dec_str(&event.emitter_address).unwrap(),
+            emitter_chain_id: update_info.emitter_chain_id,
+            emitter_address: update_info.emitter_address,
             payload,
         };
 

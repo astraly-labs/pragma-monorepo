@@ -22,7 +22,7 @@ use tokio::sync::broadcast::Receiver;
 
 use crate::constants::{DEFAULT_ACTIVE_CHAIN, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
 use crate::types::calldata::AsCalldata;
-use crate::types::{hyperlane::CheckpointMatchEvent, rpc::RpcDataFeed};
+use crate::types::{hyperlane::CheckpointSignedEvent, rpc::RpcDataFeed};
 use crate::AppState;
 use crate::{configs::evm_config::EvmChainName, types::calldata::Calldata};
 
@@ -74,7 +74,7 @@ async fn websocket_handler(stream: WebSocket, state: AppState) {
 
     let (sender, receiver) = stream.split();
 
-    let feeds_receiver = state.storage.feeds_channel.subscribe();
+    let feeds_receiver = state.storage.feeds_updated_tx().subscribe();
 
     let id = ws_state.subscriber_counter.fetch_add(1, Ordering::SeqCst);
 
@@ -89,7 +89,7 @@ pub struct Subscriber {
     id: SubscriberId,
     closed: bool,
     state: Arc<AppState>,
-    feeds_receiver: Receiver<CheckpointMatchEvent>,
+    feeds_receiver: Receiver<CheckpointSignedEvent>,
     receiver: SplitStream<WebSocket>,
     sender: SplitSink<WebSocket, Message>,
     data_feeds_with_config: HashMap<String, DataFeedClientConfig>,
@@ -102,7 +102,7 @@ impl Subscriber {
     pub fn new(
         id: SubscriberId,
         state: Arc<AppState>,
-        feeds_receiver: Receiver<CheckpointMatchEvent>,
+        feeds_receiver: Receiver<CheckpointSignedEvent>,
         receiver: SplitStream<WebSocket>,
         sender: SplitSink<WebSocket, Message>,
     ) -> Self {
@@ -134,7 +134,7 @@ impl Subscriber {
         tokio::select! {
             maybe_update_feeds_event = self.feeds_receiver.recv() => {
                 match maybe_update_feeds_event {
-                    Ok(event) => self.handle_data_feeds_update(event).await,
+                    Ok(_) => self.handle_data_feeds_update().await,
                     Err(e) => Err(anyhow!("Failed to receive update from store: {:?}", e)),
                 }
             },
@@ -162,8 +162,8 @@ impl Subscriber {
         }
     }
 
-    async fn handle_data_feeds_update(&mut self, event: CheckpointMatchEvent) -> Result<()> {
-        tracing::debug!(subscriber = self.id, n = event.block_number(), "Handling Data Feeds Update.");
+    async fn handle_data_feeds_update(&mut self) -> Result<()> {
+        tracing::debug!(subscriber = self.id, "Handling Data Feeds Update.");
         // Retrieve the updates for subscribed feed ids at the given slot
         let feed_ids = self.data_feeds_with_config.keys().cloned().collect::<Vec<_>>();
         // TODO: add support for multiple feeds

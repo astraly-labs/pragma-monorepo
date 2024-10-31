@@ -1,8 +1,6 @@
-use alloy::primitives::keccak256;
-use alloy::primitives::{hex, U256 as alloy_U256};
+use alloy::primitives::hex;
 use anyhow::{Context, Result};
 use pragma_feeds::FeedType;
-use pragma_utils::conversions::alloy::hex_str_to_u256;
 use starknet::core::types::{Felt, U256};
 
 use pragma_utils::conversions::apibara::FromFieldBytes;
@@ -77,50 +75,6 @@ impl FromStarknetEventData for DispatchEvent {
     }
 }
 
-impl DispatchEvent {
-    /// Generates a message id from a Dispatch Event.
-    pub fn id(&self) -> alloy_U256 {
-        let mut input = Vec::new();
-
-        // Formatting header part
-        input.push(self.message.header.version);
-        input.extend_from_slice(&self.message.header.nonce.to_be_bytes());
-        input.extend_from_slice(&self.message.header.origin.to_be_bytes());
-        input.extend_from_slice(&self.message.header.sender.high().to_be_bytes());
-        input.extend_from_slice(&self.message.header.sender.low().to_be_bytes());
-        input.extend_from_slice(&self.message.header.destination.to_be_bytes());
-        input.extend_from_slice(&self.message.header.recipient.high().to_be_bytes());
-        input.extend_from_slice(&self.message.header.recipient.low().to_be_bytes());
-
-        // Formatting body part
-        input.extend_from_slice(&self.message.body.nb_updated.to_be_bytes());
-
-        for update in &self.message.body.updates {
-            match update {
-                DispatchUpdate::SpotMedian { feed_id, update: spot_update } => {
-                    let feed_id = hex_str_to_u256(feed_id).unwrap();
-                    input.extend_from_slice(&feed_id.to_be_bytes_vec());
-                    // Append metadata, i.e timestamp, nb sources & decimals
-                    input.extend_from_slice(&spot_update.metadata.timestamp.to_be_bytes());
-                    input.extend_from_slice(&spot_update.metadata.num_sources_aggregated.to_be_bytes());
-                    input.extend_from_slice(&spot_update.metadata.decimals.to_be_bytes());
-                    // Append scaled price and volume
-                    input.extend_from_slice(&spot_update.price.high().to_be_bytes());
-                    input.extend_from_slice(&spot_update.price.low().to_be_bytes());
-                    input.extend_from_slice(&spot_update.volume.high().to_be_bytes());
-                    input.extend_from_slice(&spot_update.volume.low().to_be_bytes());
-                }
-            }
-        }
-
-        let hash = keccak256(&input);
-        let message_id =
-            alloy_U256::from_be_bytes(<[u8; 32]>::try_from(hash.as_slice()).expect("Hash should be 32 bytes"));
-
-        message_id
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct DispatchMessage {
     pub header: DispatchMessageHeader,
@@ -129,11 +83,14 @@ pub struct DispatchMessage {
 
 #[derive(Debug, Clone)]
 pub struct DispatchMessageHeader {
+    #[allow(unused)]
     pub version: u8,
     pub nonce: u32,
     pub origin: u32,
     pub sender: U256,
+    #[allow(unused)]
     pub destination: u32,
+    #[allow(unused)]
     pub recipient: U256,
 }
 
@@ -159,6 +116,7 @@ impl FromStarknetEventData for DispatchMessageHeader {
 
 #[derive(Debug, Clone)]
 pub struct DispatchMessageBody {
+    #[allow(unused)]
     pub nb_updated: u8,
     pub updates: Vec<DispatchUpdate>,
 }
@@ -199,6 +157,25 @@ impl FromStarknetEventData for DispatchMessageBody {
 
         // Return the result
         Ok(Self { nb_updated, updates })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct DispatchUpdateInfos {
+    pub nonce: u32,
+    pub emitter_chain_id: u32,
+    pub emitter_address: Felt,
+    pub update: DispatchUpdate,
+}
+
+impl DispatchUpdateInfos {
+    pub fn new(event: &DispatchEvent, update: &DispatchUpdate) -> Self {
+        DispatchUpdateInfos {
+            nonce: event.message.header.nonce,
+            emitter_chain_id: event.message.header.origin,
+            emitter_address: Felt::from_dec_str(&event.message.header.sender.to_string()).unwrap(),
+            update: update.clone(),
+        }
     }
 }
 

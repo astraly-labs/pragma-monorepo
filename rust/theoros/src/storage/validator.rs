@@ -1,25 +1,18 @@
 use std::str::FromStr;
 use std::{collections::HashMap, sync::Arc};
 
-use alloy::primitives::U256;
 use anyhow::bail;
 use starknet::core::types::Felt;
 use tokio::sync::RwLock;
 
-use crate::types::hyperlane::{
-    CheckpointStorage, FetchFromStorage, SignedCheckpointWithMessageId, ValidatorAnnouncementEvent,
-};
-
-// TODO: Rename this. It should be clear that it is a Validator => StorageLocation mapping.
-// TODO: The ValidatorsLocationStorage should contain the builded Location, not the CheckpointStorage.
-// Currently, we are building it everytime in the Hyperlane service using: checkpoint.build()
+use crate::types::hyperlane::{CheckpointStorage, FetchFromStorage, ValidatorAnnouncementEvent};
 
 /// Contains a mapping between the validators and their storages used to
 /// retrieve checkpoints.
 #[derive(Debug, Default)]
-pub struct ValidatorsLocationStorage(RwLock<HashMap<Felt, Arc<Box<dyn FetchFromStorage>>>>);
+pub struct ValidatorsFetchersStorage(RwLock<HashMap<Felt, Arc<Box<dyn FetchFromStorage>>>>);
 
-impl ValidatorsLocationStorage {
+impl ValidatorsFetchersStorage {
     /// Fills the [HashMap] with the initial state fetched from the RPC.
     pub async fn fill_with_initial_state(
         &mut self,
@@ -67,61 +60,5 @@ impl ValidatorsLocationStorage {
     /// Returns all registered mappings between validators & their location storage.
     pub async fn all(&self) -> HashMap<Felt, Arc<Box<dyn FetchFromStorage>>> {
         self.0.read().await.clone()
-    }
-}
-
-/// Contains a mapping between the validators and their latest fetched checkpoint.
-#[derive(Debug, Default)]
-pub struct ValidatorsCheckpointsStorage(pub RwLock<HashMap<(Felt, U256), SignedCheckpointWithMessageId>>);
-
-impl ValidatorsCheckpointsStorage {
-    /// Adds or updates the [SignedCheckpointWithMessageId] for the given validator
-    pub async fn add(
-        &self,
-        validator: Felt,
-        message_id: U256,
-        checkpoint: SignedCheckpointWithMessageId,
-    ) -> anyhow::Result<()> {
-        let mut all_checkpoints = self.0.write().await;
-        all_checkpoints.insert((validator, message_id), checkpoint);
-        Ok(())
-    }
-
-    // Check if any of the validators has a checkpoint signed for the provided message id.
-    pub async fn contains_message_id(&self, message_id: U256) -> bool {
-        let all_checkpoints = self.0.read().await;
-
-        for checkpoint in all_checkpoints.values() {
-            if checkpoint.value.message_id == message_id {
-                return true;
-            }
-        }
-        false
-    }
-
-    // Check if the given validator has a checkpoint for the given message_id.
-    pub async fn exists(&self, validator: Felt, message_id: U256) -> bool {
-        self.0.read().await.contains_key(&(validator, message_id))
-    }
-
-    // For the provided list of validators, returns all their signed checkpoints for the
-    // provided message_id.
-    pub async fn get_validators_signed_checkpoints(
-        &self,
-        validators: &[Felt],
-        searched_message_id: U256,
-    ) -> anyhow::Result<Vec<SignedCheckpointWithMessageId>> {
-        let checkpoints = self.0.read().await;
-
-        let mut signatures = Vec::new();
-        // Iterate over the map with tuple key (validator, message_id)
-        for ((validator, message_id), checkpoint) in checkpoints.iter() {
-            // Only include if validator is in the provided list and message_id matches
-            if message_id == &searched_message_id && validators.contains(validator) {
-                signatures.push(checkpoint.clone());
-            }
-        }
-
-        Ok(signatures)
     }
 }
