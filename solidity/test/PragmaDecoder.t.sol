@@ -12,6 +12,7 @@ import "../src/libraries/BytesLib.sol";
 import {TestUtils, PragmaHarness} from "./TestUtils.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "./mocks/PragmaUpgraded.sol";
+import "./utils/TestConstants.sol";
 
 contract PragmaHarnessTest is Test {
     PragmaHarness private pragmaHarness;
@@ -49,9 +50,10 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(0), //SPOT
                 uint8(0), //VARIANT
-                bytes32("ETH/USD")
+                TestConstantsLib.ETH_USD
             )
         );
+
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.SpotMedian, feedId);
         uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
 
@@ -74,8 +76,8 @@ contract PragmaHarnessTest is Test {
                 uint16(0),
                 ///CRYPTO
                 uint8(1), //TWAP
-                uint8(0), // VARIANT
-                bytes32("BTC/USD")
+                uint8(0), // VARIANT,
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Twap, feedId);
@@ -105,7 +107,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(2), //RV
                 uint8(0), //VARIANT
-                bytes32("ETH/USD")
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.RealizedVolatility, feedId);
@@ -134,7 +136,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(3), //Options
                 uint8(0),
-                bytes32("ETH/USD")
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Options, feedId);
@@ -169,7 +171,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(4), //Perp
                 uint8(0), //VARIANT
-                bytes32("ETH/USD")
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Perpetuals, feedId);

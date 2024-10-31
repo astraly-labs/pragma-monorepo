@@ -110,13 +110,12 @@ contract Hyperlane is IHyperlane {
         hyMsg.emitterAddress = encodedHyMsg.toBytes32(index);
         index += 32;
 
-        bytes32 merkeTreeHookAddress = encodedHyMsg.toBytes32(index);
+        bytes32 merkleTreeHookAddress = encodedHyMsg.toBytes32(index);
         index += 32;
 
-        bytes32 domainHash = keccak256(abi.encodePacked(hyMsg.emitterChainId, merkeTreeHookAddress, "HYPERLANE"));
+        bytes32 domainHash = keccak256(abi.encodePacked(hyMsg.emitterChainId, merkleTreeHookAddress, "HYPERLANE"));
 
         bytes32 root = encodedHyMsg.toBytes32(index);
-        checkPointRoot = root;
         index += 32;
 
         uint32 checkpointIndex = encodedHyMsg.toUint32(index);
