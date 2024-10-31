@@ -55,7 +55,9 @@ pub async fn get_calldata(
         return Err(GetCalldataError::FeedNotFound(feed_id));
     };
 
-    let calldata = Calldata::build_from(&state, chain_name, feed_id).await?;
+    let calldata = Calldata::build_from(&state, chain_name, feed_id)
+        .await
+        .map_err(|e| GetCalldataError::CalldataError(e.to_string()))?;
 
     let response =
         GetCalldataResponse { calldata: calldata.clone(), encoded_calldata: hex::encode(calldata.as_bytes()) };

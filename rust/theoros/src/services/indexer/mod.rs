@@ -127,7 +127,7 @@ impl IndexerService {
                 }
             }
             DataMessage::Invalidate { cursor } => match cursor {
-                Some(c) => bail!("Received an invalidate request data at {}", &c.order_key),
+                Some(c) => bail!("Indexed an invalidate request data at {}", &c.order_key),
                 None => bail!("Invalidate request without cursor provided"),
             },
             DataMessage::Heartbeat => {}
@@ -164,13 +164,13 @@ impl IndexerService {
         match &block.header {
             Some(h) => {
                 tracing::info!(
-                    "📨 [Indexer] Received a Dispatch event at block #{} with nonce #{}",
+                    "📨 [Indexer] [Block {}] Indexed a Dispatch event with nonce #{}",
                     h.block_number,
                     nonce,
                 );
             }
             None => {
-                tracing::info!("📨 [Indexer] Received a Dispatch event, with nonce #{}", nonce);
+                tracing::info!("📨 [Indexer] Indexed a Dispatch event with nonce #{}", nonce);
             }
         };
         self.state.storage.unsigned_checkpoints().add(nonce, &dispatch_event).await;
@@ -179,7 +179,7 @@ impl IndexerService {
 
     /// Decodes a ValidatorAnnouncementEvent from the Starknet event data.
     async fn decode_validator_announce_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
-        tracing::info!("📨 [Indexer] Received a ValidatorAnnouncement event");
+        tracing::info!("📨 [Indexer] Indexed a ValidatorAnnouncement event");
         let validator_announcement_event = ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
             .context("Failed to parse ValidatorAnnouncement")?;
         let validators = &mut self.state.storage.validators_fetchers();
@@ -190,7 +190,7 @@ impl IndexerService {
     /// Decodes a NewFeedId event from the Starknet event data.
     async fn decode_new_feed_id_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
         let feed_id = event_data[1].to_hex_string();
-        tracing::info!("📨 [Indexer] Received a NewFeedId event for: {}", feed_id);
+        tracing::info!("📨 [Indexer] Indexed a NewFeedId event for: {}", feed_id);
         self.state.storage.feed_ids().add(feed_id).await;
         Ok(())
     }
@@ -198,7 +198,7 @@ impl IndexerService {
     /// Decodes a RemovedFeedId event from the Starknet event data.
     async fn decode_removed_feed_id_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
         let feed_id = event_data[1].to_hex_string();
-        tracing::info!("📨 [Indexer] Received a RemovedFeedId event for: {}", feed_id);
+        tracing::info!("📨 [Indexer] Indexed a RemovedFeedId event for: {}", feed_id);
         self.state.storage.feed_ids().remove(&feed_id).await;
         Ok(())
     }

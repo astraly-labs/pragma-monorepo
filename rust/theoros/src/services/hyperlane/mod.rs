@@ -104,7 +104,7 @@ impl HyperlaneService {
             return Ok(());
         }
 
-        tracing::info!("🌉 [Hyperlane] Validator {:#x} retrieved signed checkpoint #{}", validator, nonce);
+        tracing::info!("🌉 [Hyperlane] Validator {:#x} signed the checkpoint with nonce #{}", validator, nonce);
 
         if let Err(e) = self.storage.signed_checkpoints().add(validator, nonce, checkpoint).await {
             tracing::error!(
@@ -120,7 +120,7 @@ impl HyperlaneService {
     async fn store_event_updates(&self, nonce: u32) -> anyhow::Result<()> {
         let event = match self.storage.unsigned_checkpoints().get(nonce).await {
             Some(e) => e,
-            None => panic!("Should not happen!"),
+            None => unreachable!(),
         };
         for update in event.message.body.updates.iter() {
             let feed_id = update.feed_id();

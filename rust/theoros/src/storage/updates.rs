@@ -13,14 +13,14 @@ pub struct LatestUpdatePerFeedStorage {
 }
 
 impl LatestUpdatePerFeedStorage {
-    /// Insert the latest dispatch update for a feed_id.
+    /// Insert the latest [`DispatchUpdateInfos`] for a feed id.
     pub async fn add(&self, feed_id: U256, event: DispatchUpdateInfos) -> Result<()> {
         let mut events = self.events.write().await;
         events.insert(feed_id, event);
         Ok(())
     }
 
-    /// Retrieves the latest dispatch update for a feed_id;
+    /// Retrieves the latest [`DispatchUpdateInfos`] for a feed id.
     pub async fn get(&self, feed_id: &U256) -> Result<Option<DispatchUpdateInfos>> {
         let events = self.events.read().await;
         Ok(events.get(feed_id).cloned())

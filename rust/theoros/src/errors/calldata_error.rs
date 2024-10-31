@@ -23,6 +23,8 @@ pub enum GetCalldataError {
     ValidatorNotFound,
     #[error("The chain '{0}' is not supported")]
     ChainNotSupported(String),
+    #[error("Error while building the calldata: {0}")]
+    CalldataError(String),
 }
 
 impl IntoResponse for GetCalldataError {

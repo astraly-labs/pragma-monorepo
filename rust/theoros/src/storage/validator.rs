@@ -7,8 +7,8 @@ use tokio::sync::RwLock;
 
 use crate::types::hyperlane::{CheckpointStorage, FetchFromStorage, ValidatorAnnouncementEvent};
 
-/// Contains a mapping between the validators and their storages used to
-/// retrieve checkpoints.
+/// Mapping between the validators and their fetcher used to
+/// retrieve signed checkpoints.
 #[derive(Debug, Default)]
 pub struct ValidatorsFetchersStorage(RwLock<HashMap<Felt, Arc<Box<dyn FetchFromStorage>>>>);
 

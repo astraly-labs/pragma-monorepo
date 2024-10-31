@@ -1,6 +1,5 @@
-// TODO:
-// Create tests for this module. It should produces the same than abi.encodePack
 use alloy::{primitives::U256, signers::Signature};
+use anyhow::Context;
 use pragma_utils::conversions::alloy::hex_str_to_u256;
 use serde::{Deserialize, Serialize};
 use starknet::core::types::Felt;
@@ -9,7 +8,6 @@ use std::str::FromStr;
 use crate::{
     configs::evm_config::EvmChainName,
     constants::{HYPERLANE_VERSION, PRAGMA_MAJOR_VERSION, PRAGMA_MINOR_VERSION, TRAILING_HEADER_SIZE},
-    errors::GetCalldataError,
     types::hyperlane::{CheckpointWithMessageId, DispatchUpdate, DispatchUpdateInfos},
     types::state::AppState,
 };
@@ -33,32 +31,20 @@ pub struct Calldata {
 }
 
 impl Calldata {
-    pub async fn build_from(
-        state: &AppState,
-        chain_name: EvmChainName,
-        feed_id: String,
-    ) -> Result<Calldata, GetCalldataError> {
+    // TODO: Only works for ONE validator for now.
+    pub async fn build_from(state: &AppState, chain_name: EvmChainName, feed_id: String) -> anyhow::Result<Calldata> {
         let update_info: DispatchUpdateInfos = state
             .storage
             .latest_update_per_feed()
             .get(&hex_str_to_u256(&feed_id).unwrap())
-            .await
-            .map_err(|_| GetCalldataError::DispatchNotFound)?
-            .ok_or(GetCalldataError::DispatchNotFound)?;
+            .await?
+            .context("No update found")?;
 
-        let validators = state
-            .hyperlane_validators_mapping
-            .get_validators(chain_name)
-            .ok_or(GetCalldataError::ChainNotSupported(format!("{:?}", chain_name)))?;
+        let validators =
+            state.hyperlane_validators_mapping.get_validators(chain_name).context("No validators found")?;
 
-        let checkpoints = state
-            .storage
-            .signed_checkpoints()
-            .get(validators, update_info.nonce)
-            .await
-            .map_err(|_| GetCalldataError::ValidatorNotFound)?;
+        let checkpoints = state.storage.signed_checkpoints().get(validators, update_info.nonce).await;
 
-        // TODO: We only have one validator for now
         let checkpoint_infos = checkpoints.last().unwrap();
 
         let update = match update_info.update {
@@ -78,7 +64,6 @@ impl Calldata {
 
         let hyperlane_message = HyperlaneMessage {
             hyperlane_version: HYPERLANE_VERSION,
-            // TODO: signers_len & signatures should work for multiple validators
             signers_len: 1_u8,
             signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
             nonce: update_info.nonce,

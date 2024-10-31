@@ -6,7 +6,7 @@ use tokio::sync::RwLock;
 
 use crate::types::hyperlane::{DispatchEvent, SignedCheckpointWithMessageId};
 
-/// Contains a Mapping between messages nonce and their corresponding Event.
+/// Mapping between messages nonces and their corresponding Event.
 #[derive(Clone, Default)]
 pub struct UnsignedCheckpointsStorage {
     cache: Arc<RwLock<HashMap<u32, DispatchEvent>>>,
@@ -34,7 +34,7 @@ impl UnsignedCheckpointsStorage {
     }
 }
 
-/// Contains a mapping between the validators and their latest fetched checkpoint.
+/// Mapping between the validators and their signed checkpoint for a given nonce.
 #[derive(Debug, Default)]
 pub struct SignedCheckpointsStorage(pub RwLock<HashMap<(Felt, u32), SignedCheckpointWithMessageId>>);
 
@@ -58,11 +58,7 @@ impl SignedCheckpointsStorage {
 
     // For the provided list of validators, returns all their signed checkpoints for the
     // provided message_id.
-    pub async fn get(
-        &self,
-        validators: &[Felt],
-        searched_nonce: u32,
-    ) -> anyhow::Result<Vec<SignedCheckpointWithMessageId>> {
+    pub async fn get(&self, validators: &[Felt], searched_nonce: u32) -> Vec<SignedCheckpointWithMessageId> {
         let lock = self.0.read().await;
 
         let mut checkpoints = Vec::new();
@@ -74,6 +70,6 @@ impl SignedCheckpointsStorage {
             }
         }
 
-        Ok(checkpoints)
+        checkpoints
     }
 }
