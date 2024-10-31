@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "../../src/Hyperlane.sol";
 import {IHyperlane, HyMsg, Signature} from "../../src/interfaces/IHyperlane.sol";
 import "forge-std/Test.sol";
+import "./TestConstants.sol";
 
 abstract contract HyperlaneTestUtils is Test {
     uint256[] currentSigners;
@@ -35,8 +36,6 @@ abstract contract HyperlaneTestUtils is Test {
         bytes memory payload,
         uint8 numSigners
     ) public view returns (bytes memory updateData) {
-        uint8 version = 3;
-
         bytes32[5] memory r = [
             bytes32(0x83db08d4e1590714aef8600f5f1e3c967ab6a3b9f93bb4242de0306510e688ea),
             bytes32(0xf81a5dd3f871ad2d27a3b538e73663d723f8263fb3d289514346d43d000175f5),
@@ -67,7 +66,7 @@ abstract contract HyperlaneTestUtils is Test {
         bytes32 _hash = keccak256(abi.encodePacked(domainHash, root, checkpointIndex, messageId));
         // Construct the updateData by concatenating all parts
         updateData = abi.encodePacked(
-            version,
+            TestConstantsLib.HYPERLANE_VERSION,
             numSigners,
             signatures,
             nonce,

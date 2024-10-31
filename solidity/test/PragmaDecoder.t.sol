@@ -12,6 +12,7 @@ import "../src/libraries/BytesLib.sol";
 import {TestUtils, PragmaHarness} from "./TestUtils.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import "./mocks/PragmaUpgraded.sol";
+import "./utils/TestConstants.sol";
 
 contract PragmaHarnessTest is Test {
     PragmaHarness private pragmaHarness;
@@ -49,7 +50,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(0), //SPOT
                 uint8(0), //VARIANT
-                uint256(0x4554482f555344)
+                TestConstantsLib.ETH_USD
             )
         );
 
@@ -76,7 +77,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(1), //TWAP
                 uint8(0), // VARIANT,
-                uint256(0x4254432f555344)
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Twap, feedId);
@@ -106,7 +107,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(2), //RV
                 uint8(0), //VARIANT
-                uint256(0x4254432f555344)
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.RealizedVolatility, feedId);
@@ -135,7 +136,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(3), //Options
                 uint8(0),
-                uint256(0x4254432f555344)
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Options, feedId);
@@ -170,7 +171,7 @@ contract PragmaHarnessTest is Test {
                 ///CRYPTO
                 uint8(4), //Perp
                 uint8(0), //VARIANT
-                uint256(0x4254432f555344)
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Perpetuals, feedId);
