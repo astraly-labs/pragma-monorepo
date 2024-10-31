@@ -274,7 +274,7 @@ impl SpotMedianUpdate {
         let price = U256::from_words(price_high, price_low);
         let volume_high = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap()); // U256
         let volume_low = u128::from_be_bytes(data.drain(..16).collect::<Vec<u8>>().try_into().unwrap());
-        let volume = U256::from_words(volume_high,volume_low);
+        let volume = U256::from_words(volume_high, volume_low);
 
         Ok(Self {
             pair_id: U256::from(0_u8), // This will get populated later
