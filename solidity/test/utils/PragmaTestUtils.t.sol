@@ -57,6 +57,10 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         uint8 numSigners;
         uint32 source_chain_id;
         bytes32 source_emitter_address;
+        bytes32 merkle_tree_hook_address;
+        bytes32 root;
+        uint32 checkpoint_index;
+        bytes32 message_id;
         bool brokenSignature;
     }
 
@@ -94,6 +98,10 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
             MOCK_TIMESTAMP_VALUE,
             config.source_chain_id,
             config.source_emitter_address,
+            config.merkle_tree_hook_address,
+            config.root,
+            config.checkpoint_index,
+            config.message_id,
             hyperlanePayload,
             config.numSigners
         );

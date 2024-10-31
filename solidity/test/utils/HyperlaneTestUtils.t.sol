@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 import "../../src/Hyperlane.sol";
 import {IHyperlane, HyMsg, Signature} from "../../src/interfaces/IHyperlane.sol";
 import "forge-std/Test.sol";
+import "./TestConstants.sol";
 
 abstract contract HyperlaneTestUtils is Test {
     uint256[] currentSigners;
@@ -28,11 +29,13 @@ abstract contract HyperlaneTestUtils is Test {
         uint64 timestamp,
         uint32 emitterChainId,
         bytes32 emitterAddress,
+        bytes32 merkleTreeHookAddress,
+        bytes32 root,
+        uint32 checkpointIndex,
+        bytes32 messageId,
         bytes memory payload,
         uint8 numSigners
     ) public view returns (bytes memory updateData) {
-        uint8 version = 1;
-
         bytes32[5] memory r = [
             bytes32(0x83db08d4e1590714aef8600f5f1e3c967ab6a3b9f93bb4242de0306510e688ea),
             bytes32(0xf81a5dd3f871ad2d27a3b538e73663d723f8263fb3d289514346d43d000175f5),
@@ -59,12 +62,23 @@ abstract contract HyperlaneTestUtils is Test {
             signatures = abi.encodePacked(signatures, validatorIndex, r[i], s[i], v);
         }
 
-        // Create the body part of the data
-        bytes memory body = abi.encodePacked(nonce, timestamp, emitterChainId, emitterAddress, payload);
-
+        bytes32 domainHash = keccak256(abi.encodePacked(emitterChainId, merkleTreeHookAddress, "HYPERLANE"));
+        bytes32 _hash = keccak256(abi.encodePacked(domainHash, root, checkpointIndex, messageId));
         // Construct the updateData by concatenating all parts
-        updateData =
-            abi.encodePacked(version, numSigners, signatures, nonce, timestamp, emitterChainId, emitterAddress, payload);
+        updateData = abi.encodePacked(
+            TestConstantsLib.HYPERLANE_VERSION,
+            numSigners,
+            signatures,
+            nonce,
+            timestamp,
+            emitterChainId,
+            emitterAddress,
+            merkleTreeHookAddress,
+            root,
+            checkpointIndex,
+            messageId,
+            payload
+        );
     }
 }
 
@@ -73,6 +87,10 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
     uint64 constant TEST_UPDATE_TIMESTAMP = 112;
     uint32 constant TEST_EMITTER_CHAIN_ID = 7;
     bytes32 constant TEST_EMITTER_ADDR = 0x0000000000000000000000000000000000000000000000000000000000000bad;
+    bytes32 constant TEST_MERKLE_TREE_ADDRESS = 0x0000000000000000000000000000000000000000000000000000000000000aaa;
+    bytes32 constant TEST_ROOT = 0x0000000000000000000000000000000000000000000000000000000000000bbb;
+    uint32 constant TEST_CHECKPOINT_INDEX = 10;
+    bytes32 constant TEST_MESSAGE_ID = 0x000000000000000000000000000000000000000000000000000000000000dddd;
     bytes constant TEST_PAYLOAD = hex"deadbeaf";
     uint8 constant TEST_NUM_SIGNERS = 5;
 
@@ -85,31 +103,40 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
     ) private view {
         assertTrue(valid);
         assertEq(reason, "");
-        assertEq(hyMsg.nonce, TEST_NONCE);
-        assertEq(hyMsg.timestamp, TEST_UPDATE_TIMESTAMP);
-        assertEq(hyMsg.emitterChainId, TEST_EMITTER_CHAIN_ID);
-        assertEq(hyMsg.emitterAddress, TEST_EMITTER_ADDR);
-        assertEq(hyMsg.payload, TEST_PAYLOAD);
+        assertEq(hyMsg.nonce, TEST_NONCE, "Nonce does not correspond");
+        assertEq(hyMsg.timestamp, TEST_UPDATE_TIMESTAMP, "Timestamp does not correspond");
+        assertEq(hyMsg.emitterChainId, TEST_EMITTER_CHAIN_ID, "Emitter chain id does not correspond");
+        assertEq(hyMsg.emitterAddress, TEST_EMITTER_ADDR, "Emitter address does not correspond");
+        assertEq(hyMsg.payload, TEST_PAYLOAD, "Payload does not correspond");
         // parseAndVerifyHyMsg() returns an empty signatures array for gas savings since it's not used
         // after its been verified. parseHyMsg() returns the full signatures array.
         (hyMsg,,) = hyperlane.parseHyMsg(updateData);
-        assertEq(hyMsg.signatures.length, TEST_NUM_SIGNERS);
+        assertEq(hyMsg.signatures.length, TEST_NUM_SIGNERS, "Num signers does not correspond");
     }
 
     function testGenerateUpdateDataWorks() public {
         address[] memory validators = new address[](5);
 
-        validators[0] = address(0x00d306a72ff3eb2325e4550e147f259ca0b180002d);
-        validators[1] = address(0x00cd62004e68d7f5262f1af91b666a53881cc01a9b);
-        validators[2] = address(0x00d84a911b9e9015045c595b8415a28d972440c20a);
-        validators[3] = address(0x0021d2edddde8aa132fadd1edf635748fa28283ed6);
-        validators[4] = address(0x00e6202a1de5ea4a46eaa00546d97a6407471e19dc);
+        validators[0] = address(0x00bDD0F7a02860F1985876e5Ea910eC64B4a960cD6);
+        validators[1] = address(0x00E5C98924bad1E765f7E7B5f290674ACaCAc1eD99);
+        validators[2] = address(0x00476Ef8a8774Ef8F2E22A2c966B4EC2cb6c602030);
+        validators[3] = address(0x0063E29F46AE447D6C9aDdC14085ab3F80D076a46A);
+        validators[4] = address(0x00D7638ca8D8dbd7ab2A89BA7244191014142a137C);
 
         // Set up the Hyperlane contract with the provided validators
         IHyperlane hyperlane = IHyperlane(setUpHyperlane(uint8(validators.length), validators));
 
         bytes memory updateData = generateUpdateData(
-            TEST_NONCE, TEST_UPDATE_TIMESTAMP, TEST_EMITTER_CHAIN_ID, TEST_EMITTER_ADDR, TEST_PAYLOAD, TEST_NUM_SIGNERS
+            TEST_NONCE,
+            TEST_UPDATE_TIMESTAMP,
+            TEST_EMITTER_CHAIN_ID,
+            TEST_EMITTER_ADDR,
+            TEST_MERKLE_TREE_ADDRESS,
+            TEST_ROOT,
+            TEST_CHECKPOINT_INDEX,
+            TEST_MESSAGE_ID,
+            TEST_PAYLOAD,
+            TEST_NUM_SIGNERS
         );
 
         (HyMsg memory hyMsg, bool valid, string memory reason,,) = hyperlane.parseAndVerifyHyMsg(updateData);
@@ -117,9 +144,14 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
     }
 
     function testParseHyMsg() public {
+        bytes32 merkleTreeHookAddress = bytes32(uint256(4));
+        bytes32 root = bytes32(uint256(1232));
+        uint32 checkpointIndex = uint32(10);
+        bytes32 messageId = bytes32(uint256(121212));
+
         // Create a sample encoded message
         bytes memory encodedHyMsg = abi.encodePacked(
-            uint8(1), // version
+            uint8(3), // version
             uint8(2), // number of signatures
             // First signature
             uint8(0), // validator index
@@ -136,6 +168,10 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
             uint64(block.timestamp), // timestamp
             uint32(5), // emitterChainId
             bytes32(uint256(6)), // emitterAddress
+            merkleTreeHookAddress, // merkleTreeHookAddress
+            root, // root
+            checkpointIndex, //checkpoint index
+            messageId, // message id
             bytes("Hello, Hyperlane!") // payload
         );
 
@@ -145,7 +181,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         (HyMsg memory parsedMsg,,) = hyperlane.parseHyMsg(encodedHyMsg);
 
         // Verify parsed fields
-        assertEq(parsedMsg.version, 1, "Incorrect version");
+        assertEq(parsedMsg.version, 3, "Incorrect version");
         assertEq(parsedMsg.signatures.length, 2, "Incorrect number of signatures");
 
         // Check first signature
@@ -164,13 +200,10 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         assertEq(parsedMsg.timestamp, block.timestamp, "Incorrect timestamp");
         assertEq(parsedMsg.emitterChainId, 5, "Incorrect emitter chain ID");
         assertEq(uint256(parsedMsg.emitterAddress), 6, "Incorrect emitter address");
-        assertEq(parsedMsg.payload, bytes("Hello, Hyperlane!"), "Incorrect payload");
+        bytes32 domainHash = keccak256(abi.encodePacked(parsedMsg.emitterChainId, merkleTreeHookAddress, "HYPERLANE"));
+        bytes32 expectedHash = keccak256(abi.encodePacked(domainHash, root, checkpointIndex, messageId));
+        assertEq(parsedMsg.hash, expectedHash, "Hash computation failed");
 
-        // Verify hash
-        bytes memory body = abi.encodePacked(
-            uint32(1234), uint64(block.timestamp), uint32(5), bytes32(uint256(6)), bytes("Hello, Hyperlane!")
-        );
-        bytes32 expectedHash = keccak256(abi.encodePacked(keccak256(body)));
-        assertEq(parsedMsg.hash, expectedHash, "Incorrect hash");
+        assertEq(parsedMsg.payload, bytes("Hello, Hyperlane!"), "Incorrect payload");
     }
 }

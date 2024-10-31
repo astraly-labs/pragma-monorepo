@@ -5,6 +5,7 @@ import "forge-std/Test.sol";
 import "../../src/PragmaDecoder.sol";
 import "../TestUtils.sol";
 import "../PragmaDecoder.t.sol";
+import "../utils/TestConstants.sol";
 
 contract PragmaDecoderGasTest is Test {
     PragmaHarness private pragmaHarness;
@@ -28,7 +29,13 @@ contract PragmaDecoderGasTest is Test {
 
     function testGasAllUpdates() public {
         string[5] memory updateTypes = ["SpotMedian", "TWAP", "RealizedVolatility", "Options", "Perpetuals"];
-        string[5] memory currencies = ["ETH/USD", "BTC/USD", "ETH/USD", "ETH/USD", "ETH/USD"];
+        uint256[5] memory currencies = [
+            TestConstantsLib.ETH_USD,
+            TestConstantsLib.BTC_USD,
+            TestConstantsLib.BTC_USD,
+            TestConstantsLib.BTC_USD,
+            TestConstantsLib.BTC_USD
+        ];
         for (uint256 i = 0; i < updateTypes.length; i++) {
             FeedType dataType = FeedType(i);
             _setUp(dataType);
