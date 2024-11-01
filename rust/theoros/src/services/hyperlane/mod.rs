@@ -148,7 +148,7 @@ impl HyperlaneService {
 
         // Send websocket notification
         if let Err(e) = self.storage.feeds_updated_tx().send(NewUpdatesAvailableEvent::New) {
-            tracing::error!("Failed to send feeds updated notification: {:?}", e);
+            tracing::error!("😨 Failed to send websocket notification: {:?}", e);
         }
         Ok(())
     }
