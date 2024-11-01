@@ -31,4 +31,16 @@ Solidity contracts & libraries.
 
 ## Typescript
 
-(TODO: akhercha)
+<a href="./typescript/theoros-sdk/">Theoros SDK</a>
+
+A SDK used to query data from Theoros in a simple way.
+
+- Fetch the latest calldata using either REST or Websocket endpoints.
+
+<a href="./typescript/pragma-deployer/">Pragma Deployer</a>
+
+The main scripts used to deploy all our contracts (Cairo, Solidity, ...) are located there.
+
+<a href="./typescript/pragma-scripts/">Pragma Scripts</a>
+
+Utils scripts that we use to make some actions on-chain.
