@@ -88,6 +88,7 @@ impl HyperlaneService {
         // NOTE: At the moment, we only process updates when ALL validators have signed a message.
         // TODO: We should instead use a quorum method - if 66% have signed, consider it ok.
         for &nonce in &unsigned_nonces {
+            // TODO: If the nonce n+1 is fully signed, shall we ignore every nonces before..? Or raise an alert?
             if self.all_validators_signed_nonce(&validators_fetchers, nonce).await {
                 tracing::info!(
                     "🌉 [Hyperlane] ✅ Nonce #{} is fully signed by all validators! Storing updates...",
