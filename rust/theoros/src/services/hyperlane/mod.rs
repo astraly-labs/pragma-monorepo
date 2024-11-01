@@ -63,6 +63,8 @@ impl HyperlaneService {
         }
         futures::future::join_all(futures).await;
 
+        // TODO: At the moment, we only process updates when ALL validators have signed a message.
+        // We should instead use a quorum method - if 66% have signed, consider it ok.
         for &nonce in &unsigned_nonces {
             if self.all_validators_signed_nonce(&validators_fetchers, nonce).await {
                 if let Err(e) = self.store_event_updates(nonce).await {
@@ -147,9 +149,16 @@ impl HyperlaneService {
         }
 
         // Send websocket notification
-        if let Err(e) = self.storage.feeds_updated_tx().send(NewUpdatesAvailableEvent::New) {
-            tracing::error!("😨 Failed to send websocket notification: {:?}", e);
+        match self.storage.feeds_updated_tx().send(NewUpdatesAvailableEvent::New) {
+            Ok(_) => {
+                tracing::debug!("🕸️ [Websocket] 🔔 Successfully sent websocket notification");
+            }
+            Err(e) => {
+                // Only log as debug since this is expected when there are no subscribers
+                tracing::debug!("🕸️ [Websocket] 📪 No active websocket subscribers to receive notification: {}", e);
+            }
         }
+
         Ok(())
     }
 }
