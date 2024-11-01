@@ -89,6 +89,10 @@ impl HyperlaneService {
         // TODO: We should instead use a quorum method - if 66% have signed, consider it ok.
         for &nonce in &unsigned_nonces {
             if self.all_validators_signed_nonce(&validators_fetchers, nonce).await {
+                tracing::info!(
+                    "🌉 [Hyperlane] ✅ Nonce #{} is fully signed by all validators! Storing updates...",
+                    nonce
+                );
                 if let Err(e) = self.store_event_updates(nonce).await {
                     tracing::error!("😱 Failed to store event updates for nonce {}: {:?}", nonce, e);
                 }
