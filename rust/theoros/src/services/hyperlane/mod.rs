@@ -91,7 +91,7 @@ impl HyperlaneService {
                     "🌉 [Hyperlane] ✅ Nonce #{} is fully signed by all validators! Storing updates...",
                     nonce
                 );
-                if let Err(e) = self.store_event_updates(nonce).await {
+                if let Err(e) = self.store_dispatch_updates(nonce).await {
                     tracing::error!("😱 Failed to store event updates for nonce {}: {:?}", nonce, e);
                 }
                 self.storage.unsigned_checkpoints().remove(nonce).await;
@@ -158,14 +158,11 @@ impl HyperlaneService {
         Ok(())
     }
 
-    /// Stores the event updates once it has been signed.
-    async fn store_event_updates(&self, nonce: u32) -> anyhow::Result<()> {
+    /// Stores the updates once it has been signed.
+    async fn store_dispatch_updates(&self, nonce: u32) -> anyhow::Result<()> {
         let event = match self.storage.unsigned_checkpoints().get(nonce).await {
             Some(e) => e,
-            None => {
-                tracing::error!("Event not found for nonce {}", nonce);
-                return Ok(());
-            }
+            None => unreachable!(),
         };
         for update in event.message.body.updates.iter() {
             let feed_id = update.feed_id();
