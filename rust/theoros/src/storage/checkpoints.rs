@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
 use starknet::core::types::Felt;
@@ -9,28 +9,32 @@ use crate::types::hyperlane::{DispatchEvent, SignedCheckpointWithMessageId};
 /// Mapping between messages nonces and their corresponding Event.
 #[derive(Clone, Default)]
 pub struct UnsignedCheckpointsStorage {
-    cache: Arc<RwLock<HashMap<u32, DispatchEvent>>>,
+    cache: Arc<RwLock<BTreeMap<u32, DispatchEvent>>>,
 }
 
 impl UnsignedCheckpointsStorage {
+    /// Insert a new mapping between a nonce & an Event.
     pub async fn add(&self, nonce: u32, event: &DispatchEvent) {
         let mut cache = self.cache.write().await;
         cache.insert(nonce, event.clone());
     }
 
-    pub async fn get(&self, nonce: u32) -> Option<DispatchEvent> {
+    /// Retrieve all nonces currently stored, in sorted order.
+    pub async fn nonces(&self) -> Vec<u32> {
         let cache = self.cache.read().await;
-        cache.get(&nonce).cloned()
+        cache.keys().cloned().collect()
     }
 
+    /// Remove a nonce from the storage.
     pub async fn remove(&self, nonce: u32) {
         let mut cache = self.cache.write().await;
         cache.remove(&nonce);
     }
 
-    pub async fn nonces(&self) -> Vec<u32> {
+    /// Get the event associated with a nonce.
+    pub async fn get(&self, nonce: u32) -> Option<DispatchEvent> {
         let cache = self.cache.read().await;
-        cache.keys().cloned().collect()
+        cache.get(&nonce).cloned()
     }
 }
 

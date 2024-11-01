@@ -13,7 +13,7 @@ use tokio::sync::broadcast::Sender;
 
 use crate::{
     rpc::starknet::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc},
-    types::hyperlane::CheckpointSignedEvent,
+    types::hyperlane::NewUpdatesAvailableEvent,
 };
 
 pub struct TheorosStorage {
@@ -23,7 +23,7 @@ pub struct TheorosStorage {
     unsigned_checkpoints: UnsignedCheckpointsStorage,
     latest_update_per_feed: LatestUpdatePerFeedStorage,
     // websocket notifications
-    feeds_updated_tx: Sender<CheckpointSignedEvent>,
+    feeds_updated_tx: Sender<NewUpdatesAvailableEvent>,
 }
 
 impl TheorosStorage {
@@ -73,7 +73,7 @@ impl TheorosStorage {
         &self.unsigned_checkpoints
     }
 
-    pub fn feeds_updated_tx(&self) -> &Sender<CheckpointSignedEvent> {
+    pub fn feeds_updated_tx(&self) -> &Sender<NewUpdatesAvailableEvent> {
         &self.feeds_updated_tx
     }
 }

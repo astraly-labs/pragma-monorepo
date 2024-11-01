@@ -31,6 +31,6 @@ pub struct CheckpointWithMessageId {
 
 /// An event that is emitted when we find a match between a checkpoint and a message
 #[derive(Clone, PartialEq, Debug)]
-pub enum CheckpointSignedEvent {
+pub enum NewUpdatesAvailableEvent {
     New,
 }

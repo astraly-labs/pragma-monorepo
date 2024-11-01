@@ -22,7 +22,7 @@ use tokio::sync::broadcast::Receiver;
 
 use crate::constants::{DEFAULT_ACTIVE_CHAIN, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
 use crate::types::calldata::AsCalldata;
-use crate::types::{hyperlane::CheckpointSignedEvent, rpc::RpcDataFeed};
+use crate::types::{hyperlane::NewUpdatesAvailableEvent, rpc::RpcDataFeed};
 use crate::AppState;
 use crate::{configs::evm_config::EvmChainName, types::calldata::Calldata};
 
@@ -89,7 +89,7 @@ pub struct Subscriber {
     id: SubscriberId,
     closed: bool,
     state: Arc<AppState>,
-    feeds_receiver: Receiver<CheckpointSignedEvent>,
+    feeds_receiver: Receiver<NewUpdatesAvailableEvent>,
     receiver: SplitStream<WebSocket>,
     sender: SplitSink<WebSocket, Message>,
     data_feeds_with_config: HashMap<String, DataFeedClientConfig>,
@@ -102,7 +102,7 @@ impl Subscriber {
     pub fn new(
         id: SubscriberId,
         state: Arc<AppState>,
-        feeds_receiver: Receiver<CheckpointSignedEvent>,
+        feeds_receiver: Receiver<NewUpdatesAvailableEvent>,
         receiver: SplitStream<WebSocket>,
         sender: SplitSink<WebSocket, Message>,
     ) -> Self {
