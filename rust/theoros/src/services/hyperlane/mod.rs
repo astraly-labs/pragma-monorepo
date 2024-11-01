@@ -37,8 +37,6 @@ impl HyperlaneService {
         Self { storage }
     }
 
-    /// Every [FETCH_INTERVAL] seconds, fetch the latest checkpoint signed for all
-    /// registered validators.
     pub async fn run_forever(&self) -> anyhow::Result<()> {
         loop {
             self.process_validator_checkpoints().await;
@@ -50,15 +48,14 @@ impl HyperlaneService {
     ///
     /// This function performs the following steps:
     ///
-    /// 1. **Retrieve Unsigned Nonces**: Fetches all the nonces currently stored in the `UnsignedCheckpointsStorage`.
-    ///    - If there are no unsigned nonces, the function returns early.
+    /// 1. **Retrieve Unsigned Nonces**:
+    ///    - Fetches all the nonces currently stored in the `UnsignedCheckpointsStorage`.
     ///
-    /// 2. **Retrieve Validators and Fetchers**: Gets all registered validators and their corresponding fetchers from the `ValidatorsFetchersStorage`.
+    /// 2. **Retrieve Validators and Fetchers**:
+    ///    - Gets all registered validators and their corresponding fetchers from the `ValidatorsFetchersStorage`.
     ///
     /// 3. **Fetch Signed Checkpoints**:
-    ///    - Attempts to fetch the signed checkpoint for the given nonce from each validator's fetcher.
-    ///    - These fetch attempts are spawned as asynchronous tasks and collected into a `futures` vector.
-    ///    - Waits for all fetch tasks to complete using `futures::future::join_all(futures).await`.
+    ///    - Attempts to fetch the signed checkpoint all unsigned nonce from each validator's fetcher (in parallel),
     ///
     /// 4. **Process Completed Nonces**:
     ///    - After all fetches are completed, iterates over the unsigned nonces again.
