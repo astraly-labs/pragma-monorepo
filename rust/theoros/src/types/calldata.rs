@@ -31,7 +31,6 @@ pub struct Calldata {
 }
 
 impl Calldata {
-    // TODO: Only works for ONE validator for now.
     pub async fn build_from(state: &AppState, chain_name: EvmChainName, feed_id: String) -> anyhow::Result<Calldata> {
         let update_info: DispatchUpdateInfos = state
             .storage
@@ -53,23 +52,29 @@ impl Calldata {
 
         let payload = Payload {
             checkpoint: checkpoint_infos.value.clone(),
+            // TODO: We only handle 1 update per calldata. See if possible to have more.
+            // TODO: If not remove this and consider it to be always one?
             num_updates: 1,
-            update_data_len: 1,
+            // TODO: Remove proof
             proof_len: 0,
             proof: vec![],
+            update_data_len: update.to_bytes().len() as u16,
             update_data: update.to_bytes(),
             feed_id: U256::from_str(&feed_id).unwrap(),
+            // TODO: publish_time is already available in the update metadata. Remove.
             publish_time: update.metadata.timestamp,
         };
 
         let hyperlane_message = HyperlaneMessage {
             hyperlane_version: HYPERLANE_VERSION,
-            signers_len: 1_u8,
-            signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
-            nonce: update_info.nonce,
-            timestamp: update.metadata.timestamp,
             emitter_chain_id: update_info.emitter_chain_id,
             emitter_address: update_info.emitter_address,
+            nonce: update_info.nonce,
+            // TODO: Adapt for N signers
+            signers_len: 1_u8,
+            signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
+            // TODO: Means we store once again the timestamp? Delete this?
+            timestamp: update.metadata.timestamp,
             payload,
         };
 
@@ -147,12 +152,13 @@ pub struct Payload {
     pub checkpoint: CheckpointWithMessageId,
     /// Number of updates
     pub num_updates: u8,
-    pub update_data_len: u16,
     /// Length of the proof
     #[serde(skip)]
     pub proof_len: u16,
     #[serde(skip)]
     pub proof: Vec<String>,
+    #[serde(skip)]
+    pub update_data_len: u16,
     #[serde(skip)]
     pub update_data: Vec<u8>,
     /// The id associated to the feed to be updated
