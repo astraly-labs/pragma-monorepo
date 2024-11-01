@@ -37,7 +37,7 @@ EXPOSE 3000
 EXPOSE 8080
 COPY --from=build /usr/bin/infisical /usr/bin/infisical
 COPY infra/theoros/entrypoint.sh /home/pragma/entrypoint.sh
-# Copy artifacts from other images
+# Copy artifacts from base image
 COPY --from=build /app/target/release/theoros /usr/local/bin/
 
 ENTRYPOINT ["/bin/bash","/home/pragma/entrypoint.sh"]
