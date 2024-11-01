@@ -46,14 +46,42 @@ impl HyperlaneService {
         }
     }
 
+    /// Processes validator checkpoints by fetching signed checkpoints from all validators for each unsigned nonce.
+    ///
+    /// This function performs the following steps:
+    ///
+    /// 1. **Retrieve Unsigned Nonces**: Fetches all the nonces currently stored in the `UnsignedCheckpointsStorage`.
+    ///    - If there are no unsigned nonces, the function returns early.
+    ///
+    /// 2. **Retrieve Validators and Fetchers**: Gets all registered validators and their corresponding fetchers from the `ValidatorsFetchersStorage`.
+    ///
+    /// 3. **Fetch Signed Checkpoints**:
+    ///    - Iterates over each unsigned nonce.
+    ///    - For each nonce, it iterates over all validators.
+    ///    - Attempts to fetch the signed checkpoint for the given nonce from each validator's fetcher.
+    ///    - These fetch attempts are spawned as asynchronous tasks and collected into a `futures` vector.
+    ///    - Waits for all fetch tasks to complete using `futures::future::join_all(futures).await`.
+    ///
+    /// 4. **Process Completed Nonces**:
+    ///    - After all fetches are completed, iterates over the unsigned nonces again.
+    ///    - Checks if all validators have signed the nonce using the `all_validators_signed_nonce` method.
+    ///    - **Note**: Currently, the function only proceeds if **all** validators have signed the nonce.
+    ///      - There's a `TODO` to modify this behavior to use a quorum method (e.g., consider a nonce as valid if 66% of validators have signed it).
+    ///    - If all validators have signed the nonce:
+    ///        - Calls `store_event_updates(nonce)` to process and store the updates associated with that nonce.
+    ///        - Removes the nonce from the `UnsignedCheckpointsStorage`, as it has been fully processed.
+    ///
+    /// **Behavior Summary**:
+    /// - The function ensures that for every unsigned nonce, it collects signed checkpoints from all validators.
+    /// - Only when a nonce has been signed by all validators does it proceed to process the associated updates.
+    /// - This mechanism ensures data consistency and integrity by waiting for consensus among validators.
     async fn process_validator_checkpoints(&self) {
-        let validators_fetchers = self.storage.validators_fetchers().all().await;
         let unsigned_nonces = self.storage.unsigned_checkpoints().nonces().await;
-
         if unsigned_nonces.is_empty() {
             return;
         }
 
+        let validators_fetchers = self.storage.validators_fetchers().all().await;
         let mut futures = Vec::new();
         for &nonce in &unsigned_nonces {
             for (validator, fetcher) in &validators_fetchers {
@@ -63,8 +91,8 @@ impl HyperlaneService {
         }
         futures::future::join_all(futures).await;
 
-        // TODO: At the moment, we only process updates when ALL validators have signed a message.
-        // We should instead use a quorum method - if 66% have signed, consider it ok.
+        // NOTE: At the moment, we only process updates when ALL validators have signed a message.
+        // TODO: We should instead use a quorum method - if 66% have signed, consider it ok.
         for &nonce in &unsigned_nonces {
             if self.all_validators_signed_nonce(&validators_fetchers, nonce).await {
                 if let Err(e) = self.store_event_updates(nonce).await {
@@ -98,7 +126,7 @@ impl HyperlaneService {
 
         match fetcher.fetch(nonce).await {
             Ok(Some(checkpoint)) => {
-                self.handle_checkpoint(validator, checkpoint).await?;
+                self.store_signed_checkpoint(validator, checkpoint).await?;
             }
             Ok(None) => {
                 tracing::debug!("🌉 [Hyperlane] Validator {:#x} has not yet signed nonce {}", validator, nonce);
@@ -115,7 +143,8 @@ impl HyperlaneService {
         Ok(())
     }
 
-    async fn handle_checkpoint(
+    /// Store the signed checkpoint for the validator ; nonce couple.
+    async fn store_signed_checkpoint(
         &self,
         validator: Felt,
         checkpoint: SignedCheckpointWithMessageId,
@@ -133,6 +162,7 @@ impl HyperlaneService {
         Ok(())
     }
 
+    /// Stores the event updates once it has been signed.
     async fn store_event_updates(&self, nonce: u32) -> anyhow::Result<()> {
         let event = match self.storage.unsigned_checkpoints().get(nonce).await {
             Some(e) => e,
