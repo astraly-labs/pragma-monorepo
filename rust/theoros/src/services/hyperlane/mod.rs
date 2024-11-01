@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::{sync::Arc, time::Duration};
 
 use starknet::core::types::Felt;
@@ -10,6 +11,7 @@ use crate::types::hyperlane::{
     DispatchUpdateInfos, FetchFromStorage, NewUpdatesAvailableEvent, SignedCheckpointWithMessageId,
 };
 
+/// Every [FETCH_INTERVAL] seconds, we check the pending checkpoints for all validators.
 const FETCH_INTERVAL: Duration = Duration::from_secs(1);
 
 #[derive(Clone)]
@@ -52,88 +54,80 @@ impl HyperlaneService {
             return;
         }
 
+        let mut futures = Vec::new();
         for &nonce in &unsigned_nonces {
-            let mut any_signed = false;
-            let mut futures = Vec::new();
-
             for (validator, fetcher) in &validators_fetchers {
-                let fut = self.try_fetch_signed_checkpoint(*validator, fetcher.clone(), nonce);
+                let fut = self.process_single_validator_nonce(*validator, fetcher.clone(), nonce);
                 futures.push(fut);
             }
+        }
+        futures::future::join_all(futures).await;
 
-            let results = futures::future::join_all(futures).await;
-
-            // Check if any validator has signed this nonce
-            for signed in results.into_iter().flatten() {
-                if signed {
-                    any_signed = true;
-                }
-            }
-
-            if any_signed {
+        for &nonce in &unsigned_nonces {
+            if self.all_validators_signed_nonce(&validators_fetchers, nonce).await {
                 if let Err(e) = self.store_event_updates(nonce).await {
-                    tracing::error!("Failed to store event updates for nonce {}: {:?}", nonce, e);
+                    tracing::error!("😱 Failed to store event updates for nonce {}: {:?}", nonce, e);
                 }
                 self.storage.unsigned_checkpoints().remove(nonce).await;
-            } else {
-                // If none of the validators have signed this nonce,
-                // we can skip processing higher nonces for now
-                break;
             }
         }
     }
 
-    /// Checks if a nonce has been signed by the validator by querying its fetcher.
-    /// Returns true if signed, else false.
-    async fn try_fetch_signed_checkpoint(
+    /// Checks if all validators have signed a given nonce.
+    async fn all_validators_signed_nonce(
+        &self,
+        validators_fetchers: &HashMap<Felt, Arc<Box<dyn FetchFromStorage>>>,
+        nonce: u32,
+    ) -> bool {
+        let validators: Vec<Felt> = validators_fetchers.keys().cloned().collect();
+        self.storage.signed_checkpoints().all_validators_signed_nonce(&validators, nonce).await
+    }
+
+    async fn process_single_validator_nonce(
         &self,
         validator: Felt,
         fetcher: Arc<Box<dyn FetchFromStorage>>,
         nonce: u32,
-    ) -> anyhow::Result<bool> {
-        if self.storage.signed_checkpoints().exists(validator, nonce).await {
-            return Ok(true);
+    ) -> anyhow::Result<()> {
+        // If the validator already signed this nonce, ignore
+        if self.storage.signed_checkpoints().validator_signed_nonce(validator, nonce).await {
+            return Ok(());
         }
 
         match fetcher.fetch(nonce).await {
             Ok(Some(checkpoint)) => {
-                self.store_signed_checkpoint(validator, checkpoint).await?;
-                Ok(true)
+                self.handle_checkpoint(validator, checkpoint).await?;
             }
             Ok(None) => {
-                tracing::debug!("🌉 [Hyperlane] Checkpoint #{} not yet signed for validator {:#x}", nonce, validator,);
-                Ok(false)
+                tracing::debug!("🌉 [Hyperlane] Validator {:#x} has not yet signed nonce {}", validator, nonce);
             }
             Err(e) => {
                 tracing::error!(
-                    "🌉 [Hyperlane] Failed to fetch checkpoint #{} for validator {:#x}: {:?}",
-                    nonce,
+                    "🌉 [Hyperlane] Failed to fetch checkpoint for validator {:#x} and nonce {}: {:?}",
                     validator,
+                    nonce,
                     e
                 );
-                Ok(false)
             }
         }
+        Ok(())
     }
 
-    async fn store_signed_checkpoint(
+    async fn handle_checkpoint(
         &self,
         validator: Felt,
         checkpoint: SignedCheckpointWithMessageId,
     ) -> anyhow::Result<()> {
         let nonce = checkpoint.value.checkpoint.index;
 
-        if self.storage.signed_checkpoints().exists(validator, nonce).await {
-            tracing::debug!(
-                "🌉 [Hyperlane] Skipping already signed checkpoint #{} for validator {:#x}",
-                nonce,
-                validator
-            );
+        if self.storage.signed_checkpoints().validator_signed_nonce(validator, nonce).await {
+            tracing::debug!("🌉 [Hyperlane] Skipping duplicate checkpoint for validator {:#x}: #{}", validator, nonce);
             return Ok(());
         }
 
-        tracing::info!("🌉 [Hyperlane] Validator {:#x} signed the checkpoint with nonce #{}", validator, nonce);
+        tracing::info!("🌉 [Hyperlane] Validator {:#x} signed checkpoint #{}", validator, nonce);
         self.storage.signed_checkpoints().add(validator, nonce, checkpoint).await?;
+
         Ok(())
     }
 
@@ -151,7 +145,11 @@ impl HyperlaneService {
             let dispatch_update_infos = DispatchUpdateInfos::new(&event, update);
             self.storage.latest_update_per_feed().add(feed_id, dispatch_update_infos).await?;
         }
-        let _ = self.storage.feeds_updated_tx().send(NewUpdatesAvailableEvent::New);
+
+        // Send websocket notification
+        if let Err(e) = self.storage.feeds_updated_tx().send(NewUpdatesAvailableEvent::New) {
+            tracing::error!("Failed to send feeds updated notification: {:?}", e);
+        }
         Ok(())
     }
 }

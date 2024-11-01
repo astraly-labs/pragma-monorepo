@@ -55,11 +55,6 @@ impl SignedCheckpointsStorage {
         Ok(())
     }
 
-    // Check if the given validator has a checkpoint for the given nonce.
-    pub async fn exists(&self, validator: Felt, nonce: u32) -> bool {
-        self.0.read().await.contains_key(&(validator, nonce))
-    }
-
     // For the provided list of validators, returns all their signed checkpoints for the
     // provided message_id.
     pub async fn get(&self, validators: &[Felt], searched_nonce: u32) -> Vec<SignedCheckpointWithMessageId> {
@@ -75,5 +70,16 @@ impl SignedCheckpointsStorage {
         }
 
         checkpoints
+    }
+
+    // Check if the given validator has a checkpoint for the given nonce.
+    pub async fn validator_signed_nonce(&self, validator: Felt, nonce: u32) -> bool {
+        self.0.read().await.contains_key(&(validator, nonce))
+    }
+
+    /// Checks if all validators have signed a nonce.
+    pub async fn all_validators_signed_nonce(&self, validators: &[Felt], nonce: u32) -> bool {
+        let inner = self.0.read().await;
+        validators.iter().all(|validator| inner.contains_key(&(*validator, nonce)))
     }
 }
