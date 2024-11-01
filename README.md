@@ -1,14 +1,14 @@
 # Pragma V2
 
-[![GitHub Actions][gha-badge]][gha] [![codecov](https://codecov.io/gh/astraly-labs/pragma-monorepo/branch/main/graph/badge.svg?)](https://codecov.io/gh/astraly-labs/pragma-monorepo) [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
+[![GitHub Actions][gha-badge]][gha] [![Foundry][foundry-badge]][foundry] [![License: MIT][license-badge]][license]
 
 [gha]: https://github.com/astraly-labs/pragma-monorepo/actions
 [gha-badge]: https://github.com/PaulRBerg/prb-math/actions/workflows/ci.yml/badge.svg
 [codecov-badge]: https://img.shields.io/codecov/c/github/astraly-labs/pragma-monorepo
 [foundry]: https://getfoundry.sh/
 [foundry-badge]: https://img.shields.io/badge/Built%20with-Foundry-FFDB1C.svg
-[license]: https://www.apache.org/licenses/LICENSE-2.0
-[license-badge]: https://img.shields.io/badge/License-Apache-blue.svg
+[license]: https://opensource.org/license/mit
+[license-badge]: https://img.shields.io/badge/License-MIT-blue.svg
 
 ## Rust
 
