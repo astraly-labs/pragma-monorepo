@@ -56,8 +56,6 @@ impl HyperlaneService {
     /// 2. **Retrieve Validators and Fetchers**: Gets all registered validators and their corresponding fetchers from the `ValidatorsFetchersStorage`.
     ///
     /// 3. **Fetch Signed Checkpoints**:
-    ///    - Iterates over each unsigned nonce.
-    ///    - For each nonce, it iterates over all validators.
     ///    - Attempts to fetch the signed checkpoint for the given nonce from each validator's fetcher.
     ///    - These fetch attempts are spawned as asynchronous tasks and collected into a `futures` vector.
     ///    - Waits for all fetch tasks to complete using `futures::future::join_all(futures).await`.
@@ -71,10 +69,6 @@ impl HyperlaneService {
     ///        - Calls `store_event_updates(nonce)` to process and store the updates associated with that nonce.
     ///        - Removes the nonce from the `UnsignedCheckpointsStorage`, as it has been fully processed.
     ///
-    /// **Behavior Summary**:
-    /// - The function ensures that for every unsigned nonce, it collects signed checkpoints from all validators.
-    /// - Only when a nonce has been signed by all validators does it proceed to process the associated updates.
-    /// - This mechanism ensures data consistency and integrity by waiting for consensus among validators.
     async fn process_validator_checkpoints(&self) {
         let unsigned_nonces = self.storage.unsigned_checkpoints().nonces().await;
         if unsigned_nonces.is_empty() {
