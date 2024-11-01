@@ -8,39 +8,37 @@ use crate::types::hyperlane::{DispatchEvent, SignedCheckpointWithMessageId};
 
 /// Mapping between messages nonces and their corresponding Event.
 #[derive(Clone, Default)]
-pub struct UnsignedCheckpointsStorage {
-    cache: Arc<RwLock<BTreeMap<u32, DispatchEvent>>>,
-}
+pub struct UnsignedCheckpointsStorage(Arc<RwLock<BTreeMap<u32, DispatchEvent>>>);
 
 impl UnsignedCheckpointsStorage {
     /// Insert a new mapping between a nonce & an Event.
     pub async fn add(&self, nonce: u32, event: &DispatchEvent) {
-        let mut cache = self.cache.write().await;
-        cache.insert(nonce, event.clone());
+        let mut lock = self.0.write().await;
+        lock.insert(nonce, event.clone());
     }
 
     /// Retrieve all nonces currently stored, in sorted order.
     pub async fn nonces(&self) -> Vec<u32> {
-        let cache = self.cache.read().await;
-        cache.keys().cloned().collect()
+        let lock = self.0.read().await;
+        lock.keys().cloned().collect()
     }
 
     /// Remove a nonce from the storage.
     pub async fn remove(&self, nonce: u32) {
-        let mut cache = self.cache.write().await;
-        cache.remove(&nonce);
+        let mut lock = self.0.write().await;
+        lock.remove(&nonce);
     }
 
     /// Get the event associated with a nonce.
     pub async fn get(&self, nonce: u32) -> Option<DispatchEvent> {
-        let cache = self.cache.read().await;
-        cache.get(&nonce).cloned()
+        let lock = self.0.read().await;
+        lock.get(&nonce).cloned()
     }
 }
 
 /// Mapping between the validators and their signed checkpoint for a given nonce.
 #[derive(Debug, Default)]
-pub struct SignedCheckpointsStorage(pub RwLock<HashMap<(Felt, u32), SignedCheckpointWithMessageId>>);
+pub struct SignedCheckpointsStorage(RwLock<HashMap<(Felt, u32), SignedCheckpointWithMessageId>>);
 
 impl SignedCheckpointsStorage {
     /// Adds or updates the [SignedCheckpointWithMessageId] for the given validator
@@ -50,8 +48,8 @@ impl SignedCheckpointsStorage {
         nonce: u32,
         checkpoint: SignedCheckpointWithMessageId,
     ) -> anyhow::Result<()> {
-        let mut all_checkpoints = self.0.write().await;
-        all_checkpoints.insert((validator, nonce), checkpoint);
+        let mut lock = self.0.write().await;
+        lock.insert((validator, nonce), checkpoint);
         Ok(())
     }
 
@@ -79,7 +77,7 @@ impl SignedCheckpointsStorage {
 
     /// Checks if all validators have signed a nonce.
     pub async fn all_validators_signed_nonce(&self, validators: &[Felt], nonce: u32) -> bool {
-        let inner = self.0.read().await;
-        validators.iter().all(|validator| inner.contains_key(&(*validator, nonce)))
+        let lock = self.0.read().await;
+        validators.iter().all(|validator| lock.contains_key(&(*validator, nonce)))
     }
 }

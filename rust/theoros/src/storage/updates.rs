@@ -13,14 +13,14 @@ pub struct LatestUpdatePerFeedStorage(RwLock<HashMap<U256, DispatchUpdateInfos>>
 impl LatestUpdatePerFeedStorage {
     /// Insert the latest [`DispatchUpdateInfos`] for a feed id.
     pub async fn add(&self, feed_id: U256, event: DispatchUpdateInfos) -> Result<()> {
-        let mut events = self.0.write().await;
-        events.insert(feed_id, event);
+        let mut lock = self.0.write().await;
+        lock.insert(feed_id, event);
         Ok(())
     }
 
     /// Retrieves the latest [`DispatchUpdateInfos`] for a feed id.
     pub async fn get(&self, feed_id: &U256) -> Result<Option<DispatchUpdateInfos>> {
-        let events = self.0.read().await;
-        Ok(events.get(feed_id).cloned())
+        let lock = self.0.read().await;
+        Ok(lock.get(feed_id).cloned())
     }
 }

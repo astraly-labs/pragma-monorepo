@@ -23,7 +23,7 @@ impl ValidatorsFetchersStorage {
             bail!("⛔ Validators and locations vectors must have the same length");
         }
 
-        let mut all_storages = self.0.write().await;
+        let mut lock = self.0.write().await;
         for (validator, location) in validators.into_iter().zip(locations.into_iter()) {
             // TODO: This should be a feature. We sometime want to have a local storage.
             if location[location.len() - 1].starts_with("file") {
@@ -31,7 +31,7 @@ impl ValidatorsFetchersStorage {
             }
             let storage = CheckpointStorage::from_str(&location[location.len() - 1])?;
             let storage_fetcher = storage.build().await?;
-            all_storages.insert(validator, Arc::new(storage_fetcher));
+            lock.insert(validator, Arc::new(storage_fetcher));
         }
 
         Ok(())
@@ -40,8 +40,8 @@ impl ValidatorsFetchersStorage {
     /// Adds or updates the [CheckpointStorage] for the given validator
     pub async fn add(&self, validator: Felt, storage: CheckpointStorage) -> anyhow::Result<()> {
         let storage_fetcher = storage.build().await?;
-        let mut all_storages = self.0.write().await;
-        all_storages.insert(validator, Arc::new(storage_fetcher));
+        let mut lock = self.0.write().await;
+        lock.insert(validator, Arc::new(storage_fetcher));
         Ok(())
     }
 
