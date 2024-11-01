@@ -20,7 +20,7 @@ use futures::{
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Receiver;
 
-use crate::constants::{DEFAULT_ACTIVE_CHAIN, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
+use crate::constants::{MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
 use crate::types::calldata::AsCalldata;
 use crate::types::{hyperlane::NewUpdatesAvailableEvent, rpc::RpcDataFeed};
 use crate::AppState;
@@ -93,7 +93,7 @@ pub struct Subscriber {
     receiver: SplitStream<WebSocket>,
     sender: SplitSink<WebSocket, Message>,
     data_feeds_with_config: HashMap<String, DataFeedClientConfig>,
-    active_chain: EvmChainName,
+    active_chain: Option<EvmChainName>,
     ping_interval: tokio::time::Interval,
     responded_to_ping: bool,
 }
@@ -114,7 +114,7 @@ impl Subscriber {
             receiver,
             sender,
             data_feeds_with_config: HashMap::new(),
-            active_chain: DEFAULT_ACTIVE_CHAIN,
+            active_chain: None,
             ping_interval: tokio::time::interval(PING_INTERVAL_DURATION),
             responded_to_ping: true,
         }
@@ -163,13 +163,17 @@ impl Subscriber {
     }
 
     async fn handle_data_feeds_update(&mut self) -> Result<()> {
+        if self.active_chain.is_none() {
+            return Ok(());
+        }
         tracing::debug!(subscriber = self.id, "Handling Data Feeds Update.");
         // Retrieve the updates for subscribed feed ids at the given slot
         let feed_ids = self.data_feeds_with_config.keys().cloned().collect::<Vec<_>>();
+
         // TODO: add support for multiple feeds
         let feed_id = feed_ids.first().unwrap();
-
-        let calldata = Calldata::build_from(self.state.as_ref(), self.active_chain, feed_id.to_owned()).await?;
+        let calldata =
+            Calldata::build_from(self.state.as_ref(), self.active_chain.unwrap(), feed_id.to_owned()).await?;
 
         let message = serde_json::to_string(&ServerMessage::DataFeedUpdate {
             data_feed: RpcDataFeed { feed_id: feed_id.clone(), calldata: Some(hex::encode(calldata.as_bytes())) },
@@ -245,7 +249,7 @@ impl Subscriber {
                     None => {
                         for feed_id in feed_ids {
                             self.data_feeds_with_config.insert(feed_id, DataFeedClientConfig {});
-                            self.active_chain = chain_name;
+                            self.active_chain = Some(chain_name);
                         }
                     }
                 }
