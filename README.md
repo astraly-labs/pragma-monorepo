@@ -20,6 +20,16 @@ Request the API to construct the calldata necessary for cross-chain updates.
 - Retrieves the signatures of the Hyperlane Validators
 - Constructs the calldata for data feeds requested through HTTP/WebSocket
 
+## Cairo
+
+<a href="./cairo/oracle">Pragma Oracle</a>
+
+Core Contacts of the Pragma Oracle.
+
+<a href="./cairo/dispatcher">Pragma Dispatcher</a>
+
+Wrapper around the Pragma Oracle that allows us to dispatch feed updates through Hyperlane.
+
 ## Solidity
 
 <a href="./solidity/">Solidity SDK</a>
