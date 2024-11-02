@@ -75,7 +75,7 @@ impl HyperlaneService {
         let mut futures = Vec::with_capacity(unsigned_nonces.len());
         for &nonce in &unsigned_nonces {
             for (validator, fetcher) in &validators_fetchers {
-                let fut = self.process_single_validator_nonce(*validator, fetcher.clone(), nonce);
+                let fut = self.fetch_checkpoint_for_validator(*validator, fetcher.clone(), nonce);
                 futures.push(fut);
             }
         }
@@ -85,17 +85,15 @@ impl HyperlaneService {
         // TODO: We should instead use a quorum method - if 66% have signed, consider it ok.
         let validator_addresses: Vec<Felt> = validators_fetchers.keys().cloned().collect();
         for &nonce in &unsigned_nonces {
-            // TODO: If the nonce n+1 is fully signed, shall we ignore every nonces before..? Or raise an alert?
-            if self.all_validators_signed_nonce(&validator_addresses, nonce).await {
-                tracing::info!(
-                    "🌉 [Hyperlane] ✅ Nonce #{} is fully signed by all validators! Storing updates...",
-                    nonce
-                );
-                if let Err(e) = self.store_dispatch_updates(nonce).await {
-                    tracing::error!("😱 Failed to store event updates for nonce {}: {:?}", nonce, e);
-                }
-                self.storage.unsigned_checkpoints().remove(nonce).await;
+            if !self.all_validators_signed_nonce(&validator_addresses, nonce).await {
+                continue;
             }
+            // TODO: If the nonce n+1 is fully signed, shall we ignore every nonces before..? Or raise an alert?
+            tracing::info!("🌉 [Hyperlane] ✅ Nonce #{} is fully signed by all validators! Storing updates...", nonce);
+            if let Err(e) = self.store_dispatch_updates(nonce).await {
+                tracing::error!("😱 Failed to store event updates for nonce {}: {:?}", nonce, e);
+            }
+            self.storage.unsigned_checkpoints().remove(nonce).await;
         }
     }
 
@@ -104,7 +102,9 @@ impl HyperlaneService {
         self.storage.signed_checkpoints().all_validators_signed_nonce(validators_addresses, nonce).await
     }
 
-    async fn process_single_validator_nonce(
+    /// Given a validator & a nonce, query the fetcher to try to get the signed checkpoint.
+    /// If it exists, it will get stored in the Signed Checkpoints storage.
+    async fn fetch_checkpoint_for_validator(
         &self,
         validator: Felt,
         fetcher: Arc<Box<dyn FetchFromStorage>>,
@@ -134,7 +134,7 @@ impl HyperlaneService {
         Ok(())
     }
 
-    /// Store the signed checkpoint for the validator ; nonce couple.
+    /// Store the signed checkpoint for the (validator;nonce) couple.
     async fn store_signed_checkpoint(
         &self,
         validator: Felt,
@@ -147,22 +147,24 @@ impl HyperlaneService {
             return Ok(());
         }
 
-        tracing::info!("🌉 [Hyperlane] Validator {:#x} signed checkpoint #{}", validator, nonce);
         self.storage.signed_checkpoints().add(validator, nonce, checkpoint).await?;
+        tracing::info!("🌉 [Hyperlane] Validator {:#x} signed checkpoint #{}", validator, nonce);
 
         Ok(())
     }
 
     /// Stores the updates once it has been signed.
+    /// Also sends an update to the websocket channel that an update has been stored.
     async fn store_dispatch_updates(&self, nonce: u32) -> anyhow::Result<()> {
         let event = match self.storage.unsigned_checkpoints().get(nonce).await {
             Some(e) => e,
             None => unreachable!(),
         };
+
         for update in event.message.body.updates.iter() {
-            let feed_id = update.feed_id();
-            let feed_id = hex_str_to_u256(&feed_id)?;
             let dispatch_update_infos = DispatchUpdateInfos::new(&event, update);
+
+            let feed_id = hex_str_to_u256(&update.feed_id())?;
             self.storage.latest_update_per_feed().add(feed_id, dispatch_update_infos).await?;
         }
 
