@@ -1,4 +1,4 @@
-# Theoros SDK
+# 🧩 Theoros SDK
 
 The official TypeScript SDK for interacting with the Pragma Theoros API. The Theoros SDK simplifies the process of:
 
@@ -130,7 +130,7 @@ You can dynamically add or remove feed IDs from the subscription:
 
 ```typescript
 // Add new feed IDs
-subscription.addFeedIds(["0x1234567890abcdef"]);
+subscription.addFeedIds(["0x4e5354522f555344"]);
 
 // Remove feed IDs
 subscription.removeFeedIds(["0x4e5354522f555344"]);
@@ -189,7 +189,7 @@ import {
 
     // Add a new feed ID after some time
     setTimeout(() => {
-      subscription.addFeedIds(["0x1234567890abcdef"]);
+      subscription.addFeedIds(["0x4e5354522f555344"]);
     }, 5000);
 
     // Unsubscribe after some time

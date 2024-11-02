@@ -38,7 +38,7 @@ import {
 
     // Add a new feed ID after some time
     setTimeout(() => {
-      subscription.addFeedIds(["0x1234567890abcdef"]);
+      subscription.addFeedIds(["0x4e5354522f555344"]);
     }, 5000);
 
     // Unsubscribe after some time
