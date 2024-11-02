@@ -50,7 +50,7 @@ export class Subscription extends EventEmitter {
   }
 
   private connect() {
-    const wsUrl = this.baseUrl.replace(/^http/, "ws") + "/ws";
+    const wsUrl = this.baseUrl + "/ws/calldata";
     this.socket = new WebSocket(wsUrl);
 
     this.socket.addEventListener("open", () => {
@@ -166,7 +166,7 @@ export class TheorosSDK {
   private httpClient: AxiosInstance;
 
   constructor(config: TheorosSDKConfig = {}) {
-    this.baseUrl = config.baseUrl || "https://api.pragma.build/v1";
+    this.baseUrl = config.baseUrl || "https://theoros.pragma.build/v1";
 
     this.httpClient = axios.create({
       baseURL: this.baseUrl,
