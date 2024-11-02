@@ -23,10 +23,12 @@ pub struct GetCalldataQuery {
 }
 
 #[derive(Debug, Serialize, Deserialize, ToResponse, ToSchema)]
-pub struct GetCalldataResponse {
+pub struct CalldataResponse {
     pub feed_id: String,
     pub encoded_calldata: String,
 }
+
+pub type GetCalldataResponse = Vec<CalldataResponse>;
 
 #[utoipa::path(
     get,
@@ -50,7 +52,7 @@ pub struct GetCalldataResponse {
 pub async fn get_calldata(
     State(state): State<AppState>,
     Query(params): Query<GetCalldataQuery>,
-) -> Result<Json<Vec<GetCalldataResponse>>, GetCalldataError> {
+) -> Result<Json<GetCalldataResponse>, GetCalldataError> {
     let started_at = std::time::Instant::now();
 
     let chain_name =
@@ -64,14 +66,14 @@ pub async fn get_calldata(
     }
 
     // Build calldata for each feed ID.
-    let mut responses = Vec::with_capacity(params.feed_ids.len());
+    let mut responses: GetCalldataResponse = Vec::with_capacity(params.feed_ids.len());
     for feed_id in &params.feed_ids {
         let calldata = Calldata::build_from(&state, chain_name, feed_id.clone())
             .await
             .map_err(|e| GetCalldataError::CalldataError(e.to_string()))?;
 
         let response =
-            GetCalldataResponse { feed_id: feed_id.clone(), encoded_calldata: hex::encode(calldata.as_bytes()) };
+            CalldataResponse { feed_id: feed_id.clone(), encoded_calldata: hex::encode(calldata.as_bytes()) };
         responses.push(response);
     }
 
