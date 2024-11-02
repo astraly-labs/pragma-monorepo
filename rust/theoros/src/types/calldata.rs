@@ -47,6 +47,13 @@ impl Calldata {
         let checkpoints = state.storage.signed_checkpoints().get(&validators, update_info.nonce).await;
         anyhow::ensure!(!checkpoints.is_empty(), "No signatures found");
 
+        // Ensure all nonce have the same checkpoint
+        let nonce_checkpoint = &checkpoints[0].1.value;
+        anyhow::ensure!(
+            checkpoints.iter().all(|(_, checkpoint)| &(checkpoint.value) == nonce_checkpoint),
+            "Inconsistent checkpoint values found"
+        );
+
         let validator_index_map: HashMap<Felt, u8> = validators_with_indices.into_iter().collect();
         let signatures: Vec<ValidatorSignature> = checkpoints
             .iter()
@@ -62,7 +69,7 @@ impl Calldata {
         };
 
         let payload = Payload {
-            checkpoint: checkpoints[0].1.value.clone(),
+            checkpoint: nonce_checkpoint.clone(),
             num_updates: 1,
             proof_len: 0,
             proof: vec![],
