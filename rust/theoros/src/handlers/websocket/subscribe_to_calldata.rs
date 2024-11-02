@@ -38,9 +38,9 @@ pub struct DataFeedClientConfig {}
 #[serde(tag = "type")]
 enum ClientMessage {
     #[serde(rename = "subscribe")]
-    Subscribe { ids: Vec<String>, chain_name: EvmChainName },
+    Subscribe { feed_ids: Vec<String>, chain: EvmChainName },
     #[serde(rename = "unsubscribe")]
-    Unsubscribe { ids: Vec<String> },
+    Unsubscribe { feed_ids: Vec<String> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
@@ -200,7 +200,7 @@ impl Subscriber {
                     });
                 }
                 Err(e) => {
-                    tracing::error!("Error building calldata for {}: {}", feed_id, e);
+                    self.send_error_to_client(format!("Error building calldata for {}: {}", feed_id, e)).await?;
                 }
             }
         }
@@ -243,34 +243,30 @@ impl Subscriber {
         let client_message: ClientMessage = match serde_json::from_str(text) {
             Ok(msg) => msg,
             Err(e) => {
-                tracing::error!("Invalid client message format: {}", e);
-                let message = ServerMessage::Response(ServerResponseMessage::Err { error: e.to_string() });
-                self.sender.send(Message::Text(serde_json::to_string(&message)?)).await?;
+                self.send_error_to_client(e.to_string()).await?;
                 return Ok(());
             }
         };
 
         match client_message {
-            ClientMessage::Subscribe { ids, chain_name } => {
+            ClientMessage::Subscribe { feed_ids, chain } => {
                 let stored_feed_ids = self.state.storage.feed_ids();
 
                 // Check if all requested feed IDs are supported.
-                if let Some(missing_id) = stored_feed_ids.contains_vec(&ids).await {
-                    let message = ServerResponseMessage::Err {
-                        error: format!("Can't subscribe: feed ID not supported ({:?})", missing_id),
-                    };
-                    self.sender.send(Message::Text(serde_json::to_string(&ServerMessage::Response(message))?)).await?;
+                if let Some(missing_id) = stored_feed_ids.contains_vec(&feed_ids).await {
+                    self.send_error_to_client(format!("Can't subscribe: feed ID not supported {:}", missing_id))
+                        .await?;
                     return Ok(());
                 }
 
                 // Subscribe to the requested feed IDs.
-                self.active_chain = Some(chain_name);
-                for feed_id in ids {
+                self.active_chain = Some(chain);
+                for feed_id in feed_ids {
                     self.data_feeds_with_config.insert(feed_id, DataFeedClientConfig {});
                 }
             }
-            ClientMessage::Unsubscribe { ids } => {
-                for feed_id in ids {
+            ClientMessage::Unsubscribe { feed_ids } => {
+                for feed_id in feed_ids {
                     self.data_feeds_with_config.remove(&feed_id);
                 }
             }
@@ -280,6 +276,12 @@ impl Subscriber {
         self.sender
             .send(Message::Text(serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Success))?))
             .await?;
+        Ok(())
+    }
+
+    async fn send_error_to_client(&mut self, msg: String) -> anyhow::Result<()> {
+        let message = ServerResponseMessage::Err { error: msg };
+        self.sender.send(Message::Text(serde_json::to_string(&ServerMessage::Response(message))?)).await?;
         Ok(())
     }
 }
