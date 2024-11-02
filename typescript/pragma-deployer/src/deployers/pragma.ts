@@ -1,12 +1,18 @@
 import fs from "fs";
 import path from "path";
-
+import axios from "axios";
+import qs from "qs";
 import hre, { ethers, upgrades } from "hardhat";
-import { Contract, parseEther, zeroPadValue } from "ethers";
+import { AbiCoder, Contract, parseEther, zeroPadValue } from "ethers";
 import { EVM_CHAINS, type Chain, type EvmChain } from "pragma-utils";
-
 import { type ContractDeployer } from "./interface";
 import type { DeploymentConfig } from "../config";
+
+/*
+ * NOTE: We use the v2 API of Etherscan.
+ * It is fairly new so it's possible that one recent chain is not supported by it.
+ */
+const ETHERSCAN_VERIFIER_URL = "https://api.etherscan.io/v2/api";
 
 export class PragmaDeployer implements ContractDeployer {
   readonly allowedChains: Chain[] = EVM_CHAINS;
@@ -14,7 +20,6 @@ export class PragmaDeployer implements ContractDeployer {
 
   async deploy(
     config: DeploymentConfig,
-    // TODO: Handle deterministic deployments, not mandatory yet.
     _deterministic: boolean,
     chain?: EvmChain,
   ): Promise<void> {
@@ -58,6 +63,9 @@ export class PragmaDeployer implements ContractDeployer {
       fs.writeFileSync(filePath, jsonContent);
       console.log(`Deployment info saved to ${filePath}`);
       console.log("Deployment complete!");
+
+      // Verify contracts
+      await this.verifyContracts(config, hyperlane, pragma);
     } catch (error) {
       console.error("Deployment failed:", error);
       throw error;
@@ -118,5 +126,152 @@ export class PragmaDeployer implements ContractDeployer {
     );
     await pragma.waitForDeployment();
     return pragma;
+  }
+
+  /// Verifies deployed contracts using Etherscan API
+  private async verifyContracts(
+    config: DeploymentConfig,
+    hyperlane: Contract,
+    pragmaProxy: Contract,
+  ): Promise<void> {
+    const apiKey = process.env.ETHERSCAN_API_KEY;
+    if (!apiKey) {
+      console.warn(
+        "ETHERSCAN_API_KEY is not set. Skipping contract verification.",
+      );
+      return;
+    }
+
+    const chainId = hre.network.config.chainId;
+
+    if (!chainId) {
+      console.error("Chain ID not found in network config.");
+      return;
+    }
+
+    try {
+      console.log("⏳ Verifying contracts on Etherscan...");
+
+      // Verify Hyperlane
+      await this.verifyContract(
+        hyperlane,
+        "src/Hyperlane.sol:Hyperlane",
+        apiKey,
+        chainId,
+        [config.pragma.hyperlane.validators], // Constructor arguments for Hyperlane
+      );
+
+      // Get the implementation address of Pragma
+      const pragmaProxyAddress = await pragmaProxy.getAddress();
+      const pragmaImplAddress =
+        await upgrades.erc1967.getImplementationAddress(pragmaProxyAddress);
+
+      // Create a Contract instance for the implementation
+      const pragmaImpl = await ethers.getContractAt(
+        "src/Pragma.sol:Pragma",
+        pragmaImplAddress,
+      );
+
+      // Verify Pragma implementation
+      await this.verifyContract(
+        pragmaImpl,
+        "src/Pragma.sol:Pragma",
+        apiKey,
+        chainId,
+        [], // No constructor arguments for implementation contract
+      );
+
+      console.log("✅ Contracts verified successfully.");
+    } catch (error) {
+      console.error("Contract verification failed:", error);
+    }
+  }
+
+  /// Verifies a single contract using Etherscan API
+  private async verifyContract(
+    contract: Contract,
+    contractFullyQualifiedName: string,
+    apiKey: string,
+    chainId: number,
+    constructorArguments: any[] = [],
+  ): Promise<void> {
+    const contractAddress = await contract.getAddress();
+
+    // Get the artifact
+    const artifact = await hre.artifacts.readArtifact(
+      contractFullyQualifiedName,
+    );
+
+    // Get the build info
+    const buildInfo = await hre.artifacts.getBuildInfo(
+      `${artifact.sourceName}:${artifact.contractName}`,
+    );
+
+    if (!buildInfo) {
+      console.error(
+        `Build info not found for contract ${artifact.contractName}`,
+      );
+      return;
+    }
+
+    const compilerVersion = `v${buildInfo.solcLongVersion}`;
+    const inputJSON = buildInfo.input;
+
+    // Encode constructor arguments if any
+    let constructorArgumentsEncoded = "";
+    if (constructorArguments.length > 0) {
+      const constructorAbi = artifact.abi.find(
+        (item) => item.type === "constructor",
+      );
+      if (constructorAbi) {
+        const abiCoder = new AbiCoder();
+        constructorArgumentsEncoded = abiCoder
+          .encode(constructorAbi.inputs || [], constructorArguments)
+          .replace(/^0x/, "");
+      }
+    }
+
+    const queryParams = {
+      apikey: apiKey,
+      chainid: chainId.toString(),
+      module: "contract",
+      action: "verifysourcecode",
+    };
+
+    const bodyData = {
+      codeformat: "solidity-standard-json-input",
+      sourceCode: JSON.stringify(inputJSON),
+      contractaddress: contractAddress,
+      contractname: `${artifact.sourceName}:${artifact.contractName}`,
+      compilerversion: compilerVersion,
+      constructorArguements: constructorArgumentsEncoded, // Note the spelling
+    };
+
+    const url = `${ETHERSCAN_VERIFIER_URL}?${qs.stringify(queryParams)}`;
+    const postData = qs.stringify(bodyData);
+
+    // Send the POST request
+    try {
+      const response = await axios.post(url, postData, {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+
+      if (response.data.status === "1") {
+        console.log(
+          `✅ Contract ${artifact.contractName} verified successfully.`,
+        );
+      } else {
+        console.error(
+          `❌ Verification failed for contract ${artifact.contractName}: ${response.data.result}`,
+        );
+      }
+    } catch (error: any) {
+      console.error(
+        `❌ Verification failed for contract ${artifact.contractName}:`,
+        error.response?.data || error.message,
+      );
+    }
   }
 }
