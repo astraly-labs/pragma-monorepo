@@ -1,9 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use std::str::FromStr;
-
-use serde::{Deserialize, Serialize};
+use strum_macros::EnumString;
 use thiserror::Error;
 
 pub const DEFAULT_CONFIG_PATH: &str = "evm_config.yaml";
@@ -11,8 +10,8 @@ pub const DEFAULT_CONFIG_PATH: &str = "evm_config.yaml";
 /// Supported Chain identifiers
 // Must reflect the EVM chains here:
 // https://github.com/astraly-labs/pragma-monorepo/blob/main/typescript/pragma-utils/src/chains.ts
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumString)]
+#[strum(serialize_all = "snake_case")]
 pub enum EvmChainName {
     Mainnet,
     Sepolia,
@@ -71,42 +70,5 @@ impl EvmConfig {
     /// Get all configured chains
     pub fn chains(&self) -> &HashMap<EvmChainName, EvmChainConfig> {
         &self.chains
-    }
-}
-
-#[derive(Error, Debug)]
-#[error("Unknown chain name: {0}")]
-pub struct ParseChainError(String);
-
-impl FromStr for EvmChainName {
-    type Err = ParseChainError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let chain_name = s.to_lowercase().replace('-', "_");
-        match chain_name.as_str() {
-            "mainnet" => Ok(Self::Mainnet),
-            "sepolia" => Ok(Self::Sepolia),
-            "holesky" => Ok(Self::Holesky),
-            "bsc" => Ok(Self::Bsc),
-            "bsc_testnet" => Ok(Self::BscTestnet),
-            "polygon" => Ok(Self::Polygon),
-            "polygon_testnet" => Ok(Self::PolygonTestnet),
-            "polygon_zk_evm" => Ok(Self::PolygonZkEvm),
-            "avalanche" => Ok(Self::Avalanche),
-            "fantom" => Ok(Self::Fantom),
-            "arbitrum" => Ok(Self::Arbitrum),
-            "optimism" => Ok(Self::Optimism),
-            "base" => Ok(Self::Base),
-            "scroll" => Ok(Self::Scroll),
-            "scroll_testnet" => Ok(Self::ScrollTestnet),
-            "scroll_sepolia_testnet" => Ok(Self::ScrollSepoliaTestnet),
-            "zircuit_testnet" => Ok(Self::ZircuitTestnet),
-            "plume_testnet" => Ok(Self::PlumeTestnet),
-            "worldchain" => Ok(Self::Worldchain),
-            "worldchain_testnet" => Ok(Self::WorldchainTestnet),
-            "zksync" => Ok(Self::Zksync),
-            "zksync_testnet" => Ok(Self::ZksyncTestnet),
-            _ => Err(ParseChainError(s.to_string())),
-        }
     }
 }
