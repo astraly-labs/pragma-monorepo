@@ -39,4 +39,15 @@ impl HyperlaneValidatorsMapping {
     pub fn chain_names(&self) -> Vec<EvmChainName> {
         self.0.keys().cloned().collect()
     }
+
+    /// Get the index of a validator for a chain
+    pub fn validator_index(&self, chain_name: &EvmChainName, searched_validator: &Felt) -> Option<u8> {
+        match self.0.get(chain_name) {
+            Some(validators) => validators
+                .iter()
+                .position(|validator| validator == searched_validator)
+                .and_then(|pos| pos.try_into().ok()),
+            None => None,
+        }
+    }
 }

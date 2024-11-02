@@ -55,7 +55,7 @@ impl SignedCheckpointsStorage {
 
     // For the provided list of validators, returns all their signed checkpoints for the
     // provided message_id.
-    pub async fn get(&self, validators: &[Felt], searched_nonce: u32) -> Vec<SignedCheckpointWithMessageId> {
+    pub async fn get(&self, validators: &[Felt], searched_nonce: u32) -> Vec<(Felt, SignedCheckpointWithMessageId)> {
         let lock = self.0.read().await;
 
         let mut checkpoints = Vec::new();
@@ -63,7 +63,7 @@ impl SignedCheckpointsStorage {
         for ((validator, nonce), checkpoint) in lock.iter() {
             // Only include if validator is in the provided list and message_id matches
             if nonce == &searched_nonce && validators.contains(validator) {
-                checkpoints.push(checkpoint.clone());
+                checkpoints.push((*validator, checkpoint.clone()));
             }
         }
 

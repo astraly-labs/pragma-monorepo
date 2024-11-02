@@ -8,7 +8,7 @@ use std::str::FromStr;
 use crate::{
     configs::evm_config::EvmChainName,
     constants::{HYPERLANE_VERSION, PRAGMA_MAJOR_VERSION, PRAGMA_MINOR_VERSION, TRAILING_HEADER_SIZE},
-    types::hyperlane::{CheckpointWithMessageId, DispatchUpdate, DispatchUpdateInfos},
+    types::hyperlane::{CheckpointWithMessageId, DispatchUpdate},
     types::state::AppState,
 };
 
@@ -32,36 +32,44 @@ pub struct Calldata {
 
 impl Calldata {
     pub async fn build_from(state: &AppState, chain_name: EvmChainName, feed_id: String) -> anyhow::Result<Calldata> {
-        let update_info: DispatchUpdateInfos = state
+        // Get latest update for this feed
+        let update_info = state
             .storage
             .latest_update_per_feed()
-            .get(&hex_str_to_u256(&feed_id).unwrap())
+            .get(&hex_str_to_u256(&feed_id)?)
             .await?
             .context("No update found")?;
 
+        // Get validators and their signatures
         let validators =
             state.hyperlane_validators_mapping.get_validators(chain_name).context("No validators found")?;
 
         let checkpoints = state.storage.signed_checkpoints().get(validators, update_info.nonce).await;
+        anyhow::ensure!(!checkpoints.is_empty(), "No signatures found");
 
-        let checkpoint_infos = checkpoints.last().unwrap();
+        let signatures: Vec<ValidatorSignature> = checkpoints
+            .iter()
+            .filter_map(|(validator, signed_checkpoint)| {
+                state
+                    .hyperlane_validators_mapping
+                    .validator_index(&chain_name, validator)
+                    .map(|idx| ValidatorSignature { validator_index: idx, signature: signed_checkpoint.signature })
+            })
+            .collect();
 
+        // Build payload using first checkpoint (all validators sign the same checkpoint since it's the same nonce)
         let update = match update_info.update {
-            DispatchUpdate::SpotMedian { update, feed_id: _ } => update,
+            DispatchUpdate::SpotMedian { update, .. } => update,
         };
 
         let payload = Payload {
-            checkpoint: checkpoint_infos.value.clone(),
-            // TODO: We only handle 1 update per calldata. See if possible to have more.
-            // TODO: If not remove this and consider it to be always one?
+            checkpoint: checkpoints[0].1.value.clone(),
             num_updates: 1,
-            // TODO: Remove proof
             proof_len: 0,
             proof: vec![],
             update_data_len: update.to_bytes().len() as u16,
             update_data: update.to_bytes(),
-            feed_id: U256::from_str(&feed_id).unwrap(),
-            // TODO: publish_time is already available in the update metadata. Remove.
+            feed_id: U256::from_str(&feed_id)?,
             publish_time: update.metadata.timestamp,
         };
 
@@ -70,23 +78,19 @@ impl Calldata {
             emitter_chain_id: update_info.emitter_chain_id,
             emitter_address: update_info.emitter_address,
             nonce: update_info.nonce,
-            // TODO: Adapt for N signers
-            signers_len: 1_u8,
-            signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
-            // TODO: Means we store once again the timestamp? Delete this?
+            signers_len: signatures.len() as u8,
+            signatures,
             timestamp: update.metadata.timestamp,
             payload,
         };
 
-        let calldata = Calldata {
+        Ok(Calldata {
             major_version: PRAGMA_MAJOR_VERSION,
             minor_version: PRAGMA_MINOR_VERSION,
             trailing_header_size: TRAILING_HEADER_SIZE,
-            hyperlane_msg_size: hyperlane_message.as_bytes().len().try_into().unwrap(),
+            hyperlane_msg_size: hyperlane_message.as_bytes().len().try_into()?,
             hyperlane_msg: hyperlane_message,
-        };
-
-        Ok(calldata)
+        })
     }
 }
 
