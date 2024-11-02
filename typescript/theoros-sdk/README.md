@@ -6,13 +6,13 @@ The official TypeScript SDK for interacting with the Pragma Theoros API. The The
 - Subscribing to real-time data feed updates via WebSocket.
 - Retrieving available feeds and supported chains.
 
-## Installation
+# Installation
 
 ```bash
 npm install @pragma/theoros-sdk
 ```
 
-## Introduction
+# Introduction
 
 The Theoros SDK provides a convenient way to interact with the Pragma Theoros API. It allows developers to:
 
@@ -21,9 +21,9 @@ The Theoros SDK provides a convenient way to interact with the Pragma Theoros AP
 - Fetch calldata for specific feeds on a given chain.
 - Subscribe to real-time updates for data feeds over WebSockets.
 
-## Getting Started
+# Getting Started
 
-### Initializing the SDK
+## Initializing the SDK
 
 Import the SDK and create an instance:
 
@@ -39,9 +39,9 @@ const sdk = new TheorosSDK({
 - `baseUrl` (optional): The base URL of the Pragma Theoros API. Defaults to `'https://api.pragma.build/v1'`.
 - `timeout` (optional): The request timeout in milliseconds. Defaults to `10000`.
 
-### Usage
+## Usage
 
-#### Fetching Available Feeds
+### Fetching Available Feeds
 
 Retrieve the list of available feeds:
 
@@ -57,7 +57,7 @@ This method returns a promise that resolves to an array of Feed objects, each co
 - `feed_type`: The type of the feed.
 - `pair_id`: The pair identifier associated with the feed.
 
-#### Fetching Supported Chains
+### Fetching Supported Chains
 
 Retrieve the list of supported chains:
 
@@ -68,7 +68,7 @@ console.log("Supported Chains:", chains);
 
 This method returns a promise that resolves to an array of strings representing the chain names.
 
-#### Fetching Calldata
+### Fetching Calldata
 
 Fetch calldata for specific feed IDs on a given chain:
 
@@ -103,7 +103,7 @@ const feedIds = ["0x4e5354522f555344", "0x4c5553442f555344"];
 const subscription = sdk.subscribe(chain, feedIds);
 ```
 
-#### Handling Updates
+### Handling Updates
 
 Listen for updates and other events:
 
@@ -125,7 +125,7 @@ subscription.on("close", () => {
 - `'error'`: Emitted when an error occurs. The callback receives an error object.
 - `'close'`: Emitted when the subscription is closed.
 
-#### Adding and Removing Feed IDs
+### Adding and Removing Feed IDs
 
 You can dynamically add or remove feed IDs from the subscription:
 
@@ -137,7 +137,7 @@ subscription.addFeedIds(["0x1234567890abcdef"]);
 subscription.removeFeedIds(["0x4e5354522f555344"]);
 ```
 
-#### Unsubscribing
+### Unsubscribing
 
 To unsubscribe from all feeds and close the connection:
 
@@ -145,12 +145,17 @@ To unsubscribe from all feeds and close the connection:
 subscription.unsubscribe();
 ```
 
-#### Example
+# Example
 
 Here's a complete example demonstrating how to use the SDK:
 
 ```typescript
-import { TheorosSDK } from "@pragma/theoros-sdk";
+import {
+  TheorosSDK,
+  type Feed,
+  type RpcDataFeed,
+  type TheorosSDKError,
+} from "@pragma/theoros-sdk";
 
 (async () => {
   const sdk = new TheorosSDK();
@@ -166,7 +171,7 @@ import { TheorosSDK } from "@pragma/theoros-sdk";
 
     // Choose a chain and feed IDs
     const chain = chains[0];
-    const feedIds = feeds.slice(0, 2).map((feed) => feed.feed_id);
+    const feedIds = feeds.slice(0, 2).map((feed: Feed) => feed.feed_id);
 
     // Fetch calldata
     const calldataResponses = await sdk.getCalldata(chain, feedIds);
@@ -175,11 +180,11 @@ import { TheorosSDK } from "@pragma/theoros-sdk";
     // Subscribe to data feed updates
     const subscription = sdk.subscribe(chain, feedIds);
 
-    subscription.on("update", (dataFeeds) => {
+    subscription.on("update", (dataFeeds: RpcDataFeed[]) => {
       console.log("Data Feed Update:", dataFeeds);
     });
 
-    subscription.on("error", (error) => {
+    subscription.on("error", (error: TheorosSDKError) => {
       console.error("Subscription Error:", error);
     });
 
@@ -198,30 +203,6 @@ import { TheorosSDK } from "@pragma/theoros-sdk";
 })();
 ```
 
-### Error Handling
-
-The SDK uses a custom `TheorosSDKError` class for error handling. You can catch errors using `try...catc`h blocks:
-
-```typescript
-try {
-  const calldataResponses = await sdk.getCalldata(chain, feedIds);
-} catch (error) {
-  if (error instanceof TheorosSDKError) {
-    console.error("Theoros SDK Error:", error.message);
-  } else {
-    console.error("Unexpected Error:", error);
-  }
-}
-```
-
-For subscriptions, listen to the 'error' event:
-
-```typescript
-subscription.on("error", (error) => {
-  console.error("Subscription Error:", error);
-});
-```
-
-## License
+# License
 
 This project is licensed under the [MIT](../../LICENSE) License.
