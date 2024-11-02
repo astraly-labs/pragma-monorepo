@@ -15,35 +15,15 @@ publish = false
 [workspace.dependencies]
 anyhow = "1.0.86"
 async-trait = "0.1.81"
-bollard = "0.17.1"
 clap = { version = "4.5.16", features = ["derive", "env"] }
 chrono = { version = "0.4.38", features = ["serde"] }
-derive_more = { version = "1", features = ["deref", "deref_mut"] }
-dirs = "5.0.1"
-dotenvy = "0.15.7"
-envy = "0.4.2"
-bigdecimal = "0.4.5"
-deadpool-diesel = { version = "0.6.1", features = ["postgres"] }
-diesel_migrations = "2.2.0"
-diesel = { version = "2.2.3", features = [
-  "postgres",
-  "extras",
-  "postgres_backend",
-  "serde_json",
-] }
-env_logger = "0.11.5"
 alloy = { version = "0.5.2", features = ["full"] }
-eyre = "0.6.12"
 futures = { version = "0.3.30", features = ["std"] }
 futures-util = "0.3.30"
-git2 = "0.19.0"
 hex = "0.4.3"
-inquire = "0.7.5"
 tracing = "0.1.4"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 tracing-axiom = "0.7"
-rand = "0.8.5"
-reqwest = { version = "0.12.7", features = ["json", "blocking"] }
 serde = { version = "1.0.208", features = ["derive"] }
 serde_json = "1.0.125"
 serde_yaml = "0.9.34"
@@ -51,7 +31,6 @@ strum = { version = "0.26.3", features = ["derive"] }
 strum_macros = { version = "0.26.4", features = [] }
 thiserror = "1.0.63"
 prometheus = "0.13.4"
-prometheus-client = { version = "0.21.2" }
 hyper = { version = "0.14", features = ["server"] }
 tokio = { version = "1.39.3", features = [
   "rt",
@@ -59,9 +38,6 @@ tokio = { version = "1.39.3", features = [
   "macros",
   "signal",
 ] }
-toml = "0.8.19"
-tower_governor = { version = "0.4.3", features = ["axum", "tracing"] }
-scale-info = "2.11.3"
 scale = { package = "parity-scale-codec", version = "3.0.0", features = [
   "derive",
 ] }
@@ -78,8 +54,6 @@ ya-gcp = { version = "0.11.3", features = ["storage"] }
 rusoto_s3 = "0.48.0"
 rusoto_core = "0.48.0"
 lazy_static = "1.5.0"
-num-bigint = "0.4"
-num-traits = "0.2"
 
 # Apibara DNA (indexing)
 apibara-core = { git = "https://github.com/apibara/dna", rev = "9caa385" }
@@ -89,9 +63,6 @@ apibara-sdk = { git = "https://github.com/apibara/dna", rev = "9caa385" }
 pragma-utils = { path = "pragma-utils" }
 pragma-feeds = { path = "pragma-feeds" }
 theoros = { path = "theoros" }
-
-# Tests dependencies
-tracing-test = "0.2.5"
 
 [profile.release]
 overflow-checks = true

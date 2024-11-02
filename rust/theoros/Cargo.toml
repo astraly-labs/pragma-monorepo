@@ -11,22 +11,16 @@ apibara-sdk = { workspace = true }
 async-trait = { workspace = true }
 axum = { workspace = true, features = ["macros", "ws", "tokio"] }
 axum-macros = { workspace = true }
-bigdecimal = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true, features = ["derive", "env"] }
-dotenvy = { workspace = true }
-envy = { workspace = true }
 futures = { workspace = true, features = ["std"] }
 futures-util = { workspace = true }
 hyper = { workspace = true, features = ["server"] }
 lazy_static = { workspace = true }
-num-bigint = { workspace = true }
-num-traits = { workspace = true }
 opentelemetry = { workspace = true }
 pragma-feeds = { workspace = true }
 pragma-utils = { workspace = true }
 prometheus = { workspace = true }
-prometheus-client = { workspace = true }
 rusoto_core = { workspace = true }
 rusoto_s3 = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -38,7 +32,6 @@ starknet = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync", "macros", "rt-multi-thread"] }
 tower-http = { workspace = true, features = ["fs", "trace", "cors"] }
-tower_governor = { workspace = true, features = ["axum", "tracing"] }
 tracing = { workspace = true }
 url = { workspace = true }
 utoipa = { workspace = true, features = ["axum_extras", "chrono", "uuid"] }
