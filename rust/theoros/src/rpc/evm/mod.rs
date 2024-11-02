@@ -32,8 +32,8 @@ impl HyperlaneValidatorsMapping {
     }
 
     /// Get the available validators for a chain & their indexes
-    pub fn get_validators(&self, chain_name: &EvmChainName) -> Option<HashMap<Felt, u8>> {
-        self.0.get(chain_name).cloned()
+    pub fn get_validators(&self, chain_name: &EvmChainName) -> Option<&HashMap<Felt, u8>> {
+        self.0.get(chain_name)
     }
 
     /// Get all configured chains names

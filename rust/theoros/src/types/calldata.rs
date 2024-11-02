@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::FromStr};
+use std::str::FromStr;
 
 use alloy::{primitives::U256, signers::Signature};
 use anyhow::Context;
@@ -36,7 +36,7 @@ impl Calldata {
         let feed_id = hex_str_to_u256(&feed_id)?;
         let update_info = state.storage.latest_update_per_feed().get(&feed_id).await?.context("No update found")?;
 
-        let validator_index_map: HashMap<Felt, u8> =
+        let validator_index_map =
             state.hyperlane_validators_mapping.get_validators(&chain_name).context("No validators found")?;
 
         let validators: Vec<Felt> = validator_index_map.keys().copied().collect();
