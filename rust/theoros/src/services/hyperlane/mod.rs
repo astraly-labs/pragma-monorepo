@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::{sync::Arc, time::Duration};
 
 use starknet::core::types::Felt;
@@ -73,7 +72,7 @@ impl HyperlaneService {
         }
 
         let validators_fetchers = self.storage.validators_fetchers().all().await;
-        let mut futures = Vec::new();
+        let mut futures = Vec::with_capacity(unsigned_nonces.len());
         for &nonce in &unsigned_nonces {
             for (validator, fetcher) in &validators_fetchers {
                 let fut = self.process_single_validator_nonce(*validator, fetcher.clone(), nonce);
@@ -84,9 +83,10 @@ impl HyperlaneService {
 
         // NOTE: At the moment, we only process updates when ALL validators have signed a message.
         // TODO: We should instead use a quorum method - if 66% have signed, consider it ok.
+        let validator_addresses: Vec<Felt> = validators_fetchers.keys().cloned().collect();
         for &nonce in &unsigned_nonces {
             // TODO: If the nonce n+1 is fully signed, shall we ignore every nonces before..? Or raise an alert?
-            if self.all_validators_signed_nonce(&validators_fetchers, nonce).await {
+            if self.all_validators_signed_nonce(&validator_addresses, nonce).await {
                 tracing::info!(
                     "🌉 [Hyperlane] ✅ Nonce #{} is fully signed by all validators! Storing updates...",
                     nonce
@@ -100,13 +100,8 @@ impl HyperlaneService {
     }
 
     /// Checks if all validators have signed a given nonce.
-    async fn all_validators_signed_nonce(
-        &self,
-        validators_fetchers: &HashMap<Felt, Arc<Box<dyn FetchFromStorage>>>,
-        nonce: u32,
-    ) -> bool {
-        let validators: Vec<Felt> = validators_fetchers.keys().cloned().collect();
-        self.storage.signed_checkpoints().all_validators_signed_nonce(&validators, nonce).await
+    async fn all_validators_signed_nonce(&self, validators_addresses: &[Felt], nonce: u32) -> bool {
+        self.storage.signed_checkpoints().all_validators_signed_nonce(validators_addresses, nonce).await
     }
 
     async fn process_single_validator_nonce(
