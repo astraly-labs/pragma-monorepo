@@ -33,12 +33,8 @@ pub struct Calldata {
 
 impl Calldata {
     pub async fn build_from(state: &AppState, chain_name: EvmChainName, feed_id: String) -> anyhow::Result<Calldata> {
-        let update_info = state
-            .storage
-            .latest_update_per_feed()
-            .get(&hex_str_to_u256(&feed_id)?)
-            .await?
-            .context("No update found")?;
+        let feed_id = hex_str_to_u256(&feed_id)?;
+        let update_info = state.storage.latest_update_per_feed().get(&feed_id).await?.context("No update found")?;
 
         let validator_index_map: HashMap<Felt, u8> =
             state.hyperlane_validators_mapping.get_validators(&chain_name).context("No validators found")?;
@@ -75,7 +71,7 @@ impl Calldata {
             proof: vec![],
             update_data_len: update.to_bytes().len() as u16,
             update_data: update.to_bytes(),
-            feed_id: U256::from_str(&feed_id)?,
+            feed_id,
             // TODO: publish_time is a duplicated of update timestamp - remove?
             publish_time: update.metadata.timestamp,
         };

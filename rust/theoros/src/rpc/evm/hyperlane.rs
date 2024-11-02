@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use alloy::network::Ethereum;
 use alloy::primitives::Address;
 use alloy::providers::fillers::{ChainIdFiller, FillProvider, GasFiller, JoinFill, NonceFiller};
@@ -36,15 +38,16 @@ impl HyperlaneClient {
         Self(hyperlane_client)
     }
 
-    pub async fn get_validators(&self) -> Result<Vec<Felt>> {
-        let mut validators = Vec::new();
+    pub async fn get_validators(&self) -> Result<HashMap<Felt, u8>> {
+        let mut validators = HashMap::new();
         let mut index = 0;
 
         while let Ok(address) = self.0._validators(index.try_into()?).call().await {
             if address._0 == Address::ZERO {
                 break;
             }
-            validators.push(Felt::from_bytes_be(&pad_left_to_32_bytes(&address._0.into_array())));
+            let validator = Felt::from_bytes_be(&pad_left_to_32_bytes(&address._0.into_array()));
+            validators.insert(validator, index);
             index += 1;
         }
 

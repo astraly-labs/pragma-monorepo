@@ -12,7 +12,7 @@ use url::Url;
 use crate::configs::evm_config::{EvmChainName, EvmConfig};
 
 #[derive(Debug, Default, Clone)]
-pub struct HyperlaneValidatorsMapping(HashMap<EvmChainName, Vec<Felt>>);
+pub struct HyperlaneValidatorsMapping(HashMap<EvmChainName, HashMap<Felt, u8>>);
 
 impl HyperlaneValidatorsMapping {
     pub async fn from_config(config: &EvmConfig) -> anyhow::Result<Self> {
@@ -33,9 +33,7 @@ impl HyperlaneValidatorsMapping {
 
     /// Get the available validators for a chain & their indexes
     pub fn get_validators(&self, chain_name: &EvmChainName) -> Option<HashMap<Felt, u8>> {
-        self.0
-            .get(chain_name)
-            .map(|validators| validators.iter().enumerate().map(|(idx, validator)| (*validator, idx as u8)).collect())
+        self.0.get(chain_name).cloned()
     }
 
     /// Get all configured chains names
