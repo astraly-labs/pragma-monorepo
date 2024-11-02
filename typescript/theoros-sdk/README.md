@@ -36,8 +36,8 @@ const sdk = new TheorosSDK({
 });
 ```
 
-- `baseUrl` (optional): The base URL of the Pragma Theoros API. Defaults to 'https://api.pragma.build/v1'.
-- `timeout` (optional): The request timeout in milliseconds. Defaults to 10000.
+- `baseUrl` (optional): The base URL of the Pragma Theoros API. Defaults to `'https://api.pragma.build/v1'`.
+- `timeout` (optional): The request timeout in milliseconds. Defaults to `10000`.
 
 ### Usage
 
@@ -87,7 +87,7 @@ try {
 - `chain`: The name of the chain.
 - `feedIds`: An array of feed IDs.
 
-The method returns a promise that resolves to an array of CalldataResponse objects, each containing:
+The method returns a promise that resolves to an array of `CalldataResponse` objects, each containing:
 
 - `feed_id`: The feed ID.
 - `encoded_calldata`: The calldata encoded as a hex string.
