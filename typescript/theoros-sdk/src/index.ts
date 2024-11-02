@@ -72,8 +72,6 @@ export class Subscription extends EventEmitter {
         } else if (data.type === "response") {
           if (data.status === "error") {
             this.emit("error", new TheorosSDKError(data.error));
-          } else if (data.status === "success") {
-            // Optional: Handle success responses if needed
           }
         }
       } catch (e) {
