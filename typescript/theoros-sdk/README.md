@@ -4,7 +4,6 @@ The official TypeScript SDK for interacting with the Pragma Theoros API. The The
 
 - Fetching calldata for given feed IDs.
 - Subscribing to real-time data feed updates via WebSocket.
-- Retrieving available feeds and supported chains.
 
 # Installation
 
