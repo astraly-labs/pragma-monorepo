@@ -139,7 +139,9 @@ impl Subscriber {
     #[tracing::instrument(skip(self))]
     pub async fn run(&mut self) {
         while !self.closed {
-            let _ = self.handle_next().await;
+            if self.handle_next().await.is_err() {
+                break;
+            }
         }
     }
 
