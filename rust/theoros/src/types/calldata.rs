@@ -3,7 +3,7 @@ use anyhow::Context;
 use pragma_utils::conversions::alloy::hex_str_to_u256;
 use serde::{Deserialize, Serialize};
 use starknet::core::types::Felt;
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use crate::{
     configs::evm_config::EvmChainName,
@@ -40,24 +40,23 @@ impl Calldata {
             .await?
             .context("No update found")?;
 
-        // Get validators and their signatures
-        let validators =
-            state.hyperlane_validators_mapping.get_validators(chain_name).context("No validators found")?;
+        let validators_with_indices =
+            state.hyperlane_validators_mapping.get_validators(&chain_name).context("No validators found")?;
 
-        let checkpoints = state.storage.signed_checkpoints().get(validators, update_info.nonce).await;
+        let validators: Vec<Felt> = validators_with_indices.iter().map(|(validator, _)| *validator).collect();
+        let checkpoints = state.storage.signed_checkpoints().get(&validators, update_info.nonce).await;
         anyhow::ensure!(!checkpoints.is_empty(), "No signatures found");
 
+        let validator_index_map: HashMap<Felt, u8> = validators_with_indices.into_iter().collect();
         let signatures: Vec<ValidatorSignature> = checkpoints
             .iter()
             .filter_map(|(validator, signed_checkpoint)| {
-                state
-                    .hyperlane_validators_mapping
-                    .validator_index(&chain_name, validator)
-                    .map(|idx| ValidatorSignature { validator_index: idx, signature: signed_checkpoint.signature })
+                validator_index_map
+                    .get(validator)
+                    .map(|&idx| ValidatorSignature { validator_index: idx, signature: signed_checkpoint.signature })
             })
             .collect();
 
-        // Build payload using first checkpoint (all validators sign the same checkpoint since it's the same nonce)
         let update = match update_info.update {
             DispatchUpdate::SpotMedian { update, .. } => update,
         };

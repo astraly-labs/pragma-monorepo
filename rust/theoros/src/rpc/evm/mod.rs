@@ -31,23 +31,15 @@ impl HyperlaneValidatorsMapping {
         Ok(Self(contracts))
     }
 
-    pub fn get_validators(&self, chain_name: EvmChainName) -> Option<&Vec<Felt>> {
-        self.0.get(&chain_name)
+    /// Get the available validators for a chain & their indexes
+    pub fn get_validators(&self, chain_name: &EvmChainName) -> Option<Vec<(Felt, u8)>> {
+        self.0
+            .get(chain_name)
+            .map(|validators| validators.iter().enumerate().map(|(idx, validator)| (*validator, idx as u8)).collect())
     }
 
     /// Get all configured chains names
     pub fn chain_names(&self) -> Vec<EvmChainName> {
         self.0.keys().cloned().collect()
-    }
-
-    /// Get the index of a validator for a chain
-    pub fn validator_index(&self, chain_name: &EvmChainName, searched_validator: &Felt) -> Option<u8> {
-        match self.0.get(chain_name) {
-            Some(validators) => validators
-                .iter()
-                .position(|validator| validator == searched_validator)
-                .and_then(|pos| pos.try_into().ok()),
-            None => None,
-        }
     }
 }
