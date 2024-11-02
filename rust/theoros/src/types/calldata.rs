@@ -1,9 +1,10 @@
+use std::{collections::HashMap, str::FromStr};
+
 use alloy::{primitives::U256, signers::Signature};
 use anyhow::Context;
 use pragma_utils::conversions::alloy::hex_str_to_u256;
 use serde::{Deserialize, Serialize};
 use starknet::core::types::Felt;
-use std::{collections::HashMap, str::FromStr};
 
 use crate::{
     configs::evm_config::EvmChainName,
@@ -32,7 +33,6 @@ pub struct Calldata {
 
 impl Calldata {
     pub async fn build_from(state: &AppState, chain_name: EvmChainName, feed_id: String) -> anyhow::Result<Calldata> {
-        // Get latest update for this feed
         let update_info = state
             .storage
             .latest_update_per_feed()
@@ -40,10 +40,10 @@ impl Calldata {
             .await?
             .context("No update found")?;
 
-        let validators_with_indices =
+        let validator_index_map: HashMap<Felt, u8> =
             state.hyperlane_validators_mapping.get_validators(&chain_name).context("No validators found")?;
 
-        let validators: Vec<Felt> = validators_with_indices.iter().map(|(validator, _)| *validator).collect();
+        let validators: Vec<Felt> = validator_index_map.keys().copied().collect();
         let checkpoints = state.storage.signed_checkpoints().get(&validators, update_info.nonce).await;
         anyhow::ensure!(!checkpoints.is_empty(), "No signatures found");
 
@@ -54,7 +54,6 @@ impl Calldata {
             "Inconsistent checkpoint values found"
         );
 
-        let validator_index_map: HashMap<Felt, u8> = validators_with_indices.into_iter().collect();
         let signatures: Vec<ValidatorSignature> = checkpoints
             .iter()
             .filter_map(|(validator, signed_checkpoint)| {
@@ -71,11 +70,13 @@ impl Calldata {
         let payload = Payload {
             checkpoint: nonce_checkpoint.clone(),
             num_updates: 1,
+            // TODO: proof should be deleted
             proof_len: 0,
             proof: vec![],
             update_data_len: update.to_bytes().len() as u16,
             update_data: update.to_bytes(),
             feed_id: U256::from_str(&feed_id)?,
+            // TODO: publish_time is a duplicated of update timestamp - remove?
             publish_time: update.metadata.timestamp,
         };
 
@@ -86,6 +87,7 @@ impl Calldata {
             nonce: update_info.nonce,
             signers_len: signatures.len() as u8,
             signatures,
+            // TODO: timestamp is a duplicated of update timestamp - remove?
             timestamp: update.metadata.timestamp,
             payload,
         };
