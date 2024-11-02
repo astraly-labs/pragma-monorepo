@@ -19,10 +19,11 @@ use futures::{
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Receiver;
+use utoipa::ToSchema;
 
 use crate::constants::{MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
 use crate::types::calldata::AsCalldata;
-use crate::types::{hyperlane::NewUpdatesAvailableEvent, rpc::RpcDataFeed};
+use crate::types::hyperlane::NewUpdatesAvailableEvent;
 use crate::AppState;
 use crate::{configs::evm_config::EvmChainName, types::calldata::Calldata};
 
@@ -38,6 +39,15 @@ enum ClientMessage {
     Subscribe { ids: Vec<String>, chain_name: EvmChainName },
     #[serde(rename = "unsubscribe")]
     Unsubscribe { ids: Vec<String> },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RpcDataFeed {
+    pub feed_id: String,
+    /// The calldata binary represented as a hex string.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[schema(value_type = Option<String>)]
+    pub encoded_calldata: Option<String>,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -70,14 +80,9 @@ pub async fn ws_route_handler(
 async fn websocket_handler(stream: WebSocket, state: AppState) {
     let ws_state = state.ws.clone();
 
-    // TODO: add new connection to metrics
-
     let (sender, receiver) = stream.split();
-
     let feeds_receiver = state.storage.feeds_updated_tx().subscribe();
-
     let id = ws_state.subscriber_counter.fetch_add(1, Ordering::SeqCst);
-
     let mut subscriber = Subscriber::new(id, Arc::new(state), feeds_receiver, receiver, sender);
 
     subscriber.run().await;
@@ -145,14 +150,6 @@ impl Subscriber {
             },
             _  = self.ping_interval.tick() => {
                 if !self.responded_to_ping {
-                    // self.metrics
-                    //     .interactions
-                    //     .get_or_create(&Labels {
-                    //         interaction: Interaction::ClientHeartbeat,
-                    //         status: Status::Error,
-                    //     })
-                    //     .inc();
-
                     return Err(anyhow!("Subscriber did not respond to ping. Closing connection."));
                 }
                 self.responded_to_ping = false;
@@ -176,10 +173,12 @@ impl Subscriber {
             Calldata::build_from(self.state.as_ref(), self.active_chain.unwrap(), feed_id.to_owned()).await?;
 
         let message = serde_json::to_string(&ServerMessage::DataFeedUpdate {
-            data_feed: RpcDataFeed { feed_id: feed_id.clone(), calldata: Some(hex::encode(calldata.as_bytes())) },
+            data_feed: RpcDataFeed {
+                feed_id: feed_id.clone(),
+                encoded_calldata: Some(hex::encode(calldata.as_bytes())),
+            },
         })?;
         self.sender.send(message.into()).await?;
-        // TODO: success metric
         Ok(())
     }
 
@@ -229,13 +228,11 @@ impl Subscriber {
             Ok(ClientMessage::Subscribe { ids: feed_ids, chain_name }) => {
                 let stored_feed_ids = self.state.storage.feed_ids();
 
-                // TODO: Assert that the chain is supported?
-
                 // If there is a single feed id that is not found, we don't subscribe to any of the
                 // asked feed ids and return an error to be more explicit and clear.
                 match stored_feed_ids.contains_vec(&feed_ids).await {
+                    // TODO: return multiple missing ids
                     Some(missing_id) => {
-                        // TODO: return multiple missing ids
                         self.sender
                             .send(
                                 serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Err {
@@ -249,6 +246,7 @@ impl Subscriber {
                     None => {
                         for feed_id in feed_ids {
                             self.data_feeds_with_config.insert(feed_id, DataFeedClientConfig {});
+                            // TODO: Assert that the chain is supported by theoros
                             self.active_chain = Some(chain_name);
                         }
                     }

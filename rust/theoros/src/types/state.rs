@@ -9,7 +9,6 @@ use crate::{
 
 #[derive(Clone)]
 pub struct AppState {
-    #[allow(unused)]
     pub starknet_rpc: Arc<StarknetRpc>,
     pub hyperlane_validators_mapping: Arc<HyperlaneValidatorsMapping>,
     pub storage: Arc<TheorosStorage>,
