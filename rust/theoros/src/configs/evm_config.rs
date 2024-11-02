@@ -10,7 +10,7 @@ pub const DEFAULT_CONFIG_PATH: &str = "evm_config.yaml";
 /// Supported Chain identifiers
 // Must reflect the EVM chains here:
 // https://github.com/astraly-labs/pragma-monorepo/blob/main/typescript/pragma-utils/src/chains.ts
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumString)]
+#[derive(Debug, strum_macros::Display, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumString)]
 #[strum(serialize_all = "snake_case")]
 #[serde(rename_all = "snake_case")]
 #[strum(ascii_case_insensitive)]

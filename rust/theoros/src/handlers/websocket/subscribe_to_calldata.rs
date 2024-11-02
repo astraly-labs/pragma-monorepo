@@ -139,14 +139,7 @@ impl Subscriber {
     #[tracing::instrument(skip(self))]
     pub async fn run(&mut self) {
         while !self.closed {
-            if let Err(e) = self.handle_next().await {
-                tracing::error!(
-                    subscriber = self.id,
-                    error = ?e,
-                    "Error handling subscriber message."
-                );
-                break;
-            }
+            let _ = self.handle_next().await;
         }
     }
 
@@ -250,9 +243,17 @@ impl Subscriber {
 
         match client_message {
             ClientMessage::Subscribe { feed_ids, chain } => {
-                let stored_feed_ids = self.state.storage.feed_ids();
-
+                // Check if the chain is supported
+                if !self.state.hyperlane_validators_mapping.is_supported_chain(&chain) {
+                    self.send_error_to_client(format!(
+                        "The chain {} is not supported. Call /v1/chains to know the chains supported by Theoros.",
+                        chain,
+                    ))
+                    .await?;
+                    return Ok(());
+                }
                 // Check if all requested feed IDs are supported.
+                let stored_feed_ids = self.state.storage.feed_ids();
                 if let Some(missing_id) = stored_feed_ids.contains_vec(&feed_ids).await {
                     self.send_error_to_client(format!("Can't subscribe: feed ID not supported {:}", missing_id))
                         .await?;

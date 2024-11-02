@@ -40,4 +40,9 @@ impl HyperlaneValidatorsMapping {
     pub fn chain_names(&self) -> Vec<EvmChainName> {
         self.0.keys().cloned().collect()
     }
+
+    /// Check if the provided chain is supported
+    pub fn is_supported_chain(&self, chain: &EvmChainName) -> bool {
+        self.0.contains_key(chain)
+    }
 }
