@@ -37,11 +37,11 @@ async fn handler_404() -> impl IntoResponse {
 }
 
 fn ws_route(state: AppState) -> Router<AppState> {
-    Router::new().route("/ws", get(ws_route_handler)).with_state(state)
+    Router::new().route("/ws/calldata", get(ws_route_handler)).with_state(state)
 }
 
 fn calldata_routes(state: AppState) -> Router<AppState> {
-    Router::new().route("/calldata/:chain_name/:feed_id", get(get_calldata)).with_state(state)
+    Router::new().route("/calldata", get(get_calldata)).with_state(state)
 }
 
 fn data_feeds_routes(state: AppState) -> Router<AppState> {

@@ -58,7 +58,7 @@ impl SignedCheckpointsStorage {
     pub async fn get(&self, validators: &[Felt], searched_nonce: u32) -> Vec<(Felt, SignedCheckpointWithMessageId)> {
         let lock = self.0.read().await;
 
-        let mut checkpoints = Vec::new();
+        let mut checkpoints = Vec::with_capacity(lock.len());
         // Iterate over the map with tuple key (validator, message_id)
         for ((validator, nonce), checkpoint) in lock.iter() {
             // Only include if validator is in the provided list and message_id matches

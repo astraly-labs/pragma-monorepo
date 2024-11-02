@@ -21,12 +21,6 @@ impl FeedIdsStorage {
         lock.remove(feed_id);
     }
 
-    /// Checks if the storage contains the given feed ID.
-    pub async fn contains(&self, feed_id: &str) -> bool {
-        let lock = self.0.read().await;
-        lock.contains(feed_id)
-    }
-
     /// Checks if all feed IDs in the given vector are present in the storage.
     /// Returns None if all IDs are present, or Some(id) with the first missing ID.
     pub async fn contains_vec(&self, feed_ids: &[String]) -> Option<String> {
