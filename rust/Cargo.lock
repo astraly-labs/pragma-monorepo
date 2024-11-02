@@ -3191,7 +3191,7 @@ dependencies = [
 
 [[package]]
 name = "pragma-feeds"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "hex",
@@ -3202,7 +3202,7 @@ dependencies = [
 
 [[package]]
 name = "pragma-utils"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "alloy",
  "anyhow",

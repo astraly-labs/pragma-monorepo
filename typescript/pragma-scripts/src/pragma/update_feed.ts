@@ -1,14 +1,19 @@
 import { Command, type OptionValues } from "commander";
-import { ethers } from "ethers";
+import { encodeBytes32String, ethers, getBytes, solidityPacked } from "ethers";
 import dotenv from "dotenv";
 import { getDeployedAddress } from "pragma-utils";
+import fetch from "node-fetch";
 
-const PRAGMA_SOL_ABI_PATH = "../../../solidity/out/Pragma.sol/Pragma.json";
+const PRAGMA_SOL_ABI_PATH = "../../../../solidity/out/Pragma.sol/Pragma.json";
 
 dotenv.config();
 const RPC_URL = process.env.RPC_URL;
 if (!RPC_URL) {
   throw new Error("RPC URL not set in .env file");
+}
+
+function snakeToCamel(s: string): string {
+  return s.replace(/_([a-z])/g, (g) => g[1].toUpperCase());
 }
 
 function parseCommandLineArguments(): OptionValues {
@@ -23,9 +28,9 @@ function parseCommandLineArguments(): OptionValues {
     )
     .requiredOption("--feed-id <feed_id>", "ID of the feed to update")
     .option(
-      "--theoros-endpoint <url>",
-      "Theoros endpoint URL",
-      "https://theoros.pragma.build/",
+      "--theoros-url <url>",
+      "Theoros URL",
+      "https://theoros.pragma.build",
     )
     .parse(process.argv);
 
@@ -36,14 +41,14 @@ function parseCommandLineArguments(): OptionValues {
     process.exit(1);
   }
 
-  if (!Number.isInteger(Number(options.feedId))) {
-    console.error("Error: Feed ID must be an integer");
+  if (!options.feedId || typeof options.feedId !== "string") {
+    console.error("Error: Feed ID must be a valid string");
     process.exit(1);
   }
 
-  if (options.theorosEndpoint) {
+  if (options.theorosUrl) {
     try {
-      new URL(options.theorosEndpoint);
+      new URL(options.theorosUrl);
     } catch (error) {
       console.error("Error: The Theoros endpoint URL is not valid");
       process.exit(1);
@@ -54,11 +59,13 @@ function parseCommandLineArguments(): OptionValues {
 }
 
 async function getCalldataFromTheoros(
-  theorosEndpoint: string,
-  feedId: string,
-): Promise<Uint8Array> {
+  theorosUrl: string,
+  chain: string,
+  feedIds: string[],
+): Promise<string> {
   try {
-    const url = `${theorosEndpoint}/v1/calldata/${feedId}`;
+    const feedIdsParam = feedIds.join(",");
+    const url = `${theorosUrl}/v1/calldata?chain=${chain}&feed_ids=${feedIdsParam}`;
     console.log(`Fetching calldata from: ${url}`);
 
     const response = await fetch(url);
@@ -69,15 +76,24 @@ async function getCalldataFromTheoros(
 
     const data = await response.json();
 
-    // Assuming that we retrieve calldata as hex string from theoros
-    // TODO: change this part with real calldata from theoros
-    if (!data.calldata || typeof data.calldata !== "string") {
-      throw new Error("Invalid response format: calldata missing or invalid");
+    if (!Array.isArray(data) || data.length === 0) {
+      throw new Error("Invalid response format: data is not a non-empty array");
     }
-    const calldataHex = data.calldata.startsWith("0x")
-      ? data.calldata.slice(2)
-      : data.calldata;
-    return new Uint8Array(Buffer.from(calldataHex, "hex"));
+
+    // Find the object with the matching feed_id
+    const calldataObj = data.find((item) => item.feed_id === feedIds[0]);
+    if (!calldataObj) {
+      throw new Error(`Feed ID ${feedIds[0]} not found in response`);
+    }
+    if (
+      !calldataObj.encoded_calldata ||
+      typeof calldataObj.encoded_calldata !== "string"
+    ) {
+      throw new Error(
+        "Invalid response format: encoded_calldata missing or invalid",
+      );
+    }
+    return `0x${calldataObj.encoded_calldata}`;
   } catch (error) {
     console.error("Error fetching data from Theoros:", error);
     throw error;
@@ -89,9 +105,13 @@ async function main() {
 
   const chain = options.chain;
   const feedId = options.feedId;
-  const theorosEndpoint = options.theorosEndpoint;
+  const theorosUrl = options.theorosUrl;
 
-  const pragmaAddress = getDeployedAddress(chain, "pragma", "Pragma");
+  const pragmaAddress = getDeployedAddress(
+    snakeToCamel(chain),
+    "pragma",
+    "Pragma",
+  );
 
   const privateKey = process.env.ETH_PRIVATE_KEY;
   if (!privateKey) {
@@ -101,19 +121,19 @@ async function main() {
   console.log(
     `Updating feed ${feedId} for contract ${pragmaAddress} on chain ${chain}`,
   );
-  console.log(`Using Theoros endpoint: ${theorosEndpoint}`);
+  console.log(`Using Theoros endpoint: ${theorosUrl}`);
 
   // 2. Get calldata from Theoros
-  let calldata: Uint8Array;
+  let calldata: string;
   try {
-    calldata = await getCalldataFromTheoros(theorosEndpoint, feedId);
+    calldata = await getCalldataFromTheoros(theorosUrl, chain, [feedId]);
     console.log("Calldata retrieved from Theoros:", calldata);
   } catch (error) {
     console.error("Failed to retrieve calldata from Theoros:", error);
     process.exit(1);
   }
 
-  // 3. Call `updateDataFeeds` with the calldata
+  // 3. Call updateDataFeeds with the calldata
   let abi;
   try {
     abi = await import(PRAGMA_SOL_ABI_PATH);
@@ -126,7 +146,7 @@ async function main() {
   const contract = new ethers.Contract(pragmaAddress, abi.abi, wallet);
 
   try {
-    const tx = await contract.updateDataFeeds(calldata);
+    const tx = await contract.updateDataFeeds([calldata]);
     console.log("Transaction sent. Transaction hash:", tx.hash);
 
     // 4. Assertions - check that everything is correctly updated on the destination chain

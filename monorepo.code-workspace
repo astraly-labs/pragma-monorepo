@@ -13,10 +13,6 @@
       "path": "rust/theoros",
     },
     {
-      "name": "pragma-cli",
-      "path": "rust/pragma-cli",
-    },
-    {
       "name": "pragma-utils",
       "path": "rust/pragma-utils",
     },
