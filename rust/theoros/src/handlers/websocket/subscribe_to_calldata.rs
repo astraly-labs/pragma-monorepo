@@ -5,7 +5,7 @@ use std::{
 };
 
 use alloy::hex;
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
@@ -19,15 +19,18 @@ use futures::{
 };
 use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast::Receiver;
+use utoipa::ToSchema;
 
-use crate::constants::{DEFAULT_ACTIVE_CHAIN, MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION};
-use crate::types::calldata::AsCalldata;
-use crate::types::{hyperlane::CheckpointMatchEvent, rpc::RpcDataFeed};
-use crate::AppState;
-use crate::{configs::evm_config::EvmChainName, types::calldata::Calldata};
+use crate::{
+    configs::evm_config::EvmChainName,
+    constants::{MAX_CLIENT_MESSAGE_SIZE, PING_INTERVAL_DURATION},
+    types::{
+        calldata::{AsCalldata, Calldata},
+        hyperlane::NewUpdatesAvailableEvent,
+    },
+    AppState,
+};
 
-// TODO: add config for the client
-/// Configuration for a specific data feed.
 #[derive(Clone)]
 pub struct DataFeedClientConfig {}
 
@@ -35,9 +38,16 @@ pub struct DataFeedClientConfig {}
 #[serde(tag = "type")]
 enum ClientMessage {
     #[serde(rename = "subscribe")]
-    Subscribe { ids: Vec<String>, chain_name: EvmChainName },
+    Subscribe { feed_ids: Vec<String>, chain: EvmChainName },
     #[serde(rename = "unsubscribe")]
-    Unsubscribe { ids: Vec<String> },
+    Unsubscribe { feed_ids: Vec<String> },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
+pub struct RpcDataFeed {
+    pub feed_id: String,
+    /// The calldata binary represented as a hex string.
+    pub encoded_calldata: String,
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -46,7 +56,7 @@ enum ServerMessage {
     #[serde(rename = "response")]
     Response(ServerResponseMessage),
     #[serde(rename = "data_feed_update")]
-    DataFeedUpdate { data_feed: RpcDataFeed },
+    DataFeedUpdate { data_feeds: Vec<RpcDataFeed> },
 }
 
 #[derive(Serialize, Debug, Clone)]
@@ -58,6 +68,10 @@ enum ServerResponseMessage {
     Err { error: String },
 }
 
+/// WebSocket route handler.
+///
+/// Upgrades the HTTP connection to a WebSocket connection and spawns a new
+/// subscriber to handle incoming and outgoing messages.
 pub async fn ws_route_handler(
     ws: WebSocketUpgrade,
     AxumState(state): AxumState<AppState>,
@@ -66,18 +80,14 @@ pub async fn ws_route_handler(
     ws.max_message_size(MAX_CLIENT_MESSAGE_SIZE).on_upgrade(move |socket| websocket_handler(socket, state))
 }
 
+/// Handles the WebSocket connection for a single client.
 #[tracing::instrument(skip(stream, state))]
 async fn websocket_handler(stream: WebSocket, state: AppState) {
     let ws_state = state.ws.clone();
 
-    // TODO: add new connection to metrics
-
     let (sender, receiver) = stream.split();
-
-    let feeds_receiver = state.storage.feeds_channel.subscribe();
-
+    let feeds_receiver = state.storage.feeds_updated_tx().subscribe();
     let id = ws_state.subscriber_counter.fetch_add(1, Ordering::SeqCst);
-
     let mut subscriber = Subscriber::new(id, Arc::new(state), feeds_receiver, receiver, sender);
 
     subscriber.run().await;
@@ -85,24 +95,29 @@ async fn websocket_handler(stream: WebSocket, state: AppState) {
 
 pub type SubscriberId = usize;
 
+/// Represents a client connected via WebSocket.
+///
+/// Manages subscriptions to data feeds, handles incoming client messages,
+/// and sends updates to the client.
 pub struct Subscriber {
     id: SubscriberId,
     closed: bool,
     state: Arc<AppState>,
-    feeds_receiver: Receiver<CheckpointMatchEvent>,
+    feeds_receiver: Receiver<NewUpdatesAvailableEvent>,
     receiver: SplitStream<WebSocket>,
     sender: SplitSink<WebSocket, Message>,
     data_feeds_with_config: HashMap<String, DataFeedClientConfig>,
-    active_chain: EvmChainName,
+    active_chain: Option<EvmChainName>,
     ping_interval: tokio::time::Interval,
     responded_to_ping: bool,
 }
 
 impl Subscriber {
+    /// Creates a new `Subscriber` instance.
     pub fn new(
         id: SubscriberId,
         state: Arc<AppState>,
-        feeds_receiver: Receiver<CheckpointMatchEvent>,
+        feeds_receiver: Receiver<NewUpdatesAvailableEvent>,
         receiver: SplitStream<WebSocket>,
         sender: SplitSink<WebSocket, Message>,
     ) -> Self {
@@ -114,47 +129,43 @@ impl Subscriber {
             receiver,
             sender,
             data_feeds_with_config: HashMap::new(),
-            active_chain: DEFAULT_ACTIVE_CHAIN,
+            active_chain: None,
             ping_interval: tokio::time::interval(PING_INTERVAL_DURATION),
             responded_to_ping: true,
         }
     }
 
+    /// Runs the subscriber event loop, handling messages and updates.
     #[tracing::instrument(skip(self))]
     pub async fn run(&mut self) {
         while !self.closed {
-            if let Err(e) = self.handle_next().await {
-                tracing::error!(subscriber = self.id, error = ?e, "Error Handling Subscriber Message.");
+            if self.handle_next().await.is_err() {
                 break;
             }
         }
     }
 
+    /// Handles the next event, whether it's an incoming message, a data feed update, or a ping.
     async fn handle_next(&mut self) -> Result<()> {
         tokio::select! {
-            maybe_update_feeds_event = self.feeds_receiver.recv() => {
-                match maybe_update_feeds_event {
-                    Ok(event) => self.handle_data_feeds_update(event).await,
-                    Err(e) => Err(anyhow!("Failed to receive update from store: {:?}", e)),
+            maybe_update = self.feeds_receiver.recv() => {
+                match maybe_update {
+                    Ok(_) => self.handle_data_feeds_update().await,
+                    Err(e) => anyhow::bail!("Failed to receive update from store: {:?}", e),
                 }
             },
-            maybe_message_or_err = self.receiver.next() => {
-                self.handle_client_message(
-                    maybe_message_or_err.ok_or(anyhow!("Client channel is closed"))??
-                ).await
-            },
-            _  = self.ping_interval.tick() => {
-                if !self.responded_to_ping {
-                    // self.metrics
-                    //     .interactions
-                    //     .get_or_create(&Labels {
-                    //         interaction: Interaction::ClientHeartbeat,
-                    //         status: Status::Error,
-                    //     })
-                    //     .inc();
-
-                    return Err(anyhow!("Subscriber did not respond to ping. Closing connection."));
+            maybe_message = self.receiver.next() => {
+                match maybe_message {
+                    Some(Ok(message)) => self.handle_client_message(message).await,
+                    Some(Err(e)) => anyhow::bail!("WebSocket error: {:?}", e),
+                    None => {
+                        self.closed = true;
+                        Ok(())
+                    }
                 }
+            },
+            _ = self.ping_interval.tick() => {
+                anyhow::ensure!(self.responded_to_ping, "Subscriber did not respond to ping. Closing connection.");
                 self.responded_to_ping = false;
                 self.sender.send(Message::Ping(vec![])).await?;
                 Ok(())
@@ -162,105 +173,118 @@ impl Subscriber {
         }
     }
 
-    async fn handle_data_feeds_update(&mut self, event: CheckpointMatchEvent) -> Result<()> {
-        tracing::debug!(subscriber = self.id, n = event.block_number(), "Handling Data Feeds Update.");
-        // Retrieve the updates for subscribed feed ids at the given slot
-        let feed_ids = self.data_feeds_with_config.keys().cloned().collect::<Vec<_>>();
-        // TODO: add support for multiple feeds
-        let feed_id = feed_ids.first().unwrap();
+    /// Handles data feed updates by sending new data to the client for all subscribed feeds.
+    async fn handle_data_feeds_update(&mut self) -> Result<()> {
+        if self.active_chain.is_none() || self.data_feeds_with_config.is_empty() {
+            return Ok(());
+        }
 
-        let calldata = Calldata::build_from(self.state.as_ref(), self.active_chain, feed_id.to_owned()).await?;
+        tracing::debug!(subscriber = self.id, "Handling data feeds update.");
 
-        let message = serde_json::to_string(&ServerMessage::DataFeedUpdate {
-            data_feed: RpcDataFeed { feed_id: feed_id.clone(), calldata: Some(hex::encode(calldata.as_bytes())) },
-        })?;
-        self.sender.send(message.into()).await?;
-        // TODO: success metric
+        // Retrieve the list of subscribed feed IDs.
+        let feed_ids: Vec<String> = self.data_feeds_with_config.keys().cloned().collect();
+
+        let mut data_feeds = Vec::with_capacity(feed_ids.len());
+        // Build calldata for each subscribed feed and collect them.
+        for feed_id in feed_ids {
+            match Calldata::build_from(self.state.as_ref(), self.active_chain.unwrap(), feed_id.clone()).await {
+                Ok(calldata) => {
+                    data_feeds.push(RpcDataFeed {
+                        feed_id: feed_id.clone(),
+                        encoded_calldata: hex::encode(calldata.as_bytes()),
+                    });
+                }
+                Err(e) => {
+                    self.send_error_to_client(format!("Error building calldata for {}: {}", feed_id, e)).await?;
+                }
+            }
+        }
+
+        // Send a single update containing all data feeds.
+        if !data_feeds.is_empty() {
+            let update = ServerMessage::DataFeedUpdate { data_feeds };
+            let message = serde_json::to_string(&update)?;
+            self.sender.send(Message::Text(message)).await?;
+        }
+
         Ok(())
     }
 
+    /// Processes messages received from the client.
     #[tracing::instrument(skip(self, message))]
     async fn handle_client_message(&mut self, message: Message) -> Result<()> {
-        let maybe_client_message = match message {
+        match message {
             Message::Close(_) => {
-                // Closing the connection. We don't remove it from the subscribers
-                // list, instead when the Subscriber struct is dropped the channel
-                // to subscribers list will be closed and it will eventually get
-                // removed.
                 tracing::trace!(id = self.id, "📨 [CLOSE]");
-
-                // Send the close message to gracefully shut down the connection
-                // Otherwise the client might get an abnormal Websocket closure
-                // error.
                 self.sender.close().await?;
                 self.closed = true;
-                return Ok(());
+                Ok(())
             }
-            Message::Text(text) => serde_json::from_str::<ClientMessage>(&text),
-            Message::Binary(data) => serde_json::from_slice::<ClientMessage>(&data),
-            Message::Ping(_) => {
-                // Axum will send Pong automatically
-                return Ok(());
+            Message::Text(text) => self.process_client_message(&text).await,
+            Message::Binary(data) => {
+                let text = String::from_utf8(data)?;
+                self.process_client_message(&text).await
             }
+            Message::Ping(_) => Ok(()), // Axum handles PONG responses automatically.
             Message::Pong(_) => {
                 self.responded_to_ping = true;
+                Ok(())
+            }
+        }
+    }
+
+    /// Parses and processes a client message in text format.
+    async fn process_client_message(&mut self, text: &str) -> Result<()> {
+        let client_message: ClientMessage = match serde_json::from_str(text) {
+            Ok(msg) => msg,
+            Err(e) => {
+                self.send_error_to_client(e.to_string()).await?;
                 return Ok(());
             }
         };
 
-        match maybe_client_message {
-            Err(e) => {
-                tracing::error!("😶‍🌫️ Client disconnected/error occurred. Closing the channel.");
-                self.sender
-                    .send(
-                        serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Err {
-                            error: e.to_string(),
-                        }))?
-                        .into(),
-                    )
+        match client_message {
+            ClientMessage::Subscribe { feed_ids, chain } => {
+                // Check if the chain is supported
+                if !self.state.hyperlane_validators_mapping.is_supported_chain(&chain) {
+                    self.send_error_to_client(format!(
+                        "The chain {} is not supported. Call /v1/chains to know the chains supported by Theoros.",
+                        chain,
+                    ))
                     .await?;
-                return Ok(());
-            }
-
-            Ok(ClientMessage::Subscribe { ids: feed_ids, chain_name }) => {
+                    return Ok(());
+                }
+                // Check if all requested feed IDs are supported.
                 let stored_feed_ids = self.state.storage.feed_ids();
+                if let Some(missing_id) = stored_feed_ids.contains_vec(&feed_ids) {
+                    self.send_error_to_client(format!("Can't subscribe: feed ID not supported {:}", missing_id))
+                        .await?;
+                    return Ok(());
+                }
 
-                // TODO: Assert that the chain is supported?
-
-                // If there is a single feed id that is not found, we don't subscribe to any of the
-                // asked feed ids and return an error to be more explicit and clear.
-                match stored_feed_ids.contains_vec(&feed_ids).await {
-                    Some(missing_id) => {
-                        // TODO: return multiple missing ids
-                        self.sender
-                            .send(
-                                serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Err {
-                                    error: format!("Can't subscribe: at least one of the requested feed ids is not supported ({:?})", missing_id),
-                                }))?
-                                .into(),
-                            )
-                            .await?;
-                        return Ok(());
-                    }
-                    None => {
-                        for feed_id in feed_ids {
-                            self.data_feeds_with_config.insert(feed_id, DataFeedClientConfig {});
-                            self.active_chain = chain_name;
-                        }
-                    }
+                // Subscribe to the requested feed IDs.
+                self.active_chain = Some(chain);
+                for feed_id in feed_ids {
+                    self.data_feeds_with_config.insert(feed_id, DataFeedClientConfig {});
                 }
             }
-            Ok(ClientMessage::Unsubscribe { ids: feed_ids }) => {
+            ClientMessage::Unsubscribe { feed_ids } => {
                 for feed_id in feed_ids {
                     self.data_feeds_with_config.remove(&feed_id);
                 }
             }
         }
 
+        // Acknowledge the successful processing of the client message.
         self.sender
-            .send(serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Success))?.into())
+            .send(Message::Text(serde_json::to_string(&ServerMessage::Response(ServerResponseMessage::Success))?))
             .await?;
+        Ok(())
+    }
 
+    async fn send_error_to_client(&mut self, msg: String) -> anyhow::Result<()> {
+        let message = ServerResponseMessage::Err { error: msg };
+        self.sender.send(Message::Text(serde_json::to_string(&ServerMessage::Response(message))?)).await?;
         Ok(())
     }
 }

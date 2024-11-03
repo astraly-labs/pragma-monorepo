@@ -1,20 +1,17 @@
-// TODO:
-// Create tests for this module. It should produces the same than abi.encodePack
+use std::str::FromStr;
+
 use alloy::{primitives::U256, signers::Signature};
+use anyhow::Context;
+use pragma_utils::conversions::alloy::hex_str_to_u256;
 use serde::{Deserialize, Serialize};
 use starknet::core::types::Felt;
-use std::str::FromStr;
 
 use crate::{
     configs::evm_config::EvmChainName,
     constants::{HYPERLANE_VERSION, PRAGMA_MAJOR_VERSION, PRAGMA_MINOR_VERSION, TRAILING_HEADER_SIZE},
-    errors::GetCalldataError,
-    storage::DispatchUpdateInfos,
-    types::hyperlane::CheckpointWithMessageId,
-    AppState,
+    types::hyperlane::{CheckpointWithMessageId, DispatchUpdate},
+    types::state::AppState,
 };
-
-use super::hyperlane::DispatchUpdate;
 
 pub trait AsCalldata {
     fn as_bytes(&self) -> Vec<u8>;
@@ -35,72 +32,69 @@ pub struct Calldata {
 }
 
 impl Calldata {
-    pub async fn build_from(
-        state: &AppState,
-        chain_name: EvmChainName,
-        feed_id: String,
-    ) -> Result<Calldata, GetCalldataError> {
-        let event: DispatchUpdateInfos = state
-            .storage
-            .dispatch_events()
-            .get(&feed_id)
-            .await
-            .map_err(|_| GetCalldataError::DispatchNotFound)?
-            .ok_or(GetCalldataError::DispatchNotFound)?;
+    pub async fn build_from(state: &AppState, chain_name: EvmChainName, feed_id: String) -> anyhow::Result<Calldata> {
+        let feed_id = hex_str_to_u256(&feed_id)?;
+        let update_info = state.storage.latest_update_per_feed().get(&feed_id).context("No update found")?;
 
-        let validators = state
-            .hyperlane_validators_mapping
-            .get_validators(chain_name)
-            .ok_or(GetCalldataError::ChainNotSupported(format!("{:?}", chain_name)))?;
+        let validator_index_map =
+            state.hyperlane_validators_mapping.get_validators(&chain_name).context("No validators found")?;
 
-        let checkpoints = state
-            .storage
-            .validators_checkpoints()
-            .get_validators_signed_checkpoints(validators, event.message_id)
-            .await
-            .map_err(|_| GetCalldataError::ValidatorNotFound)?;
+        let validators: Vec<Felt> = validator_index_map.keys().copied().collect();
+        let checkpoints = state.storage.signed_checkpoints().get(&validators, update_info.nonce);
+        anyhow::ensure!(!checkpoints.is_empty(), "No signatures found");
 
-        // TODO: We only have one validator for now
-        let checkpoint_infos = checkpoints.last().unwrap();
+        // Ensure all nonce have the same checkpoint
+        let nonce_checkpoint = &checkpoints[0].1.value;
+        anyhow::ensure!(
+            checkpoints.iter().all(|(_, checkpoint)| &(checkpoint.value) == nonce_checkpoint),
+            "Inconsistent checkpoint values found"
+        );
 
-        let update = match event.update {
-            DispatchUpdate::SpotMedian { update, feed_id: _ } => update,
+        let signatures: Vec<ValidatorSignature> = checkpoints
+            .iter()
+            .filter_map(|(validator, signed_checkpoint)| {
+                validator_index_map
+                    .get(validator)
+                    .map(|&idx| ValidatorSignature { validator_index: idx, signature: signed_checkpoint.signature })
+            })
+            .collect();
+
+        let update = match update_info.update {
+            DispatchUpdate::SpotMedian { update, .. } => update,
         };
 
         let payload = Payload {
-            checkpoint: checkpoint_infos.value.clone(),
+            checkpoint: nonce_checkpoint.clone(),
             num_updates: 1,
-            update_data_len: 1,
+            // TODO: proof should be deleted
             proof_len: 0,
             proof: vec![],
+            update_data_len: update.to_bytes().len() as u16,
             update_data: update.to_bytes(),
-            // TODO: Store directly a U256.
-            feed_id: U256::from_str(&feed_id).unwrap(),
+            feed_id,
+            // TODO: publish_time is a duplicated of update timestamp - remove?
             publish_time: update.metadata.timestamp,
         };
 
         let hyperlane_message = HyperlaneMessage {
             hyperlane_version: HYPERLANE_VERSION,
-            // TODO: signers_len & signatures should work for multiple validators
-            signers_len: 1_u8,
-            signatures: vec![ValidatorSignature { validator_index: 0, signature: checkpoint_infos.signature }],
-            nonce: event.nonce,
+            emitter_chain_id: update_info.emitter_chain_id,
+            emitter_address: update_info.emitter_address,
+            nonce: update_info.nonce,
+            signers_len: signatures.len() as u8,
+            signatures,
+            // TODO: timestamp is a duplicated of update timestamp - remove?
             timestamp: update.metadata.timestamp,
-            emitter_chain_id: event.emitter_chain_id,
-            // TODO: Store directly a Felt.
-            emitter_address: Felt::from_dec_str(&event.emitter_address).unwrap(),
             payload,
         };
 
-        let calldata = Calldata {
+        Ok(Calldata {
             major_version: PRAGMA_MAJOR_VERSION,
             minor_version: PRAGMA_MINOR_VERSION,
             trailing_header_size: TRAILING_HEADER_SIZE,
-            hyperlane_msg_size: hyperlane_message.as_bytes().len().try_into().unwrap(),
+            hyperlane_msg_size: hyperlane_message.as_bytes().len().try_into()?,
             hyperlane_msg: hyperlane_message,
-        };
-
-        Ok(calldata)
+        })
     }
 }
 
@@ -166,12 +160,13 @@ pub struct Payload {
     pub checkpoint: CheckpointWithMessageId,
     /// Number of updates
     pub num_updates: u8,
-    pub update_data_len: u16,
     /// Length of the proof
     #[serde(skip)]
     pub proof_len: u16,
     #[serde(skip)]
     pub proof: Vec<String>,
+    #[serde(skip)]
+    pub update_data_len: u16,
     #[serde(skip)]
     pub update_data: Vec<u8>,
     /// The id associated to the feed to be updated

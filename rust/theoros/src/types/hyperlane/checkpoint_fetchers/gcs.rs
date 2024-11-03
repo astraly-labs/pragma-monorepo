@@ -68,14 +68,6 @@ impl FetchFromStorage for GcsStorageClient {
         Ok(Some(serde_json::from_slice(res.as_ref())?))
     }
 
-    async fn fetch_latest(&self) -> Result<Option<SignedCheckpointWithMessageId>> {
-        let res = self.inner.get_object(&self.bucket, GcsStorageClient::get_latest_checkpoint_key()).await?;
-        let latest_index = serde_json::from_slice(&res)?;
-
-        let res = self.inner.get_object(&self.bucket, GcsStorageClient::get_checkpoint_key(latest_index)).await?;
-        Ok(Some(serde_json::from_slice(res.as_ref())?))
-    }
-
     fn announcement_location(&self) -> String {
         format!("gs://{}/{}", &self.bucket, ANNOUNCEMENT_KEY)
     }

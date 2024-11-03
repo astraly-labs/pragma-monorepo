@@ -1,3 +1,5 @@
+use std::cmp::max;
+
 use anyhow::{anyhow, bail, Context, Result};
 use apibara_core::{
     node::v1alpha2::DataFinality,
@@ -14,13 +16,12 @@ use pragma_utils::{
     services::Service,
 };
 
-use crate::{
-    storage::DispatchUpdateInfos,
-    types::hyperlane::{CheckpointMatchEvent, DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent},
-    AppState,
-};
+use crate::types::hyperlane::{DispatchEvent, FromStarknetEventData, ValidatorAnnouncementEvent};
+use crate::types::state::AppState;
 
 const INDEXING_STREAM_CHUNK_SIZE: usize = 1;
+
+const START_INDEXER_DELTA: u64 = 5;
 
 lazy_static::lazy_static! {
     // Pragma Dispatcher
@@ -37,7 +38,6 @@ pub struct IndexerService {
     state: AppState,
     uri: Uri,
     stream_config: Configuration<Filter>,
-    reached_pending_block: bool,
 }
 
 #[async_trait::async_trait]
@@ -60,10 +60,10 @@ impl IndexerService {
         hyperlane_mailbox_address: Felt,
         hyperlane_validator_announce_address: Felt,
         pragma_feeds_registry_address: Felt,
-        starting_block: u64,
+        current_block: u64,
     ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
-            .with_starting_block(starting_block)
+            .with_starting_block(max(0, current_block.saturating_sub(START_INDEXER_DELTA)))
             .with_filter(|mut filter| {
                 filter
                     .with_header(HeaderFilter::weak())
@@ -86,7 +86,7 @@ impl IndexerService {
             })
             .with_finality(DataFinality::DataStatusPending);
 
-        let indexer_service = Self { state, uri: apibara_uri, stream_config, reached_pending_block: false };
+        let indexer_service = Self { state, uri: apibara_uri, stream_config };
         Ok(indexer_service)
     }
 
@@ -108,15 +108,6 @@ impl IndexerService {
             match stream.try_next().await {
                 Ok(Some(response)) => {
                     self.process_batch(response).await?;
-                    // This should be done in Hyperlane service? Currently poisoning the thread.
-                    self.state
-                        .storage
-                        .cached_events()
-                        .process_cached_events(
-                            self.state.storage.validators_checkpoints(),
-                            self.state.storage.dispatch_events(),
-                        )
-                        .await?;
                 }
                 Ok(None) => continue,
                 Err(e) => bail!("Error while streaming indexed batch: {}", e),
@@ -127,11 +118,7 @@ impl IndexerService {
     /// Process a batch of blocks indexed by Apibara DNA
     async fn process_batch(&mut self, batch: DataMessage<Block>) -> Result<()> {
         match batch {
-            DataMessage::Data { cursor: _, end_cursor: _, finality, batch } => {
-                if matches!(finality, DataFinality::DataStatusPending) && !self.reached_pending_block {
-                    tracing::info!("[🔍 Indexer] 🥳🎉 Reached pending block!");
-                    self.reached_pending_block = true;
-                }
+            DataMessage::Data { cursor: _, end_cursor: _, finality: _, batch } => {
                 for block in batch {
                     for event in block.clone().events.into_iter().filter_map(|e| e.event) {
                         if event.from_address.is_none() {
@@ -142,7 +129,7 @@ impl IndexerService {
                 }
             }
             DataMessage::Invalidate { cursor } => match cursor {
-                Some(c) => bail!("Received an invalidate request data at {}", &c.order_key),
+                Some(c) => bail!("Indexed an invalidate request data at {}", &c.order_key),
                 None => bail!("Invalidate request without cursor provided"),
             },
             DataMessage::Heartbeat => {}
@@ -162,10 +149,10 @@ impl IndexerService {
                 self.decode_validator_announce_event(event_data).await?;
             }
             selector if selector == &*NEW_FEED_ID_EVENT_SELECTOR => {
-                self.decode_new_feed_id_event(event_data).await?;
+                self.decode_new_feed_id_event(event_data);
             }
             selector if selector == &*REMOVED_FEED_ID_EVENT_SELECTOR => {
-                self.decode_removed_feed_id_event(event_data).await?;
+                self.decode_removed_feed_id_event(event_data);
             }
             _ => unreachable!(),
         }
@@ -174,70 +161,45 @@ impl IndexerService {
 
     /// Decodes a DispatchEvent from the Starknet event data.
     async fn decode_dispatch_event(&self, event_data: Vec<Felt>, block: &Block) -> anyhow::Result<()> {
-        // TODO: If we index from a toooooo far block, just ignore?
-        // What's the point of fetching storing etc for old events? Since they get
-        // overriten anyway? (we only store the latest update for a given feed)
-        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).context("Failed to parse Dispatch")?;
-        let message_id = dispatch_event.id();
-
+        let dispatch_event = DispatchEvent::from_starknet_event_data(event_data).context("Parsing DispatchEvent")?;
+        let nonce = dispatch_event.message.header.nonce;
         match &block.header {
             Some(h) => {
                 tracing::info!(
-                    "📨 [Indexer] Received a Dispatch event at block #{}, message_id={:#x}",
+                    "📨 [Indexer] [Block {}] Indexed a Dispatch event with nonce #{}",
                     h.block_number,
-                    message_id
+                    nonce,
                 );
             }
             None => {
-                tracing::info!("📨 [Indexer] Received a Dispatch event, message_id={:#x}", message_id);
+                tracing::info!("📨 [Indexer] Indexed a Dispatch event with nonce #{}", nonce);
             }
         };
-
-        for update in dispatch_event.message.body.updates.iter() {
-            let feed_id = update.feed_id();
-            // Check if there's a corresponding signed checkpoints among validators
-            if self.state.storage.validators_checkpoints().contains_message_id(message_id).await {
-                tracing::debug!("Found corresponding checkpoint for message ID: {:?}", message_id);
-                let dispatch_update_infos = DispatchUpdateInfos::new(message_id, &dispatch_event, update);
-                self.state.storage.dispatch_events().add(feed_id, dispatch_update_infos).await?;
-                let _ = self
-                    .state
-                    .storage
-                    .feeds_channel
-                    .send(CheckpointMatchEvent::New { block_number: block.clone().header.unwrap().block_number });
-            // If not, store the event and check later in `process_cached_events`
-            } else {
-                tracing::debug!("No checkpoint found, caching dispatch event");
-                // If no checkpoint found, add to cache
-                self.state.storage.cached_events().add(message_id, &dispatch_event).await;
-            }
-        }
+        self.state.storage.unsigned_checkpoints().add(nonce, &dispatch_event).await;
         Ok(())
     }
 
     /// Decodes a ValidatorAnnouncementEvent from the Starknet event data.
     async fn decode_validator_announce_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
-        tracing::info!("📨 [Indexer] Received a ValidatorAnnouncement event");
+        tracing::info!("📨 [Indexer] Indexed a ValidatorAnnouncement event");
         let validator_announcement_event = ValidatorAnnouncementEvent::from_starknet_event_data(event_data)
             .context("Failed to parse ValidatorAnnouncement")?;
-        let validators = &mut self.state.storage.validators_locations();
+        let validators = &mut self.state.storage.validators_fetchers();
         validators.add_from_announcement_event(validator_announcement_event).await?;
         Ok(())
     }
 
     /// Decodes a NewFeedId event from the Starknet event data.
-    async fn decode_new_feed_id_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
+    fn decode_new_feed_id_event(&self, event_data: Vec<Felt>) {
         let feed_id = event_data[1].to_hex_string();
-        tracing::info!("📨 [Indexer] Received a NewFeedId event for: {}", feed_id);
-        self.state.storage.feed_ids().add(feed_id).await;
-        Ok(())
+        tracing::info!("📨 [Indexer] Indexed a NewFeedId event for: {}", feed_id);
+        self.state.storage.feed_ids().add(feed_id);
     }
 
     /// Decodes a RemovedFeedId event from the Starknet event data.
-    async fn decode_removed_feed_id_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
+    fn decode_removed_feed_id_event(&self, event_data: Vec<Felt>) {
         let feed_id = event_data[1].to_hex_string();
-        tracing::info!("📨 [Indexer] Received a RemovedFeedId event for: {}", feed_id);
-        self.state.storage.feed_ids().remove(&feed_id).await;
-        Ok(())
+        tracing::info!("📨 [Indexer] Indexed a RemovedFeedId event for: {}", feed_id);
+        self.state.storage.feed_ids().remove(&feed_id);
     }
 }
