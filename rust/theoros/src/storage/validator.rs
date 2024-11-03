@@ -10,7 +10,7 @@ use crate::types::hyperlane::{CheckpointStorage, FetchFromStorage, ValidatorAnno
 /// Mapping between the validators and their fetcher used to
 /// retrieve signed checkpoints.
 #[derive(Debug, Default)]
-pub struct ValidatorsFetchersStorage(Arc<DashMap<Felt, Arc<Box<dyn FetchFromStorage>>>>);
+pub struct ValidatorsFetchersStorage(Arc<DashMap<Felt, Arc<dyn FetchFromStorage + Send + Sync>>>);
 
 impl ValidatorsFetchersStorage {
     /// Fills the [DashMap] with the initial state fetched from the RPC.
@@ -30,7 +30,7 @@ impl ValidatorsFetchersStorage {
             }
             let storage = CheckpointStorage::from_str(&location[location.len() - 1])?;
             let storage_fetcher = storage.build().await?;
-            self.0.insert(validator, Arc::new(storage_fetcher));
+            self.0.insert(validator, storage_fetcher);
         }
 
         Ok(())
@@ -39,7 +39,7 @@ impl ValidatorsFetchersStorage {
     /// Adds or updates the [CheckpointStorage] for the given validator
     pub async fn build_and_add(&self, validator: Felt, storage: CheckpointStorage) -> anyhow::Result<()> {
         let storage_fetcher = storage.build().await?;
-        self.0.insert(validator, Arc::new(storage_fetcher));
+        self.0.insert(validator, storage_fetcher);
         Ok(())
     }
 
@@ -57,7 +57,7 @@ impl ValidatorsFetchersStorage {
     }
 
     /// Returns all registered mappings between validators & their location storage.
-    pub fn all(&self) -> HashMap<Felt, Arc<Box<dyn FetchFromStorage>>> {
+    pub fn all(&self) -> HashMap<Felt, Arc<dyn FetchFromStorage + Send + Sync>> {
         self.0.iter().map(|entry| (*entry.key(), entry.value().clone())).collect()
     }
 }

@@ -6,6 +6,7 @@ pub mod s3;
 // https://github.com/hyperlane-xyz/hyperlane-monorepo/blob/3e90734310fb1ca9a607ce3d334015fa7aaa9208/rust/hyperlane-base/src/settings/checkpoint_syncer.rs#L14
 
 use std::fmt::Debug;
+use std::sync::Arc;
 use std::{env, path::PathBuf};
 
 use anyhow::{anyhow, bail, Context, Error, Result};
@@ -115,11 +116,11 @@ impl FromStr for CheckpointStorage {
 
 impl CheckpointStorage {
     /// Turn conf info a Checkpoint Syncer
-    pub async fn build(&self) -> Result<Box<dyn FetchFromStorage>> {
+    pub async fn build(&self) -> Result<Arc<dyn FetchFromStorage + Send + Sync>> {
         Ok(match self {
-            CheckpointStorage::LocalStorage { path } => Box::new(LocalStorage::new(path.clone())?),
+            CheckpointStorage::LocalStorage { path } => Arc::new(LocalStorage::new(path.clone())?),
             CheckpointStorage::S3 { bucket, folder, region } => {
-                Box::new(S3Storage::new(bucket.clone(), folder.clone(), region.clone()))
+                Arc::new(S3Storage::new(bucket.clone(), folder.clone(), region.clone()))
             }
             CheckpointStorage::Gcs { bucket, folder, service_account_key, user_secrets } => {
                 let auth = if let Some(path) = service_account_key {
@@ -131,7 +132,7 @@ impl CheckpointStorage {
                     AuthFlow::NoAuth
                 };
 
-                Box::new(GcsStorageClientBuilder::new(auth).build(bucket, folder.to_owned()).await?)
+                Arc::new(GcsStorageClientBuilder::new(auth).build(bucket, folder.to_owned()).await?)
             }
         })
     }

@@ -108,7 +108,7 @@ impl HyperlaneService {
     async fn fetch_checkpoint_for_validator(
         &self,
         validator: Felt,
-        fetcher: Arc<Box<dyn FetchFromStorage>>,
+        fetcher: Arc<dyn FetchFromStorage + Send + Sync>,
         nonce: u32,
     ) -> anyhow::Result<()> {
         // If the validator already signed this nonce, ignore
