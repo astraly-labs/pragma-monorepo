@@ -197,16 +197,13 @@ export class PragmaDeployer implements ContractDeployer {
   ): Promise<void> {
     const contractAddress = await contract.getAddress();
 
-    // Get the artifact
     const artifact = await hre.artifacts.readArtifact(
       contractFullyQualifiedName,
     );
 
-    // Get the build info
     const buildInfo = await hre.artifacts.getBuildInfo(
       `${artifact.sourceName}:${artifact.contractName}`,
     );
-
     if (!buildInfo) {
       console.error(
         `Build info not found for contract ${artifact.contractName}`,
@@ -216,7 +213,6 @@ export class PragmaDeployer implements ContractDeployer {
 
     const compilerVersion = `v${buildInfo.solcLongVersion}`;
     const inputJSON = buildInfo.input;
-
     // Encode constructor arguments if any
     let constructorArgumentsEncoded = "";
     if (constructorArguments.length > 0) {
@@ -244,15 +240,12 @@ export class PragmaDeployer implements ContractDeployer {
       contractaddress: contractAddress,
       contractname: `${artifact.sourceName}:${artifact.contractName}`,
       compilerversion: compilerVersion,
-      constructorArguements: constructorArgumentsEncoded, // Note the spelling
+      // NOTE: There's a mistake in the etherscan api... "Arguements". To fix, one day.
+      constructorArguements: constructorArgumentsEncoded,
     };
-
     const url = `${ETHERSCAN_VERIFIER_URL}?${qs.stringify(queryParams)}`;
-    const postData = qs.stringify(bodyData);
-
-    // Send the POST request
     try {
-      const response = await axios.post(url, postData, {
+      const response = await axios.post(url, qs.stringify(bodyData), {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
