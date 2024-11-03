@@ -20,19 +20,27 @@ abstract contract PragmaDecoder {
     using BytesLib for bytes;
 
     /* STORAGE */
-    IHyperlane public hyperlane;
-    mapping(bytes32 => bool) public _isValidDataSource;
-    mapping(bytes32 => SpotMedian) public spotMedianFeeds;
-    mapping(bytes32 => TWAP) public twapFeeds;
-    mapping(bytes32 => RealizedVolatility) public rvFeeds;
-    mapping(bytes32 => Options) public optionsFeeds;
-    mapping(bytes32 => Perp) public perpFeeds;
+    IHyperlane public hyperlane; // Hyperlane instance for message parsing and verification
+    mapping(bytes32 => bool) public _isValidDataSource; // Stores valid data sources by hash of chain ID and emitter address
+    mapping(bytes32 => SpotMedian) public spotMedianFeeds; // Stores Spot Median feed data by feed ID
+    mapping(bytes32 => TWAP) public twapFeeds; // Stores TWAP feed data by feed ID
+    mapping(bytes32 => RealizedVolatility) public rvFeeds; // Stores Realized Volatility feed data by feed ID
+    mapping(bytes32 => Options) public optionsFeeds; // Stores Options feed data by feed ID
+    mapping(bytes32 => Perp) public perpFeeds; // Stores Perpetual feed data by feed ID
 
-    // TODO: set valid data sources
+    /// @notice Checks if the specified chain ID and emitter address correspond to a valid data source.
+    /// @param chainId The chain ID of the emitter.
+    /// @param emitterAddress The emitter's address.
+    /// @return bool True if the source is valid, false otherwise.
     function isValidDataSource(uint32 chainId, bytes32 emitterAddress) public view returns (bool) {
         return _isValidDataSource[keccak256(abi.encodePacked(chainId, emitterAddress))];
     }
 
+    /// @notice Parses, verifies a Hyperlane message and extract the checkpoint root, the hyperlane message and the offset index
+    /// @param encodedHyMsg Encoded Hyperlane message.
+    /// @return hyMsg Parsed hyperlane structure.
+    /// @return index Index of the parsed message in the data.
+    /// @return checkpointRoot Root hash of the checkpoint in the Hyperlane message.
     function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         internal
         view
@@ -50,6 +58,10 @@ abstract contract PragmaDecoder {
         }
     }
 
+    /// @notice Extracts and validates metadata from the header of update data.
+    /// @param updateData The data containing update information.
+    /// @param offset The cursor initial position in the data.
+    /// @return uint256 The updated offset after metadata extraction.
     function extractMetadataFromheader(bytes calldata updateData, uint256 offset) internal pure returns (uint256) {
         unchecked {
             {
@@ -86,6 +98,12 @@ abstract contract PragmaDecoder {
         return offset;
     }
 
+    /// @notice Extracts the checkpoint root and number of updates from the update data.
+    /// @param updateData The data containing update information.
+    /// @param offset The cursor position.
+    /// @return uint256 The updated cursor position after extraction.
+    /// @return checkpointRoot The Merkle root of the checkpoint.
+    /// @return numUpdates The number of updates in the payload.
     function extractCheckpointRootAndNumUpdates(bytes calldata updateData, uint256 offset)
         internal
         view
@@ -123,6 +141,14 @@ abstract contract PragmaDecoder {
         return (true, offset);
     }
 
+    /// @notice Extracts feed data information from the update data.
+    /// @param updateData The data containing update information.
+    /// @param offset The cursor initial position in the data.
+    /// @param checkpointRoot The Merkle root to verify data.
+    /// @return endOffset The updated cursor position after processing data.
+    /// @return parsedData The parsed data structure.
+    /// @return feedId Unique identifier of the data feed.
+    /// @return publishTime The timestamp of the feed data.
     function extractDataInfoFromUpdate(bytes calldata updateData, uint256 offset, bytes32 checkpointRoot)
         internal
         returns (uint256 endOffset, ParsedData memory parsedData, bytes32 feedId, uint64 publishTime)
@@ -155,6 +181,11 @@ abstract contract PragmaDecoder {
         }
     }
 
+    /// @notice Parses data feed to extract essential information.
+    /// @param encodedDataFeed Encoded data feed.
+    /// @return parsedData Parsed feed data.
+    /// @return feedId Unique feed identifier.
+    /// @return publishTime Timestamp of the feed data.
     function parseDataFeed(bytes calldata encodedDataFeed)
         private
         pure
@@ -168,6 +199,9 @@ abstract contract PragmaDecoder {
         publishTime = UnsafeBytesLib.toUint64(encodedDataFeed, offset);
     }
 
+    /// @notice Processes update data and applies necessary data feed updates.
+    /// @param updateData The data containing update information.
+    /// @return numUpdates Number of updates processed.
     function updateDataInfoFromUpdate(bytes calldata updateData) internal returns (uint8 numUpdates) {
         uint256 offset = 0;
 
@@ -193,6 +227,10 @@ abstract contract PragmaDecoder {
         if (offset != updateData.length) revert ErrorsLib.InvalidUpdateData();
     }
 
+    /// @notice Updates feed data if the publish time is newer than the current stored data.
+    /// @param feedId Unique feed identifier.
+    /// @param parsedData Parsed data to be stored.
+    /// @param publishTime Timestamp of the parsed data.
     function updateLatestDataInfoIfNecessary(bytes32 feedId, ParsedData memory parsedData, uint64 publishTime)
         internal
     {

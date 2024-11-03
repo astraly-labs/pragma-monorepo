@@ -14,6 +14,9 @@ import "./libraries/DataParser.sol";
 
 /// @title Pragma
 /// @author Pragma Labs
+/// @dev This contract uses the UUPS (Universal Upgradeable Proxy Standard) pattern for upgradability.
+/// It inherits functionality from OwnableUpgradeable for access control,
+/// and includes custom libraries for data parsing and validation
 /// @custom:contact security@pragma.build
 /// @notice The Pragma contract.
 contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, PragmaDecoder {
