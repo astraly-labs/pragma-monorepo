@@ -58,7 +58,7 @@ export class PragmaDeployer implements ContractDeployer {
       console.log("Deployment complete!");
 
       // Verify contracts
-      await this.verifyContracts(config, hyperlane, pragma);
+      await this.verify(config, chain);
     } catch (error) {
       console.error("Deployment failed:", error);
       throw error;
@@ -121,12 +121,13 @@ export class PragmaDeployer implements ContractDeployer {
     return pragma;
   }
 
-  /// Verifies deployed contracts using Etherscan API
-  private async verifyContracts(
-    config: DeploymentConfig,
-    hyperlane: Contract,
-    pragmaProxy: Contract,
-  ): Promise<void> {
+  async verify(config: DeploymentConfig, chain?: EvmChain): Promise<void> {
+    if (!chain) chain = this.defaultChain;
+    if (!this.allowedChains.includes(chain)) {
+      throw new Error(`⛔ Verification on ${chain} is not supported.`);
+    }
+    await hre.switchNetwork(chain);
+
     const apiKey = process.env.ETHERSCAN_API_KEY;
     if (!apiKey) {
       console.warn(
@@ -142,8 +143,29 @@ export class PragmaDeployer implements ContractDeployer {
       return;
     }
 
+    // Load deployment info
+    const deploymentPath = path.join("..", "..", "deployments", chain);
+    const filePath = path.join(deploymentPath, "pragma.json");
+    if (!fs.existsSync(filePath)) {
+      console.error(`Deployment info not found at ${filePath}`);
+      return;
+    }
+    const deploymentInfo = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    const hyperlaneAddress = deploymentInfo.Hyperlane;
+    const pragmaAddress = deploymentInfo.Pragma;
+
     try {
       console.log("⏳ Verifying contracts on Etherscan...");
+
+      // Get contract instances
+      const hyperlane = await ethers.getContractAt(
+        "src/Hyperlane.sol:Hyperlane",
+        hyperlaneAddress,
+      );
+      const pragmaProxy = await ethers.getContractAt(
+        "src/Pragma.sol:Pragma",
+        pragmaAddress,
+      );
 
       // Verify Hyperlane
       await verifyContract(
@@ -151,13 +173,12 @@ export class PragmaDeployer implements ContractDeployer {
         "src/Hyperlane.sol:Hyperlane",
         apiKey,
         chainId,
-        [config.pragma.hyperlane.validators], // Constructor arguments for Hyperlane
+        [config.pragma.hyperlane.validators],
       );
 
       // Get the implementation address of Pragma
-      const pragmaProxyAddress = await pragmaProxy.getAddress();
       const pragmaImplAddress =
-        await upgrades.erc1967.getImplementationAddress(pragmaProxyAddress);
+        await upgrades.erc1967.getImplementationAddress(pragmaAddress);
 
       // Create a Contract instance for the implementation
       const pragmaImpl = await ethers.getContractAt(
@@ -171,7 +192,7 @@ export class PragmaDeployer implements ContractDeployer {
         "src/Pragma.sol:Pragma",
         apiKey,
         chainId,
-        [], // No constructor arguments for implementation contract
+        [],
       );
 
       console.log("✅ Contracts verified successfully.");

@@ -10,4 +10,6 @@ export interface ContractDeployer {
     deterministic: boolean,
     chain?: string,
   ): Promise<void>;
+
+  verify?(config: DeploymentConfig, chain?: string): Promise<void>;
 }
