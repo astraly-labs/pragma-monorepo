@@ -110,10 +110,10 @@ impl HyperlaneService {
         validator: Felt,
         fetcher: Arc<dyn FetchFromStorage + Send + Sync>,
         nonce: u32,
-    ) -> anyhow::Result<()> {
+    ) {
         // If the validator already signed this nonce, ignore
         if self.storage.signed_checkpoints().validator_signed_nonce(validator, nonce) {
-            return Ok(());
+            return;
         }
 
         match fetcher.fetch(nonce).await {
@@ -132,7 +132,6 @@ impl HyperlaneService {
                 );
             }
         }
-        Ok(())
     }
 
     /// Store the signed checkpoint for the (validator;nonce) couple.
