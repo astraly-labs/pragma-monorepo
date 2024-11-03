@@ -157,17 +157,11 @@ export class PragmaDeployer implements ContractDeployer {
     try {
       console.log("⏳ Verifying contracts on Etherscan...");
 
-      // Get contract instances
+      // Hyperlane verification
       const hyperlane = await ethers.getContractAt(
         "src/Hyperlane.sol:Hyperlane",
         hyperlaneAddress,
       );
-      const pragmaProxy = await ethers.getContractAt(
-        "src/Pragma.sol:Pragma",
-        pragmaAddress,
-      );
-
-      // Verify Hyperlane
       await verifyContract(
         hyperlane,
         "src/Hyperlane.sol:Hyperlane",
@@ -176,17 +170,14 @@ export class PragmaDeployer implements ContractDeployer {
         [config.pragma.hyperlane.validators],
       );
 
-      // Get the implementation address of Pragma
+      // Pragma verification
       const pragmaImplAddress =
         await upgrades.erc1967.getImplementationAddress(pragmaAddress);
 
-      // Create a Contract instance for the implementation
       const pragmaImpl = await ethers.getContractAt(
         "src/Pragma.sol:Pragma",
         pragmaImplAddress,
       );
-
-      // Verify Pragma implementation
       await verifyContract(
         pragmaImpl,
         "src/Pragma.sol:Pragma",

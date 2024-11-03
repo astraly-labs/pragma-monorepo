@@ -31,7 +31,6 @@ export async function verifyContract(
 
   const compilerVersion = `v${buildInfo.solcLongVersion}`;
   const inputJSON = buildInfo.input;
-  // Encode constructor arguments if any
   let constructorArgumentsEncoded = "";
   if (constructorArguments.length > 0) {
     const constructorAbi = artifact.abi.find(
@@ -58,7 +57,8 @@ export async function verifyContract(
     contractaddress: contractAddress,
     contractname: `${artifact.sourceName}:${artifact.contractName}`,
     compilerversion: compilerVersion,
-    // NOTE: There's a mistake in the etherscan api... "Arguements". To fix, one day.
+    // NOTE: There's a mistake in the etherscan api... "Arguements".
+    // TODO: To fix, one day, when they fix it.
     constructorArguements: constructorArgumentsEncoded,
   };
   const url = `${ETHERSCAN_VERIFIER_URL}?${qs.stringify(queryParams)}`;
