@@ -18,13 +18,27 @@ import "./libraries/DataParser.sol";
 /// @notice The Pragma contract.
 contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, PragmaDecoder {
     /* STORAGE */
+
+    /// @notice The period, in seconds, for which data is considered valid (default 60s)
     uint256 public validTimePeriodSeconds;
+
+    /// @notice The fee in wei required for a single update.
     uint256 public singleUpdateFeeInWei;
+
+    /* CONSTRUCTOR */
 
     constructor() {
         _disableInitializers();
     }
 
+    /* INITIALIZER */
+
+    /// @notice Initializes the contract with initial parameters.
+    /// @param _hyperlane Address of the Hyperlane contract deployed on the chain.
+    /// @param initial_owner Address of the owner of the contract.
+    /// @param _dataSourceEmitterChainIds Registry of valid chain IDs for data source emitters.
+    /// @param _dataSourceEmitterAddresses Registry of valid data source emitters addresses for their respective chains.
+    /// @param _validTimePeriodSeconds Maximum period in seconds a data feed is valid.
     function initialize(
         address _hyperlane,
         address initial_owner,
@@ -46,6 +60,8 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         singleUpdateFeeInWei = _singleUpdateFeeInWei;
     }
 
+    /// @notice Authorizes the contract upgrade to a new implementation address.
+    /// @param newImplementation Address of the new implementation contract.
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     /// @inheritdoc IPragma
@@ -59,9 +75,7 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
             }
         }
         uint256 requiredFee = getTotalFee(totalNumUpdates);
-        if (msg.value < requiredFee) {
-            revert ErrorsLib.InsufficientFee();
-        }
+        if (msg.value < requiredFee) revert ErrorsLib.InsufficientFee();
     }
 
     /// @inheritdoc IPragma
@@ -69,10 +83,14 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         return 0;
     }
 
+    /// @notice Calculates the total fee required for a specified number of updates.
+    /// @param totalNumUpdates Number of updates to process.
+    /// @return requiredFee The calculated fee.
     function getTotalFee(uint256 totalNumUpdates) private view returns (uint256 requiredFee) {
         return totalNumUpdates * singleUpdateFeeInWei;
     }
 
+    /// @inheritdoc IPragma
     function getSpotMedianNoOlderThan(bytes32 id, uint256 age) external view returns (SpotMedian memory data) {
         data = spotMedianFeeds[id];
         if (data.metadata.timestamp == 0) {
@@ -84,6 +102,7 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         return data;
     }
 
+    /// @inheritdoc IPragma
     function getTwapNoOlderThan(bytes32 id, uint256 age) external view returns (TWAP memory data) {
         data = twapFeeds[id];
         if (data.metadata.timestamp == 0) {
@@ -94,6 +113,7 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         }
     }
 
+    /// @inheritdoc IPragma
     function getRealizedVolatilityNoOlderThan(bytes32 id, uint256 age)
         external
         view
@@ -108,6 +128,7 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         }
     }
 
+    /// @inheritdoc IPragma
     function getOptionsNoOlderThan(bytes32 id, uint256 age) external view returns (Options memory data) {
         data = optionsFeeds[id];
         if (data.metadata.timestamp == 0) {
@@ -118,6 +139,7 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         }
     }
 
+    /// @inheritdoc IPragma
     function getPerpNoOlderThan(bytes32 id, uint256 age) external view returns (Perp memory data) {
         data = perpFeeds[id];
         if (data.metadata.timestamp == 0) {
@@ -146,10 +168,14 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         }
     }
 
+    /// @notice Retrieves the valid time period for data in seconds.
+    /// @return validTimePeriodSeconds The configured time period.
     function getValidTimePeriod() public view returns (uint256) {
         return validTimePeriodSeconds;
     }
 
+    /// @notice Allows the owner to withdraw the specified amount from the contract.
+    /// @param amount The amount in wei to withdraw.
     function withdrawFunds(uint256 amount) external onlyOwner {
         require(amount <= address(this).balance, "Insufficient balance");
         (bool success,) = owner().call{value: amount}("");

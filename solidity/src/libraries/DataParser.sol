@@ -5,7 +5,6 @@ import "./BytesLib.sol";
 import "../interfaces/PragmaStructs.sol";
 import "./ErrorsLib.sol";
 
-
 /// @title DataParser Library
 /// @notice A library for parsing various data feed types into structured data.
 /// @dev This library uses `BytesLib` for handling byte data, and assumes that data is encoded in a specific format.
@@ -14,17 +13,15 @@ import "./ErrorsLib.sol";
 library DataParser {
     using BytesLib for bytes;
 
-
     /// @notice Parses the raw byte data and returns a structured `ParsedData` type.
     /// @dev Determines the feed type based on the data and parses accordingly.
     /// Reverts if the data feed type is invalid.
     /// @param data The raw byte-encoded data to parse.
     /// @return ParsedData struct containing the parsed data.
     function parse(bytes memory data) internal pure returns (ParsedData memory) {
-
         // Each update data has a feedId as first 31-bytes (and stored as 32-bytes). The two first bytes are allocated to the asset class.
-        // The two next bytes are respectively for the feed type and the feed type variant. Finally the remaining 27 bytes are allocated to the 
-        // pair id. In order to retrieve the feed type, we need to skip the first 2 bytes. 
+        // The two next bytes are respectively for the feed type and the feed type variant. Finally the remaining 27 bytes are allocated to the
+        // pair id. In order to retrieve the feed type, we need to skip the first 2 bytes.
         uint8 offset = 2; // skips the asset class.
 
         // Extract the feed type
