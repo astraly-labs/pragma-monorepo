@@ -24,9 +24,7 @@
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
     "paths": {
-      "@pragmaoracle/theoros-sdk": [
-        "./src/index.ts"
-      ]
-    },
+      "@pragmaoracle/theoros-sdk": ["./src/index.ts"]
+    }
   }
 }
