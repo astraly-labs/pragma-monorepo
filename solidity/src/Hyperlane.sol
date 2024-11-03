@@ -9,27 +9,28 @@ import "./libraries/BytesLib.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
-
 /// @title Hyperlane Contract
 /// @notice This contract verifies and parses messages signed by validators.
 /// @dev The contract uses validator signatures to reach a quorum and validate the authenticity of messages.
 /// Validators are initialized during contract deployment and stored in `_validators`.
 contract Hyperlane is IHyperlane {
     using BytesLib for bytes;
-
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
+    /* STORAGE */
+
     address[] public _validators;
+    uint256 private constant VERSION = 3;
 
-    uint256 private constant VERSION = 3; 
-
+    /* CONSTRUCTOR */
 
     /// @notice Initializes the contract with a list of validators.
     /// @param validators Array of validator addresses authorized to sign messages.
     constructor(address[] memory validators) {
         _validators = validators;
     }
+
     /// @notice Parses and verifies a Hyperlane message.
     /// @param encodedHyMsg The encoded Hyperlane message.
     /// @return hyMsg The parsed Hyperlane message.
@@ -97,7 +98,7 @@ contract Hyperlane is IHyperlane {
         return (true, "");
     }
 
-    /// @notice Parses a Hyperlane message from encoded data, and compute the hash to be signed by the validators. 
+    /// @notice Parses a Hyperlane message from encoded data, and compute the hash to be signed by the validators.
     /// @param encodedHyMsg The encoded Hyperlane message data.
     /// @return hyMsg The parsed Hyperlane message.
     /// @return index The index in the data stream, for further parsing.
