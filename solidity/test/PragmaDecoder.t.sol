@@ -29,12 +29,12 @@ contract PragmaHarnessTest is Test {
         pragmaHarness = PragmaHarness(TestUtils.configurePragmaContract(dataType));
     }
 
-    function setupRaw() public {
-        pragmaHarness = PragmaHarness(TestUtils.configurePragmaRawContract());
+    function setupRealPragmaHarness() public {
+        pragmaHarness = PragmaHarness(TestUtils.setupRealEnvironment());
     }
 
-    function testUpdateRawFeed() public {
-        setupRaw();
+    function testUpdateRealFeed() public {
+        setupRealPragmaHarness();
         // encoded update
         bytes memory encodedUpdate =
             hex"0100000170030100c1ec5070f1a4868b8e6bfa5bbd31ac77605c5af1a739bc4e7758d4ca1d88fa8835c1460646b647c4c4403b324c2297a04d70b84888dc873021f80d6d70ed015e1c00031b8b0000000067225b1100611a3d0060240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc30536953cdd0dd5b8e24428e4fb6eab5c143daba15f62b24606e50d822508faefd53032e26a3b1d1510dfe82a2ab8d6c0fc0f010dcdd3c410ba2f9fdad3479b1400031b8b15704e0efd1955cfe1c1182ba083bd5309707bdd795397cbbbb106cfc9b29bb001000100000000000000000000004254432f555344000000000000000000000000000000000000000067225b1100080800000000000000000000068aa5cb9d63000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004254432f5553440000000067225b11";
@@ -46,11 +46,7 @@ contract PragmaHarnessTest is Test {
         _setUp(FeedType.SpotMedian);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(0), //SPOT
-                uint8(0), //VARIANT
-                TestConstantsLib.ETH_USD
+                TestConstantsLib.CRYPTO, TestConstantsLib.SPOT, TestConstantsLib.UNIQUE, TestConstantsLib.ETH_USD
             )
         );
 
@@ -73,11 +69,7 @@ contract PragmaHarnessTest is Test {
         _setUp(FeedType.Twap);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(1), //TWAP
-                uint8(0), // VARIANT,
-                TestConstantsLib.BTC_USD
+                TestConstantsLib.CRYPTO, TestConstantsLib.TWAP, TestConstantsLib.UNIQUE, TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Twap, feedId);
@@ -103,10 +95,9 @@ contract PragmaHarnessTest is Test {
         _setUp(FeedType.RealizedVolatility);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(2), //RV
-                uint8(0), //VARIANT
+                TestConstantsLib.CRYPTO,
+                TestConstantsLib.REALIZED_VOLATILITY,
+                TestConstantsLib.UNIQUE,
                 TestConstantsLib.BTC_USD
             )
         );
@@ -132,11 +123,7 @@ contract PragmaHarnessTest is Test {
         _setUp(FeedType.Options);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(3), //Options
-                uint8(0),
-                TestConstantsLib.BTC_USD
+                TestConstantsLib.CRYPTO, TestConstantsLib.OPTIONS, TestConstantsLib.UNIQUE, TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Options, feedId);
@@ -167,11 +154,7 @@ contract PragmaHarnessTest is Test {
         _setUp(FeedType.Perpetuals);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(4), //Perp
-                uint8(0), //VARIANT
-                TestConstantsLib.BTC_USD
+                TestConstantsLib.CRYPTO, TestConstantsLib.PERP, TestConstantsLib.UNIQUE, TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Perpetuals, feedId);

@@ -8,6 +8,7 @@ import "../src/interfaces/IHyperlane.sol";
 import "./PragmaDecoder.t.sol";
 import "../src/Hyperlane.sol";
 import "../src/Pragma.sol";
+import "./utils/TestConstants.sol";
 import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract PragmaHarness is Pragma {
@@ -90,7 +91,7 @@ library TestUtils {
         );
 
         return abi.encodePacked(
-            uint8(3), // version
+            TestConstantsLib.HYPERLANE_VERSION,
             signatures,
             uint32(0), // nonce
             uint64(block.timestamp), // timestamp
@@ -183,9 +184,9 @@ library TestUtils {
         bytes memory hyMsg = createHyperlaneMessage(hyMsgPayload, feedId);
 
         return abi.encodePacked(
-            uint8(1), // majorVersion
-            uint8(0), // minorVersion
-            uint8(0), // trailingHeaderSize
+            TestConstantsLib.MAJOR_VERSION,
+            TestConstantsLib.MINOR_VERSION,
+            TestConstantsLib.TRAILING_HEADER_SIZE,
             uint16(hyMsg.length), // hyMsgSize
             hyMsg
         );
@@ -292,7 +293,8 @@ library TestUtils {
         return address(proxy);
     }
 
-    function configurePragmaRawContract() internal returns (address) {
+    // This function reproduce a real evm configuration for testing purposes
+    function setupRealEnvironment() internal returns (address) {
         address[] memory validatorSets = new address[](1);
         validatorSets[0] = address(0xF6311461A6d8b44cb3F62b2FCd47570A28443ca0);
         IHyperlane hyperlane = IHyperlane(setUpHyperlane(uint8(validatorSets.length), validatorSets));

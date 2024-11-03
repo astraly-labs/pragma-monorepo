@@ -8,11 +8,11 @@ import "../../src/libraries/MerkleTree.sol";
 import "./RandTestUtils.t.sol";
 import "./HyperlaneTestUtils.t.sol";
 import {DataFeedType} from "../../src/interfaces/IPragma.sol";
+import "../utils/TestConstants.sol";
 
 abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
     uint32 constant SOURCE_EMITTER_CHAIN_ID = 0x1;
     bytes32 constant SOURCE_EMITTER_ADDRESS = 0x03dA250675D8c2BB7cef7E1b7FDFe17aA4D5752Ed82A9333e4F9a12b22E521aa;
-
     uint256 constant SINGLE_UPDATE_FEE_IN_WEI = 1;
     uint256 constant VALID_TIME_PERIOD_IN_SECONDS = 60;
     uint32 constant MOCK_NONCE_VALUE = 1234;
@@ -114,9 +114,9 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         }
 
         hyMerkleUpdateData = abi.encodePacked(
-            uint8(1), // major version
-            uint8(0), // minor version
-            uint8(0), // trailing header size
+            TestConstantsLib.MAJOR_VERSION,
+            TestConstantsLib.MINOR_VERSION,
+            TestConstantsLib.TRAILING_HEADER_SIZE,
             uint16(updateData.length),
             updateData,
             uint8(dataFeedMessages.length)
