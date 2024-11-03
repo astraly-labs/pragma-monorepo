@@ -46,6 +46,17 @@ bun run deployer pragma --config ./config/config.example.yaml --chain hardhat
 npm run deployer pragma -- --config ./config/config.example.yaml --chain hardhat
 ```
 
+The etherscan verification should be automatic after a deployment.
+
+If you'd like to verify a pre-deployed contract, you can also run:
+
+```bash
+bun run verifier pragma --config ./config/config.example.yaml --chain sepolia
+```
+
+It will look up the `deployments` folder for any deployments on `sepolia`. If any, it will
+attempt a verification for the `Hyperlane` & `Pragma` contracts.
+
 # Available chains
 
 ## Starknet

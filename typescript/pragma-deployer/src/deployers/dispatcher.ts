@@ -232,4 +232,13 @@ export class DispatcherDeployer implements ContractDeployer {
     await deployer.waitForTransaction(tx.transaction_hash);
     return feedRouter.address;
   }
+
+  async verify(
+    _config: DeploymentConfig,
+    _chain?: StarknetChain,
+  ): Promise<void> {
+    console.error(
+      "Contract verification not implemented yet for StarkNet chains.",
+    );
+  }
 }

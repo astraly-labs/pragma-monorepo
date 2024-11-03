@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: Apache 2
+// SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
 import {IPragma, DataFeed} from "./interfaces/IPragma.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";

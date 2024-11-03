@@ -30,6 +30,24 @@ class DeploymentManager {
 
     await deployer.deploy(config, deterministic, chain);
   }
+
+  async verify(
+    contract: string,
+    config: DeploymentConfig,
+    chain?: string,
+  ): Promise<void> {
+    const deployer = this.deployers.get(contract);
+    if (
+      deployer?.verify !== undefined &&
+      typeof deployer.verify === "function"
+    ) {
+      await deployer.verify(config, chain);
+    } else {
+      console.error(
+        `Contract verification not implemented yet for ${contract} on chain ${chain}.`,
+      );
+    }
+  }
 }
 
 const deploymentManager = new DeploymentManager();
