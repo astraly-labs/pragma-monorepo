@@ -42,15 +42,9 @@ pub struct SignedCheckpointsStorage(RwLock<HashMap<(Felt, u32), SignedCheckpoint
 
 impl SignedCheckpointsStorage {
     /// Adds or updates the [SignedCheckpointWithMessageId] for the given validator
-    pub async fn add(
-        &self,
-        validator: Felt,
-        nonce: u32,
-        checkpoint: SignedCheckpointWithMessageId,
-    ) -> anyhow::Result<()> {
+    pub async fn add(&self, validator: Felt, nonce: u32, checkpoint: SignedCheckpointWithMessageId) {
         let mut lock = self.0.write().await;
         lock.insert((validator, nonce), checkpoint);
-        Ok(())
     }
 
     // For the provided list of validators, returns all their signed checkpoints for the

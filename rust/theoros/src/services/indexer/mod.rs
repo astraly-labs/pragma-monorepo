@@ -63,7 +63,7 @@ impl IndexerService {
         current_block: u64,
     ) -> Result<Self> {
         let stream_config = Configuration::<Filter>::default()
-            .with_starting_block(max(1, current_block.saturating_sub(START_INDEXER_DELTA)))
+            .with_starting_block(max(0, current_block.saturating_sub(START_INDEXER_DELTA)))
             .with_filter(|mut filter| {
                 filter
                     .with_header(HeaderFilter::weak())

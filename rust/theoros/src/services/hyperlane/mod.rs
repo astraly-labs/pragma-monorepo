@@ -90,9 +90,10 @@ impl HyperlaneService {
             }
             // TODO: If the nonce n+1 is fully signed, shall we ignore every nonces before..? Or raise an alert?
             tracing::info!("🌉 [Hyperlane] ✅ Nonce #{} is fully signed by all validators! Storing updates...", nonce);
-            if let Err(e) = self.store_dispatch_updates_and_send_websocket_notification(nonce).await {
+            if let Err(e) = self.store_dispatch_updates(nonce).await {
                 tracing::error!("😱 Failed to store event updates for nonce {}: {:?}", nonce, e);
             }
+            self.send_websocket_notification().await;
             self.storage.unsigned_checkpoints().remove(nonce).await;
         }
     }
@@ -117,7 +118,7 @@ impl HyperlaneService {
 
         match fetcher.fetch(nonce).await {
             Ok(Some(checkpoint)) => {
-                self.store_signed_checkpoint(validator, checkpoint).await?;
+                self.store_signed_checkpoint(validator, checkpoint).await;
             }
             Ok(None) => {
                 tracing::debug!("🌉 [Hyperlane] Validator {:#x} has not yet signed nonce {}", validator, nonce);
@@ -135,27 +136,21 @@ impl HyperlaneService {
     }
 
     /// Store the signed checkpoint for the (validator;nonce) couple.
-    async fn store_signed_checkpoint(
-        &self,
-        validator: Felt,
-        checkpoint: SignedCheckpointWithMessageId,
-    ) -> anyhow::Result<()> {
+    async fn store_signed_checkpoint(&self, validator: Felt, checkpoint: SignedCheckpointWithMessageId) {
         let nonce = checkpoint.value.checkpoint.index;
 
         if self.storage.signed_checkpoints().validator_signed_nonce(validator, nonce).await {
             tracing::debug!("🌉 [Hyperlane] Skipping duplicate checkpoint for validator {:#x}: #{}", validator, nonce);
-            return Ok(());
+            return;
         }
 
-        self.storage.signed_checkpoints().add(validator, nonce, checkpoint).await?;
+        self.storage.signed_checkpoints().add(validator, nonce, checkpoint).await;
         tracing::info!("🌉 [Hyperlane] Validator {:#x} signed checkpoint #{}", validator, nonce);
-
-        Ok(())
     }
 
     /// Stores the updates once it has been signed.
     /// Also sends an update to the websocket channel that an update has been stored.
-    async fn store_dispatch_updates_and_send_websocket_notification(&self, nonce: u32) -> anyhow::Result<()> {
+    async fn store_dispatch_updates(&self, nonce: u32) -> anyhow::Result<()> {
         let event = match self.storage.unsigned_checkpoints().get(nonce).await {
             Some(e) => e,
             None => unreachable!(),
@@ -165,16 +160,12 @@ impl HyperlaneService {
             let dispatch_update_infos = DispatchUpdateInfos::new(&event, update);
 
             let feed_id = hex_str_to_u256(&update.feed_id())?;
-            self.storage.latest_update_per_feed().add(feed_id, dispatch_update_infos).await?;
+            self.storage.latest_update_per_feed().add(feed_id, dispatch_update_infos).await;
         }
-
-        // Send websocket notification
-        self.update_websocket().await?;
-
         Ok(())
     }
 
-    async fn update_websocket(&self) -> anyhow::Result<()> {
+    async fn send_websocket_notification(&self) {
         match self.storage.feeds_updated_tx().send(NewUpdatesAvailableEvent::New) {
             Ok(_) => {
                 tracing::debug!("🕸️ [Websocket] 🔔 Successfully sent websocket notification");
@@ -184,7 +175,5 @@ impl HyperlaneService {
                 tracing::debug!("🕸️ [Websocket] 📪 No active websocket subscribers to receive notification: {}", e);
             }
         }
-
-        Ok(())
     }
 }
