@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: Unlicense
+// SPDX-License-Identifier: UNLICENSED
 /*
  * @title Solidity Bytes Arrays Utils
  * @author Gonçalo Sá <goncalo.sa@consensys.net>
@@ -9,7 +9,7 @@
  * @notice This is the **unsafe** version of BytesLib which removed all the checks (out of bound, ...)
  * to be more gas efficient.
  */
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity 0.8.28;
 
 library UnsafeCalldataBytesLib {
     function slice(bytes calldata _bytes, uint256 _start, uint256 _length) internal pure returns (bytes calldata) {
