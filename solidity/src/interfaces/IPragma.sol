@@ -24,19 +24,19 @@ interface IPragma {
     /// @notice Fetches the latest spot median price that is no older than a specified age.
     /// @param id The unique identifier of the data feed.
     /// @param age The maximum allowed age (in seconds) for the price data.
-    /// @return The latest valid SpotMedian data, or a revert if no valid data is available within the specified age.
+    /// @return SpotMedian The latest valid SpotMedian data, or a revert if no valid data is available within the specified age.
     function getSpotMedianNoOlderThan(bytes32 id, uint256 age) external view returns (SpotMedian memory);
 
     /// @notice Fetches the latest TWAP (Time-Weighted Average Price) that is no older than a specified age.
     /// @param id The unique identifier of the TWAP data feed.
     /// @param age The maximum allowed age (in seconds) for the TWAP data.
-    /// @return The latest valid TWAP data, or a revert if no valid data is available within the specified age.
+    /// @return TWAP The latest valid TWAP data, or a revert if no valid data is available within the specified age.
     function getTwapNoOlderThan(bytes32 id, uint256 age) external view returns (TWAP memory);
 
     /// @notice Fetches the latest realized volatility that is no older than a specified age.
     /// @param id The unique identifier of the realized volatility data feed.
     /// @param age The maximum allowed age (in seconds) for the volatility data.
-    /// @return The latest valid RealizedVolatility data, or a revert if no valid data is available within the specified age.
+    /// @return RealizedVolatility The latest valid RealizedVolatility data, or a revert if no valid data is available within the specified age.
     function getRealizedVolatilityNoOlderThan(bytes32 id, uint256 age)
         external
         view
@@ -45,16 +45,16 @@ interface IPragma {
     /// @notice Fetches the latest options data that is no older than a specified age.
     /// @param id The unique identifier of the options data feed.
     /// @param age The maximum allowed age (in seconds) for the options data.
-    /// @return The latest valid Options data, or a revert if no valid data is available within the specified age.
+    /// @return Options The latest valid Options data, or a revert if no valid data is available within the specified age.
     function getOptionsNoOlderThan(bytes32 id, uint256 age) external view returns (Options memory);
 
     /// @notice Fetches the latest perpetuals data that is no older than a specified age.
     /// @param id The unique identifier of the perpetuals data feed.
     /// @param age The maximum allowed age (in seconds) for the perpetuals data.
-    /// @return The latest valid Perp data, or a revert if no valid data is available within the specified age.
+    /// @return Perp The latest valid Perp data, or a revert if no valid data is available within the specified age.
     function getPerpNoOlderThan(bytes32 id, uint256 age) external view returns (Perp memory);
 
-    /// @notice Checks if a data feed exists.
+    /// @notice Checks if a data feed exists. To verify if a data feed exists, we just verify if the timestamp for the feed registered in the storage is not null.
     /// @param id The data feed ID.
     /// @return True if the data feed exists, false otherwise.
     function dataFeedExists(bytes32 id) external view returns (bool);
