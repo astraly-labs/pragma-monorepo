@@ -17,7 +17,7 @@ impl UnsignedCheckpointsStorage {
         lock.insert(nonce, event.clone());
     }
 
-    /// Retrieve all nonces currently stored, in sorted order.
+    /// Retrieve all nonces currently stored, in ascending order.
     pub async fn nonces(&self) -> Vec<u32> {
         let lock = self.0.read().await;
         lock.keys().cloned().collect()

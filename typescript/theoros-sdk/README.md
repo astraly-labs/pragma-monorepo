@@ -8,7 +8,7 @@ The official TypeScript SDK for interacting with the Pragma Theoros API. The The
 # Installation
 
 ```bash
-npm install @pragma/theoros-sdk
+npm install @pragmaoracle/theoros-sdk
 ```
 
 # Introduction
@@ -27,7 +27,7 @@ The Theoros SDK provides a convenient way to interact with the Pragma Theoros AP
 Import the SDK and create an instance:
 
 ```typescript
-import { TheorosSDK } from "@pragma/theoros-sdk";
+import { TheorosSDK } from "@pragmaoracle/theoros-sdk";
 
 const sdk = new TheorosSDK({
   baseUrl: "https://api.pragma.build/v1", // Optional, defaults to this value
@@ -154,7 +154,7 @@ import {
   type Feed,
   type RpcDataFeed,
   type TheorosSDKError,
-} from "@pragma/theoros-sdk";
+} from "@pragmaoracle/theoros-sdk";
 
 const sdk = new TheorosSDK({
   baseUrl: "http://localhost:3000/v1", // Local Theoros instance

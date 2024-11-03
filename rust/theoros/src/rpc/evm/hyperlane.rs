@@ -38,7 +38,7 @@ impl HyperlaneClient {
         Self(hyperlane_client)
     }
 
-    pub async fn get_validators(&self) -> Result<HashMap<Felt, u8>> {
+    pub async fn get_validators_with_index(&self) -> Result<HashMap<Felt, u8>> {
         let mut validators = HashMap::new();
         let mut index = 0;
 

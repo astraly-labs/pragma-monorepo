@@ -3,7 +3,7 @@ import {
   type Feed,
   type RpcDataFeed,
   type TheorosSDKError,
-} from "@pragma/theoros-sdk";
+} from "@pragmaoracle/theoros-sdk";
 
 const sdk = new TheorosSDK({
   baseUrl: "http://localhost:3000/v1", // Local Theoros instance

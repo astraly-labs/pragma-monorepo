@@ -38,7 +38,7 @@ impl ValidatorsFetchersStorage {
     }
 
     /// Adds or updates the [CheckpointStorage] for the given validator
-    pub async fn add(&self, validator: Felt, storage: CheckpointStorage) -> anyhow::Result<()> {
+    pub async fn build_and_add(&self, validator: Felt, storage: CheckpointStorage) -> anyhow::Result<()> {
         let storage_fetcher = storage.build().await?;
         let mut lock = self.0.write().await;
         lock.insert(validator, Arc::new(storage_fetcher));
@@ -46,14 +46,15 @@ impl ValidatorsFetchersStorage {
     }
 
     /// Adds or updates the [CheckpointStorage] for the given validator from a [ValidatorAnnouncementEvent]
+    /// NOTE: This won't work with local storage.
+    /// TODO: This should be a feature. We sometime want to have a local storage.
     pub async fn add_from_announcement_event(&self, event: ValidatorAnnouncementEvent) -> anyhow::Result<()> {
         let validator: Felt = event.validator.into();
-        // TODO: This should be a feature. We sometime want to have a local storage.
         if event.storage_location.starts_with("file") {
             return Ok(());
         }
         let storage = CheckpointStorage::from_str(&event.storage_location)?;
-        self.add(validator, storage).await?;
+        self.build_and_add(validator, storage).await?;
         Ok(())
     }
 

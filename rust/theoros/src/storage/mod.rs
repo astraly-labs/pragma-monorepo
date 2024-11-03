@@ -12,6 +12,7 @@ use starknet::core::types::Felt;
 use tokio::sync::broadcast::Sender;
 
 use crate::{
+    constants::FEED_UPDATED_CHANNEL_CAPACITY,
     rpc::starknet::{HyperlaneCalls, PragmaFeedsRegistryCalls, StarknetRpc},
     types::hyperlane::NewUpdatesAvailableEvent,
 };
@@ -49,7 +50,7 @@ impl TheorosStorage {
             signed_checkpoints: SignedCheckpointsStorage::default(),
             unsigned_checkpoints: UnsignedCheckpointsStorage::default(),
             latest_update_per_feed: LatestUpdatePerFeedStorage::default(),
-            feeds_updated_tx: tokio::sync::broadcast::channel(1024).0,
+            feeds_updated_tx: tokio::sync::broadcast::channel(FEED_UPDATED_CHANNEL_CAPACITY).0,
         })
     }
 

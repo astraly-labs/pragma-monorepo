@@ -90,7 +90,7 @@ impl HyperlaneService {
             }
             // TODO: If the nonce n+1 is fully signed, shall we ignore every nonces before..? Or raise an alert?
             tracing::info!("🌉 [Hyperlane] ✅ Nonce #{} is fully signed by all validators! Storing updates...", nonce);
-            if let Err(e) = self.store_dispatch_updates(nonce).await {
+            if let Err(e) = self.store_dispatch_updates_and_send_websocket_notification(nonce).await {
                 tracing::error!("😱 Failed to store event updates for nonce {}: {:?}", nonce, e);
             }
             self.storage.unsigned_checkpoints().remove(nonce).await;
@@ -155,7 +155,7 @@ impl HyperlaneService {
 
     /// Stores the updates once it has been signed.
     /// Also sends an update to the websocket channel that an update has been stored.
-    async fn store_dispatch_updates(&self, nonce: u32) -> anyhow::Result<()> {
+    async fn store_dispatch_updates_and_send_websocket_notification(&self, nonce: u32) -> anyhow::Result<()> {
         let event = match self.storage.unsigned_checkpoints().get(nonce).await {
             Some(e) => e,
             None => unreachable!(),
@@ -169,6 +169,12 @@ impl HyperlaneService {
         }
 
         // Send websocket notification
+        self.update_websocket().await?;
+
+        Ok(())
+    }
+
+    async fn update_websocket(&self) -> anyhow::Result<()> {
         match self.storage.feeds_updated_tx().send(NewUpdatesAvailableEvent::New) {
             Ok(_) => {
                 tracing::debug!("🕸️ [Websocket] 🔔 Successfully sent websocket notification");

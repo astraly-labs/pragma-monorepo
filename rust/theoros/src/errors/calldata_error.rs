@@ -39,6 +39,7 @@ impl IntoResponse for GetCalldataError {
             Self::DispatchNotFound => {
                 (StatusCode::NOT_FOUND, "Could not find any Dispatch event for the provided Feed ID".into())
             }
+            Self::CalldataError(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
             _ => (StatusCode::INTERNAL_SERVER_ERROR, String::from("Internal server error")),
         };
         (status, Json(json!({"resource":"Calldata", "message": err_msg, "happened_at" : chrono::Utc::now() })))

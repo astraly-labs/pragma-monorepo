@@ -24,7 +24,7 @@ impl HyperlaneValidatorsMapping {
                 .map_err(|e| anyhow::anyhow!("Invalid hyperlane address for {chain_name:?}: {e}"))?;
             let rpc_client = HyperlaneClient::new(rpc_url, address).await;
 
-            let validators = rpc_client.get_validators().await?;
+            let validators = rpc_client.get_validators_with_index().await?;
             contracts.insert(*chain_name, validators);
         }
 
