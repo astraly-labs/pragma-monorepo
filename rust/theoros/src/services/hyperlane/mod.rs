@@ -165,6 +165,8 @@ impl HyperlaneService {
         Ok(())
     }
 
+    /// Sends a websocket notification to any client that *might* be listening.
+    /// Allows them to retrieve the latest update instantly after it is stored.
     async fn send_websocket_notification(&self) {
         match self.storage.feeds_updated_tx().send(NewUpdatesAvailableEvent::New) {
             Ok(_) => {
