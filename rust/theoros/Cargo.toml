@@ -13,6 +13,7 @@ axum = { workspace = true, features = ["macros", "ws", "tokio"] }
 axum-macros = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 clap = { workspace = true, features = ["derive", "env"] }
+dashmap = { workspace = true }
 futures = { workspace = true, features = ["std"] }
 futures-util = { workspace = true }
 hyper = { workspace = true, features = ["server"] }

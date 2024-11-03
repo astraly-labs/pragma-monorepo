@@ -149,10 +149,10 @@ impl IndexerService {
                 self.decode_validator_announce_event(event_data).await?;
             }
             selector if selector == &*NEW_FEED_ID_EVENT_SELECTOR => {
-                self.decode_new_feed_id_event(event_data).await?;
+                self.decode_new_feed_id_event(event_data);
             }
             selector if selector == &*REMOVED_FEED_ID_EVENT_SELECTOR => {
-                self.decode_removed_feed_id_event(event_data).await?;
+                self.decode_removed_feed_id_event(event_data);
             }
             _ => unreachable!(),
         }
@@ -190,18 +190,16 @@ impl IndexerService {
     }
 
     /// Decodes a NewFeedId event from the Starknet event data.
-    async fn decode_new_feed_id_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
+    fn decode_new_feed_id_event(&self, event_data: Vec<Felt>) {
         let feed_id = event_data[1].to_hex_string();
         tracing::info!("📨 [Indexer] Indexed a NewFeedId event for: {}", feed_id);
-        self.state.storage.feed_ids().add(feed_id).await;
-        Ok(())
+        self.state.storage.feed_ids().add(feed_id);
     }
 
     /// Decodes a RemovedFeedId event from the Starknet event data.
-    async fn decode_removed_feed_id_event(&self, event_data: Vec<Felt>) -> anyhow::Result<()> {
+    fn decode_removed_feed_id_event(&self, event_data: Vec<Felt>) {
         let feed_id = event_data[1].to_hex_string();
         tracing::info!("📨 [Indexer] Indexed a RemovedFeedId event for: {}", feed_id);
-        self.state.storage.feed_ids().remove(&feed_id).await;
-        Ok(())
+        self.state.storage.feed_ids().remove(&feed_id);
     }
 }

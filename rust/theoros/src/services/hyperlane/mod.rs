@@ -71,7 +71,7 @@ impl HyperlaneService {
             return;
         }
 
-        let validators_fetchers = self.storage.validators_fetchers().all().await;
+        let validators_fetchers = self.storage.validators_fetchers().all();
         let mut futures = Vec::with_capacity(unsigned_nonces.len());
         for &nonce in &unsigned_nonces {
             for (validator, fetcher) in &validators_fetchers {
@@ -85,7 +85,7 @@ impl HyperlaneService {
         // TODO: We should instead use a quorum method - if 66% have signed, consider it ok.
         let validator_addresses: Vec<Felt> = validators_fetchers.keys().cloned().collect();
         for &nonce in &unsigned_nonces {
-            if !self.all_validators_signed_nonce(&validator_addresses, nonce).await {
+            if !self.all_validators_signed_nonce(&validator_addresses, nonce) {
                 continue;
             }
             // TODO: If the nonce n+1 is fully signed, shall we ignore every nonces before..? Or raise an alert?
@@ -99,8 +99,8 @@ impl HyperlaneService {
     }
 
     /// Checks if all validators have signed a given nonce.
-    async fn all_validators_signed_nonce(&self, validators_addresses: &[Felt], nonce: u32) -> bool {
-        self.storage.signed_checkpoints().all_validators_signed_nonce(validators_addresses, nonce).await
+    fn all_validators_signed_nonce(&self, validators_addresses: &[Felt], nonce: u32) -> bool {
+        self.storage.signed_checkpoints().all_validators_signed_nonce(validators_addresses, nonce)
     }
 
     /// Given a validator & a nonce, query the fetcher to try to get the signed checkpoint.
@@ -112,13 +112,13 @@ impl HyperlaneService {
         nonce: u32,
     ) -> anyhow::Result<()> {
         // If the validator already signed this nonce, ignore
-        if self.storage.signed_checkpoints().validator_signed_nonce(validator, nonce).await {
+        if self.storage.signed_checkpoints().validator_signed_nonce(validator, nonce) {
             return Ok(());
         }
 
         match fetcher.fetch(nonce).await {
             Ok(Some(checkpoint)) => {
-                self.store_signed_checkpoint(validator, checkpoint).await;
+                self.store_signed_checkpoint(validator, checkpoint);
             }
             Ok(None) => {
                 tracing::debug!("🌉 [Hyperlane] Validator {:#x} has not yet signed nonce {}", validator, nonce);
@@ -136,15 +136,15 @@ impl HyperlaneService {
     }
 
     /// Store the signed checkpoint for the (validator;nonce) couple.
-    async fn store_signed_checkpoint(&self, validator: Felt, checkpoint: SignedCheckpointWithMessageId) {
+    fn store_signed_checkpoint(&self, validator: Felt, checkpoint: SignedCheckpointWithMessageId) {
         let nonce = checkpoint.value.checkpoint.index;
 
-        if self.storage.signed_checkpoints().validator_signed_nonce(validator, nonce).await {
+        if self.storage.signed_checkpoints().validator_signed_nonce(validator, nonce) {
             tracing::debug!("🌉 [Hyperlane] Skipping duplicate checkpoint for validator {:#x}: #{}", validator, nonce);
             return;
         }
 
-        self.storage.signed_checkpoints().add(validator, nonce, checkpoint).await;
+        self.storage.signed_checkpoints().add(validator, nonce, checkpoint);
         tracing::info!("🌉 [Hyperlane] Validator {:#x} signed checkpoint #{}", validator, nonce);
     }
 
@@ -160,7 +160,7 @@ impl HyperlaneService {
             let dispatch_update_infos = DispatchUpdateInfos::new(&event, update);
 
             let feed_id = hex_str_to_u256(&update.feed_id())?;
-            self.storage.latest_update_per_feed().add(feed_id, dispatch_update_infos).await;
+            self.storage.latest_update_per_feed().add(feed_id, dispatch_update_infos);
         }
         Ok(())
     }

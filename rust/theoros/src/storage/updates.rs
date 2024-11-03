@@ -1,24 +1,22 @@
-use std::collections::HashMap;
+use std::sync::Arc;
 
 use alloy::primitives::U256;
-use tokio::sync::RwLock;
+use dashmap::DashMap;
 
 use crate::types::hyperlane::DispatchUpdateInfos;
 
 /// Contains a mapping between feed ids and their latest dispatch update.
 #[derive(Debug, Default)]
-pub struct LatestUpdatePerFeedStorage(RwLock<HashMap<U256, DispatchUpdateInfos>>);
+pub struct LatestUpdatePerFeedStorage(Arc<DashMap<U256, DispatchUpdateInfos>>);
 
 impl LatestUpdatePerFeedStorage {
     /// Insert the latest [`DispatchUpdateInfos`] for a feed id.
-    pub async fn add(&self, feed_id: U256, event: DispatchUpdateInfos) {
-        let mut lock = self.0.write().await;
-        lock.insert(feed_id, event);
+    pub fn add(&self, feed_id: U256, event: DispatchUpdateInfos) {
+        self.0.insert(feed_id, event);
     }
 
     /// Retrieves the latest [`DispatchUpdateInfos`] for a feed id.
-    pub async fn get(&self, feed_id: &U256) -> Option<DispatchUpdateInfos> {
-        let lock = self.0.read().await;
-        lock.get(feed_id).cloned()
+    pub fn get(&self, feed_id: &U256) -> Option<DispatchUpdateInfos> {
+        self.0.get(feed_id).map(|r| r.value().clone())
     }
 }

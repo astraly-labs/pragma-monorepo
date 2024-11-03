@@ -61,7 +61,7 @@ pub async fn get_calldata(
     let stored_feed_ids = state.storage.feed_ids();
 
     // Check if all requested feed IDs are supported.
-    if let Some(missing_id) = stored_feed_ids.contains_vec(&params.feed_ids).await {
+    if let Some(missing_id) = stored_feed_ids.contains_vec(&params.feed_ids) {
         return Err(GetCalldataError::FeedNotFound(missing_id));
     }
 

@@ -34,13 +34,13 @@ pub struct Calldata {
 impl Calldata {
     pub async fn build_from(state: &AppState, chain_name: EvmChainName, feed_id: String) -> anyhow::Result<Calldata> {
         let feed_id = hex_str_to_u256(&feed_id)?;
-        let update_info = state.storage.latest_update_per_feed().get(&feed_id).await.context("No update found")?;
+        let update_info = state.storage.latest_update_per_feed().get(&feed_id).context("No update found")?;
 
         let validator_index_map =
             state.hyperlane_validators_mapping.get_validators(&chain_name).context("No validators found")?;
 
         let validators: Vec<Felt> = validator_index_map.keys().copied().collect();
-        let checkpoints = state.storage.signed_checkpoints().get(&validators, update_info.nonce).await;
+        let checkpoints = state.storage.signed_checkpoints().get(&validators, update_info.nonce);
         anyhow::ensure!(!checkpoints.is_empty(), "No signatures found");
 
         // Ensure all nonce have the same checkpoint

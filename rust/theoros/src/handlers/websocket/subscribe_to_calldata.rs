@@ -256,7 +256,7 @@ impl Subscriber {
                 }
                 // Check if all requested feed IDs are supported.
                 let stored_feed_ids = self.state.storage.feed_ids();
-                if let Some(missing_id) = stored_feed_ids.contains_vec(&feed_ids).await {
+                if let Some(missing_id) = stored_feed_ids.contains_vec(&feed_ids) {
                     self.send_error_to_client(format!("Can't subscribe: feed ID not supported {:}", missing_id))
                         .await?;
                     return Ok(());

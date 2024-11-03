@@ -2,18 +2,18 @@ use std::str::FromStr;
 use std::{collections::HashMap, sync::Arc};
 
 use anyhow::bail;
+use dashmap::DashMap;
 use starknet::core::types::Felt;
-use tokio::sync::RwLock;
 
 use crate::types::hyperlane::{CheckpointStorage, FetchFromStorage, ValidatorAnnouncementEvent};
 
 /// Mapping between the validators and their fetcher used to
 /// retrieve signed checkpoints.
 #[derive(Debug, Default)]
-pub struct ValidatorsFetchersStorage(RwLock<HashMap<Felt, Arc<Box<dyn FetchFromStorage>>>>);
+pub struct ValidatorsFetchersStorage(Arc<DashMap<Felt, Arc<Box<dyn FetchFromStorage>>>>);
 
 impl ValidatorsFetchersStorage {
-    /// Fills the [HashMap] with the initial state fetched from the RPC.
+    /// Fills the [DashMap] with the initial state fetched from the RPC.
     pub async fn fill_with_initial_state(
         &mut self,
         validators: Vec<Felt>,
@@ -23,7 +23,6 @@ impl ValidatorsFetchersStorage {
             bail!("⛔ Validators and locations vectors must have the same length");
         }
 
-        let mut lock = self.0.write().await;
         for (validator, location) in validators.into_iter().zip(locations.into_iter()) {
             // TODO: This should be a feature. We sometime want to have a local storage.
             if location[location.len() - 1].starts_with("file") {
@@ -31,7 +30,7 @@ impl ValidatorsFetchersStorage {
             }
             let storage = CheckpointStorage::from_str(&location[location.len() - 1])?;
             let storage_fetcher = storage.build().await?;
-            lock.insert(validator, Arc::new(storage_fetcher));
+            self.0.insert(validator, Arc::new(storage_fetcher));
         }
 
         Ok(())
@@ -40,8 +39,7 @@ impl ValidatorsFetchersStorage {
     /// Adds or updates the [CheckpointStorage] for the given validator
     pub async fn build_and_add(&self, validator: Felt, storage: CheckpointStorage) -> anyhow::Result<()> {
         let storage_fetcher = storage.build().await?;
-        let mut lock = self.0.write().await;
-        lock.insert(validator, Arc::new(storage_fetcher));
+        self.0.insert(validator, Arc::new(storage_fetcher));
         Ok(())
     }
 
@@ -59,7 +57,7 @@ impl ValidatorsFetchersStorage {
     }
 
     /// Returns all registered mappings between validators & their location storage.
-    pub async fn all(&self) -> HashMap<Felt, Arc<Box<dyn FetchFromStorage>>> {
-        self.0.read().await.clone()
+    pub fn all(&self) -> HashMap<Felt, Arc<Box<dyn FetchFromStorage>>> {
+        self.0.iter().map(|entry| (*entry.key(), entry.value().clone())).collect()
     }
 }

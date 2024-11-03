@@ -1,42 +1,40 @@
-use std::collections::HashSet;
+use dashmap::DashSet;
 use std::sync::Arc;
-use tokio::sync::RwLock;
 
 /// Contains the registered feed ids.
 #[derive(Debug, Default, Clone)]
-pub struct FeedIdsStorage(Arc<RwLock<HashSet<String>>>);
+pub struct FeedIdsStorage(Arc<DashSet<String>>);
 
 impl FeedIdsStorage {
     pub fn from_rpc_response(feed_ids: Vec<String>) -> Self {
-        Self(Arc::new(RwLock::new(feed_ids.into_iter().collect())))
+        let set = DashSet::new();
+        for id in feed_ids {
+            set.insert(id);
+        }
+        Self(Arc::new(set))
     }
 
-    pub async fn add(&self, feed_id: String) {
-        let mut lock = self.0.write().await;
-        lock.insert(feed_id);
+    pub fn add(&self, feed_id: String) {
+        self.0.insert(feed_id);
     }
 
-    pub async fn remove(&self, feed_id: &str) {
-        let mut lock = self.0.write().await;
-        lock.remove(feed_id);
+    pub fn remove(&self, feed_id: &str) {
+        self.0.remove(feed_id);
     }
 
     /// Checks if all feed IDs in the given vector are present in the storage.
     /// Returns None if all IDs are present, or Some(id) with the first missing ID.
-    pub async fn contains_vec(&self, feed_ids: &[String]) -> Option<String> {
-        let lock = self.0.read().await;
-        feed_ids.iter().find(|id| !lock.contains(*id)).cloned()
+    pub fn contains_vec(&self, feed_ids: &[String]) -> Option<String> {
+        feed_ids.iter().find(|id| !self.0.contains(*id)).cloned()
     }
 
     /// Returns the number of feed IDs in the storage.
-    pub async fn len(&self) -> usize {
-        let lock = self.0.read().await;
-        lock.len()
+    pub fn len(&self) -> usize {
+        self.0.len()
     }
 
     /// Returns an iterator over the feed IDs.
-    pub async fn iter(&self) -> impl Iterator<Item = String> {
-        let lock = self.0.read().await;
-        lock.iter().cloned().collect::<Vec<_>>().into_iter()
+    pub fn iter(&self) -> impl Iterator<Item = String> {
+        self.0.iter().map(|ref_multi| ref_multi.key().clone()).collect::<Vec<_>>().into_iter()
     }
 }
