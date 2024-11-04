@@ -95,7 +95,6 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
 
         bytes memory updateData = generateUpdateData(
             MOCK_NONCE_VALUE,
-            MOCK_TIMESTAMP_VALUE,
             config.source_chain_id,
             config.source_emitter_address,
             config.merkle_tree_hook_address,

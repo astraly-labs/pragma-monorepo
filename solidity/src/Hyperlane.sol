@@ -112,6 +112,7 @@ contract Hyperlane is IHyperlane {
         index += 1;
         require(hyMsg.version == VERSION, "unsupported version");
 
+
         // Parse Signatures
         uint256 signersLen = encodedHyMsg.toUint8(index);
         index += 1;
@@ -132,9 +133,6 @@ contract Hyperlane is IHyperlane {
         // Parse the rest of the message
         hyMsg.nonce = encodedHyMsg.toUint32(index);
         index += 4;
-
-        hyMsg.timestamp = encodedHyMsg.toUint64(index);
-        index += 8;
 
         hyMsg.emitterChainId = encodedHyMsg.toUint32(index);
         index += 4;

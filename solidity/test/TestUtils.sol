@@ -94,7 +94,6 @@ library TestUtils {
             TestConstantsLib.HYPERLANE_VERSION,
             signatures,
             uint32(0), // nonce
-            uint64(block.timestamp), // timestamp
             uint32(1), // emitterChainId
             bytes32(uint256(0x1234)), // emitterAddress
             bytes32(uint256(0x12311)), // merkle tree hook address

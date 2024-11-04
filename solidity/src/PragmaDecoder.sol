@@ -208,10 +208,11 @@ abstract contract PragmaDecoder {
         // Extract header metadata
         offset = extractMetadataFromheader(updateData, offset);
         // Extract merkle root and number of updates from update data.
-        // uint256 offset;
+        
         bytes32 checkpointRoot;
 
         (offset, checkpointRoot, numUpdates) = extractCheckpointRootAndNumUpdates(updateData, offset);
+
         unchecked {
             for (uint256 i = 0; i < numUpdates; i++) {
                 ParsedData memory parsedData;

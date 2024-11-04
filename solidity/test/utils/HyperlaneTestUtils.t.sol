@@ -26,7 +26,6 @@ abstract contract HyperlaneTestUtils is Test {
 
     function generateUpdateData(
         uint32 nonce,
-        uint64 timestamp,
         uint32 emitterChainId,
         bytes32 emitterAddress,
         bytes32 merkleTreeHookAddress,
@@ -62,15 +61,12 @@ abstract contract HyperlaneTestUtils is Test {
             signatures = abi.encodePacked(signatures, validatorIndex, r[i], s[i], v);
         }
 
-        bytes32 domainHash = keccak256(abi.encodePacked(emitterChainId, merkleTreeHookAddress, "HYPERLANE"));
-        bytes32 _hash = keccak256(abi.encodePacked(domainHash, root, checkpointIndex, messageId));
         // Construct the updateData by concatenating all parts
         updateData = abi.encodePacked(
             TestConstantsLib.HYPERLANE_VERSION,
             numSigners,
             signatures,
             nonce,
-            timestamp,
             emitterChainId,
             emitterAddress,
             merkleTreeHookAddress,
@@ -84,7 +80,6 @@ abstract contract HyperlaneTestUtils is Test {
 
 contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
     uint32 constant TEST_NONCE = 1234;
-    uint64 constant TEST_UPDATE_TIMESTAMP = 112;
     uint32 constant TEST_EMITTER_CHAIN_ID = 7;
     bytes32 constant TEST_EMITTER_ADDR = 0x0000000000000000000000000000000000000000000000000000000000000bad;
     bytes32 constant TEST_MERKLE_TREE_ADDRESS = 0x0000000000000000000000000000000000000000000000000000000000000aaa;
@@ -104,7 +99,6 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         assertTrue(valid);
         assertEq(reason, "");
         assertEq(hyMsg.nonce, TEST_NONCE, "Nonce does not correspond");
-        assertEq(hyMsg.timestamp, TEST_UPDATE_TIMESTAMP, "Timestamp does not correspond");
         assertEq(hyMsg.emitterChainId, TEST_EMITTER_CHAIN_ID, "Emitter chain id does not correspond");
         assertEq(hyMsg.emitterAddress, TEST_EMITTER_ADDR, "Emitter address does not correspond");
         assertEq(hyMsg.payload, TEST_PAYLOAD, "Payload does not correspond");
@@ -128,7 +122,6 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
 
         bytes memory updateData = generateUpdateData(
             TEST_NONCE,
-            TEST_UPDATE_TIMESTAMP,
             TEST_EMITTER_CHAIN_ID,
             TEST_EMITTER_ADDR,
             TEST_MERKLE_TREE_ADDRESS,
@@ -165,7 +158,6 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
             uint8(28), // v
             // Rest of the message
             uint32(1234), // nonce
-            uint64(block.timestamp), // timestamp
             uint32(5), // emitterChainId
             bytes32(uint256(6)), // emitterAddress
             merkleTreeHookAddress, // merkleTreeHookAddress
@@ -197,7 +189,6 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         assertEq(parsedMsg.signatures[1].v, 28, "Incorrect v for second signature");
 
         assertEq(parsedMsg.nonce, 1234, "Incorrect nonce");
-        assertEq(parsedMsg.timestamp, block.timestamp, "Incorrect timestamp");
         assertEq(parsedMsg.emitterChainId, 5, "Incorrect emitter chain ID");
         assertEq(uint256(parsedMsg.emitterAddress), 6, "Incorrect emitter address");
         bytes32 domainHash = keccak256(abi.encodePacked(parsedMsg.emitterChainId, merkleTreeHookAddress, "HYPERLANE"));
