@@ -1,3 +1,5 @@
+pragma solidity ^0.8.0;
+
 /// @title Constants
 /// @author Pragma Labs
 /// @custom:contact security@pragma.build

@@ -34,7 +34,7 @@ abstract contract HyperlaneTestUtils is Test {
         bytes32 messageId,
         bytes memory payload,
         uint8 numSigners
-    ) public view returns (bytes memory updateData) {
+    ) public pure returns (bytes memory updateData) {
         bytes32[5] memory r = [
             bytes32(0x83db08d4e1590714aef8600f5f1e3c967ab6a3b9f93bb4242de0306510e688ea),
             bytes32(0xf81a5dd3f871ad2d27a3b538e73663d723f8263fb3d289514346d43d000175f5),
@@ -95,7 +95,7 @@ contract HyperlaneTestUtilsTest is Test, HyperlaneTestUtils {
         string memory reason,
         bytes memory updateData,
         IHyperlane hyperlane
-    ) private view {
+    ) private pure {
         assertTrue(valid);
         assertEq(reason, "");
         assertEq(hyMsg.nonce, TEST_NONCE, "Nonce does not correspond");

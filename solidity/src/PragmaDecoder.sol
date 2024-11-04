@@ -151,6 +151,7 @@ abstract contract PragmaDecoder {
     /// @return publishTime The timestamp of the feed data.
     function extractDataInfoFromUpdate(bytes calldata updateData, uint256 offset, bytes32 checkpointRoot)
         internal
+        pure
         returns (uint256 endOffset, ParsedData memory parsedData, bytes32 feedId, uint64 publishTime)
     {
         unchecked {
@@ -208,7 +209,7 @@ abstract contract PragmaDecoder {
         // Extract header metadata
         offset = extractMetadataFromheader(updateData, offset);
         // Extract merkle root and number of updates from update data.
-        
+
         bytes32 checkpointRoot;
 
         (offset, checkpointRoot, numUpdates) = extractCheckpointRootAndNumUpdates(updateData, offset);
