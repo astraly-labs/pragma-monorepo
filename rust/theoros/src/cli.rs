@@ -50,6 +50,9 @@ pub struct TheorosCli {
         value_parser = parse_evm_config
     )]
     pub evm_config: evm_config::EvmConfig,
+
+    #[clap(env = "PROMETHEUS_EXTERNAL", long, default_value = "false")]
+    pub prometheus_external: bool,
 }
 
 /// Parse a Felt.
