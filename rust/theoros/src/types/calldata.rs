@@ -66,13 +66,11 @@ impl Calldata {
         let payload = Payload {
             checkpoint: nonce_checkpoint.clone(),
             num_updates: 1,
-            // TODO: proof should be deleted
             proof_len: 0,
             proof: vec![],
             update_data_len: update.to_bytes().len() as u16,
             update_data: update.to_bytes(),
             feed_id,
-            // TODO: publish_time is a duplicated of update timestamp - remove?
             publish_time: update.metadata.timestamp,
         };
 
@@ -83,8 +81,6 @@ impl Calldata {
             nonce: update_info.nonce,
             signers_len: signatures.len() as u8,
             signatures,
-            // TODO: timestamp is a duplicated of update timestamp - remove?
-            timestamp: update.metadata.timestamp,
             payload,
         };
 
@@ -116,7 +112,6 @@ pub struct HyperlaneMessage {
     /// List of signatures
     pub signatures: Vec<ValidatorSignature>,
     pub nonce: u32,
-    pub timestamp: u64,
     /// Chain ID of the emitter (pragma chain id)
     pub emitter_chain_id: u32,
     /// Address of the emitter (pragma chain mailbox address)
@@ -132,7 +127,6 @@ impl AsCalldata for HyperlaneMessage {
             bytes.extend_from_slice(&signer.signature.as_bytes());
         }
         bytes.extend_from_slice(&self.nonce.to_be_bytes());
-        bytes.extend_from_slice(&self.timestamp.to_be_bytes());
         bytes.extend_from_slice(&self.emitter_chain_id.to_be_bytes());
         bytes.extend_from_slice(&self.emitter_address.to_bytes_be());
         bytes.extend_from_slice(&self.payload.as_bytes());
