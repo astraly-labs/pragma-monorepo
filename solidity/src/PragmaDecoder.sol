@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: Apache 2
+// SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity 0.8.28;
 
 import {DataFeed, DataFeedType} from "./interfaces/IPragma.sol";
 import {HyMsg, IHyperlane} from "./interfaces/IHyperlane.sol";

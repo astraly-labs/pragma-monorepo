@@ -85,10 +85,7 @@ const config: HardhatUserConfig = {
       "sepolia",
       `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
     ),
-    holesky: getChainConfig(
-      "holesky",
-      `https://holesky.infura.io/v3/${INFURA_PROJECT_ID}`,
-    ),
+    holesky: getChainConfig("holesky", `https://holesky.gateway.tenderly.co`),
     bsc: getChainConfig("bsc", "https://bsc-dataseed1.defibit.io/"),
     bscTestnet: getChainConfig(
       "bsctestnet",

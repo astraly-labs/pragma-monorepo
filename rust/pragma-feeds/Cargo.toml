@@ -1,19 +1,11 @@
 [package]
 name = "pragma-feeds"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
 anyhow = { workspace = true }
-apibara-core = { workspace = true }
-async-trait = { workspace = true }
 hex = { workspace = true }
-rusoto_core = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-starknet = { workspace = true }
 strum = { workspace = true }
 strum_macros = { workspace = true }
-tokio = { workspace = true, features = ["signal"] }
-tracing = { workspace = true }
-tracing-axiom = { workspace = true }
-tracing-subscriber = { workspace = true }

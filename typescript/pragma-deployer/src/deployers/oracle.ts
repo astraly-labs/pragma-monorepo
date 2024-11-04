@@ -170,4 +170,13 @@ export class OracleDeployer implements ContractDeployer {
     console.log("✅ Pragma Summary Stats deployment complete!\n");
     return summaryStats;
   }
+
+  async verify(
+    _config: DeploymentConfig,
+    _chain?: StarknetChain,
+  ): Promise<void> {
+    console.error(
+      "Contract verification not implemented yet for StarkNet chains.",
+    );
+  }
 }

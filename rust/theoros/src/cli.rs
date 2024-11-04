@@ -51,8 +51,8 @@ pub struct TheorosCli {
     )]
     pub evm_config: evm_config::EvmConfig,
 
-    #[clap(env = "INDEXER_STARTING_BLOCK", long, default_value = "0")]
-    pub indexer_starting_block: u64,
+    #[clap(env = "PROMETHEUS_EXTERNAL", long, default_value = "false")]
+    pub prometheus_external: bool,
 }
 
 /// Parse a Felt.
@@ -76,7 +76,5 @@ pub fn parse_evm_config(s: &str) -> anyhow::Result<evm_config::EvmConfig> {
     if !std::path::Path::new(s).exists() {
         anyhow::bail!("EVM config file not found at path: {}", s);
     }
-
-    // Load and parse the config
     evm_config::EvmConfig::from_file(s).with_context(|| format!("Failed to load EVM config from path: {}", s))
 }

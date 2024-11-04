@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance } from "axios";
+import { EventEmitter } from "events";
 
 export interface TheorosSDKConfig {
   baseUrl?: string;
@@ -6,15 +7,166 @@ export interface TheorosSDKConfig {
 }
 
 export interface CalldataResponse {
-  calldata: number[];
+  feed_id: string;
+  encoded_calldata: string;
+}
+
+export interface Feed {
+  feed_id: string;
+  asset_class: string;
+  feed_type: string;
+  pair_id: string;
+}
+
+export interface RpcDataFeed {
+  feed_id: string;
+  encoded_calldata: string;
+}
+
+export class TheorosSDKError extends Error {
+  public cause?: any;
+  constructor(message: string, cause?: any) {
+    super(message);
+    this.name = "TheorosSDKError";
+    this.cause = cause;
+  }
+}
+
+export class Subscription extends EventEmitter {
+  private socket!: WebSocket;
+  private isClosed = false;
+  private chain: string;
+  private feedIds: Set<string>;
+  private baseUrl: string;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+
+  constructor(baseUrl: string, chain: string, feedIds: string[]) {
+    super();
+    this.baseUrl = baseUrl;
+    this.chain = chain;
+    this.feedIds = new Set(feedIds);
+    this.connect();
+  }
+
+  private connect() {
+    const wsUrl = this.baseUrl + "/ws/calldata";
+    this.socket = new WebSocket(wsUrl);
+
+    this.socket.addEventListener("open", () => {
+      this.reconnectAttempts = 0;
+      const subscribeMessage = JSON.stringify({
+        type: "subscribe",
+        chain: this.chain,
+        feed_ids: Array.from(this.feedIds),
+      });
+      this.socket.send(subscribeMessage);
+      this.emit("open");
+    });
+
+    this.socket.addEventListener("message", (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "data_feed_update") {
+          this.emit("update", data.data_feeds as RpcDataFeed[]);
+        } else if (data.type === "response") {
+          if (data.status === "error") {
+            this.emit("error", new TheorosSDKError(data.error));
+          }
+        }
+      } catch (e) {
+        this.emit(
+          "error",
+          new TheorosSDKError("Invalid JSON message received", e),
+        );
+      }
+    });
+
+    this.socket.addEventListener("error", (event) => {
+      this.emit("error", new TheorosSDKError("WebSocket error", event));
+    });
+
+    this.socket.addEventListener("close", () => {
+      this.emit("close");
+      if (
+        !this.isClosed &&
+        this.reconnectAttempts < this.maxReconnectAttempts
+      ) {
+        const timeout = Math.pow(2, this.reconnectAttempts) * 1000;
+        this.reconnectAttempts += 1;
+        setTimeout(() => this.connect(), timeout);
+      } else if (!this.isClosed) {
+        this.emit(
+          "error",
+          new TheorosSDKError("Max reconnection attempts reached"),
+        );
+      }
+    });
+  }
+
+  /**
+   * Adds new feed IDs to the subscription.
+   * @param feedIds - Array of feed IDs to subscribe to.
+   */
+  addFeedIds(feedIds: string[]) {
+    for (const id of feedIds) {
+      if (!this.feedIds.has(id)) {
+        this.feedIds.add(id);
+        if (this.socket.readyState === WebSocket.OPEN) {
+          const subscribeMessage = JSON.stringify({
+            type: "subscribe",
+            chain: this.chain,
+            feed_ids: [id],
+          });
+          this.socket.send(subscribeMessage);
+        }
+      }
+    }
+  }
+
+  /**
+   * Removes feed IDs from the subscription.
+   * @param feedIds - Array of feed IDs to unsubscribe from.
+   */
+  removeFeedIds(feedIds: string[]) {
+    for (const id of feedIds) {
+      if (this.feedIds.has(id)) {
+        this.feedIds.delete(id);
+        if (this.socket.readyState === WebSocket.OPEN) {
+          const unsubscribeMessage = JSON.stringify({
+            type: "unsubscribe",
+            feed_ids: [id],
+          });
+          this.socket.send(unsubscribeMessage);
+        }
+      }
+    }
+  }
+
+  /**
+   * Unsubscribes from all feeds and closes the WebSocket connection.
+   */
+  unsubscribe() {
+    this.isClosed = true;
+    if (this.socket.readyState === WebSocket.OPEN) {
+      const unsubscribeMessage = JSON.stringify({
+        type: "unsubscribe",
+        feed_ids: Array.from(this.feedIds),
+      });
+      this.socket.send(unsubscribeMessage);
+      this.socket.close();
+    } else {
+      this.socket.close();
+    }
+  }
 }
 
 export class TheorosSDK {
   private baseUrl: string;
   private httpClient: AxiosInstance;
 
-  constructor(config: TheorosSDKConfig) {
-    this.baseUrl = config.baseUrl || "https://api.pragma.build/v1";
+  constructor(config: TheorosSDKConfig = {}) {
+    this.baseUrl = config.baseUrl || "https://theoros.pragma.build/v1";
 
     this.httpClient = axios.create({
       baseURL: this.baseUrl,
@@ -25,27 +177,64 @@ export class TheorosSDK {
     });
   }
 
-  // Fetch available data feeds
-  async getAvailableFeedIds(): Promise<string[]> {
+  /**
+   * Retrieves all available data feeds.
+   * @returns A promise that resolves to an array of Feed objects.
+   */
+  async getAvailableFeeds(): Promise<Feed[]> {
     try {
-      const response = await this.httpClient.get<string[]>("/data_feeds");
+      const response = await this.httpClient.get<Feed[]>("/data_feeds");
       return response.data;
     } catch (error) {
-      throw new Error(`Error fetching data feeds: ${error}`);
+      throw new TheorosSDKError("Error fetching data feeds", error);
     }
   }
 
-  // Fetch calldata for a given Feed ID
-  async getCalldata(feedId: string): Promise<CalldataResponse> {
+  /**
+   * Retrieves all supported chains.
+   * @returns A promise that resolves to an array of chain names.
+   */
+  async getSupportedChains(): Promise<string[]> {
     try {
-      const response = await this.httpClient.get<CalldataResponse>(
-        `/calldata/${feedId}`,
+      const response = await this.httpClient.get<string[]>("/chains");
+      return response.data;
+    } catch (error) {
+      throw new TheorosSDKError("Error fetching supported chains", error);
+    }
+  }
+
+  /**
+   * Fetches calldata for the specified chain and feed IDs.
+   * @param chain - The chain name.
+   * @param feedIds - An array of feed IDs.
+   * @returns A promise that resolves to an array of CalldataResponse objects.
+   */
+  async getCalldata(
+    chain: string,
+    feedIds: string[],
+  ): Promise<CalldataResponse[]> {
+    try {
+      const params = {
+        chain,
+        feed_ids: feedIds.join(","),
+      };
+      const response = await this.httpClient.get<CalldataResponse[]>(
+        "/calldata",
+        { params },
       );
       return response.data;
     } catch (error) {
-      throw new Error(
-        `Error fetching calldata for feed ID ${feedId}: ${error}`,
-      );
+      throw new TheorosSDKError("Error fetching calldata", error);
     }
+  }
+
+  /**
+   * Subscribes to data feed updates over WebSocket.
+   * @param chain - The chain name.
+   * @param feedIds - An array of feed IDs.
+   * @returns A Subscription object that emits events on data updates.
+   */
+  subscribe(chain: string, feedIds: string[]): Subscription {
+    return new Subscription(this.baseUrl, chain, feedIds);
   }
 }
