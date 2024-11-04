@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
     )
     .await?;
 
-    let metrics_service = MetricsService::new(false, config.metrics_port)?;
+    let metrics_service = MetricsService::new(config.prometheus_external, config.metrics_port)?;
 
     let state = AppState {
         starknet_rpc: Arc::new(starknet_rpc),
