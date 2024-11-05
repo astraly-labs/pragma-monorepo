@@ -40,6 +40,7 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "deployer": "bun run src/index.ts"
+    "deployer": "bun run src/index.ts deploy",
+    "verifier": "bun run src/index.ts verify"
   }
 }

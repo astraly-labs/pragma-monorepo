@@ -14,8 +14,9 @@
     "dotenv": "^16.4.5",
     "ethers": "^6.13.3",
     "js-yaml": "^4.1.0",
-    "starknet": "^6.11.0",
-    "pragma-utils": "file:../pragma-utils"
+    "node-fetch": "^3.3.2",
+    "pragma-utils": "file:../pragma-utils",
+    "starknet": "^6.11.0"
   },
   "scripts": {
     "generate_feed_id": "bun run src/generate_feed_id.ts",

@@ -1,12 +1,11 @@
 import fs from "fs";
 import path from "path";
-
 import hre, { ethers, upgrades } from "hardhat";
 import { Contract, parseEther, zeroPadValue } from "ethers";
 import { EVM_CHAINS, type Chain, type EvmChain } from "pragma-utils";
-
 import { type ContractDeployer } from "./interface";
 import type { DeploymentConfig } from "../config";
+import { verifyContract } from "../utils";
 
 export class PragmaDeployer implements ContractDeployer {
   readonly allowedChains: Chain[] = EVM_CHAINS;
@@ -14,7 +13,6 @@ export class PragmaDeployer implements ContractDeployer {
 
   async deploy(
     config: DeploymentConfig,
-    // TODO: Handle deterministic deployments, not mandatory yet.
     _deterministic: boolean,
     chain?: EvmChain,
   ): Promise<void> {
@@ -58,6 +56,9 @@ export class PragmaDeployer implements ContractDeployer {
       fs.writeFileSync(filePath, jsonContent);
       console.log(`Deployment info saved to ${filePath}`);
       console.log("Deployment complete!");
+
+      // Verify contracts
+      await this.verify(config, chain);
     } catch (error) {
       console.error("Deployment failed:", error);
       throw error;
@@ -118,5 +119,76 @@ export class PragmaDeployer implements ContractDeployer {
     );
     await pragma.waitForDeployment();
     return pragma;
+  }
+
+  async verify(config: DeploymentConfig, chain?: EvmChain): Promise<void> {
+    if (!chain) chain = this.defaultChain;
+    if (!this.allowedChains.includes(chain)) {
+      throw new Error(`⛔ Verification on ${chain} is not supported.`);
+    }
+    await hre.switchNetwork(chain);
+
+    const apiKey = process.env.ETHERSCAN_API_KEY;
+    if (!apiKey) {
+      console.warn(
+        "ETHERSCAN_API_KEY is not set. Skipping contract verification.",
+      );
+      return;
+    }
+
+    const chainId = hre.network.config.chainId;
+
+    if (!chainId) {
+      console.error("Chain ID not found in network config.");
+      return;
+    }
+
+    // Load deployment info
+    const deploymentPath = path.join("..", "..", "deployments", chain);
+    const filePath = path.join(deploymentPath, "pragma.json");
+    if (!fs.existsSync(filePath)) {
+      console.error(`Deployment info not found at ${filePath}`);
+      return;
+    }
+    const deploymentInfo = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    const hyperlaneAddress = deploymentInfo.Hyperlane;
+    const pragmaAddress = deploymentInfo.Pragma;
+
+    try {
+      console.log("⏳ Verifying contracts on Etherscan...");
+
+      // Hyperlane verification
+      const hyperlane = await ethers.getContractAt(
+        "src/Hyperlane.sol:Hyperlane",
+        hyperlaneAddress,
+      );
+      await verifyContract(
+        hyperlane,
+        "src/Hyperlane.sol:Hyperlane",
+        apiKey,
+        chainId,
+        [config.pragma.hyperlane.validators],
+      );
+
+      // Pragma verification
+      const pragmaImplAddress =
+        await upgrades.erc1967.getImplementationAddress(pragmaAddress);
+
+      const pragmaImpl = await ethers.getContractAt(
+        "src/Pragma.sol:Pragma",
+        pragmaImplAddress,
+      );
+      await verifyContract(
+        pragmaImpl,
+        "src/Pragma.sol:Pragma",
+        apiKey,
+        chainId,
+        [],
+      );
+
+      console.log("✅ Contracts verified successfully.");
+    } catch (error) {
+      console.error("Contract verification failed:", error);
+    }
   }
 }

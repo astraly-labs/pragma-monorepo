@@ -9,16 +9,34 @@
     "version": "0.1.0"
   },
   "paths": {
-    "/v1/calldata/{chain_name}/{feed_id}": {
+    "/v1/calldata": {
       "get": {
-        "tags": [
-          "crate::handlers::get_calldata"
-        ],
+        "tags": ["crate::handlers::rest::get_calldata"],
         "operationId": "get_calldata",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "chain",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "feed_ids",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "Constructs the calldata used to update the feed id specified",
+            "description": "Constructs the calldata used to update the specified feed IDs",
             "content": {
               "application/json": {
                 "schema": {
@@ -31,14 +49,11 @@
             }
           },
           "404": {
-            "description": "Unknown Feed Id",
+            "description": "Unknown Feed ID",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/GetCalldataError"
-                  }
+                  "$ref": "#/components/schemas/GetCalldataError"
                 }
               }
             }
@@ -48,9 +63,7 @@
     },
     "/v1/chains": {
       "get": {
-        "tags": [
-          "crate::handlers::get_chains"
-        ],
+        "tags": ["crate::handlers::rest::get_chains"],
         "operationId": "get_chains",
         "responses": {
           "200": {
@@ -71,9 +84,7 @@
     },
     "/v1/data_feeds": {
       "get": {
-        "tags": [
-          "crate::handlers::get_data_feeds"
-        ],
+        "tags": ["crate::handlers::rest::get_data_feeds"],
         "operationId": "get_data_feeds",
         "responses": {
           "200": {
@@ -95,37 +106,39 @@
   },
   "components": {
     "schemas": {
+      "CalldataResponse": {
+        "type": "object",
+        "required": ["feed_id", "encoded_calldata"],
+        "properties": {
+          "encoded_calldata": {
+            "type": "string"
+          },
+          "feed_id": {
+            "type": "string"
+          }
+        }
+      },
       "GetCalldataError": {
         "oneOf": [
           {
             "type": "string",
-            "enum": [
-              "InternalServerError"
-            ]
+            "enum": ["InternalServerError"]
           },
           {
             "type": "string",
-            "enum": [
-              "DatabaseConnection"
-            ]
+            "enum": ["DatabaseConnection"]
           },
           {
             "type": "string",
-            "enum": [
-              "InvalidFeedId"
-            ]
+            "enum": ["InvalidFeedId"]
           },
           {
             "type": "string",
-            "enum": [
-              "DispatchNotFound"
-            ]
+            "enum": ["DispatchNotFound"]
           },
           {
             "type": "object",
-            "required": [
-              "FeedNotFound"
-            ],
+            "required": ["FeedNotFound"],
             "properties": {
               "FeedNotFound": {
                 "type": "string"
@@ -134,29 +147,30 @@
           },
           {
             "type": "string",
-            "enum": [
-              "FailedToCreateHyperlaneClient"
-            ]
+            "enum": ["FailedToCreateHyperlaneClient"]
           },
           {
             "type": "string",
-            "enum": [
-              "FailedToFetchOnchainValidators"
-            ]
+            "enum": ["FailedToFetchOnchainValidators"]
           },
           {
             "type": "string",
-            "enum": [
-              "ValidatorNotFound"
-            ]
+            "enum": ["ValidatorNotFound"]
           },
           {
             "type": "object",
-            "required": [
-              "ChainNotSupported"
-            ],
+            "required": ["ChainNotSupported"],
             "properties": {
               "ChainNotSupported": {
+                "type": "string"
+              }
+            }
+          },
+          {
+            "type": "object",
+            "required": ["CalldataError"],
+            "properties": {
+              "CalldataError": {
                 "type": "string"
               }
             }
@@ -164,24 +178,23 @@
         ]
       },
       "GetCalldataQuery": {
-        "type": "object"
-      },
-      "GetCalldataResponse": {
         "type": "object",
-        "required": [
-          "calldata"
-        ],
+        "required": ["chain", "feed_ids"],
         "properties": {
-          "calldata": {
+          "chain": {
             "type": "string"
+          },
+          "feed_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },
       "GetChainsError": {
         "type": "string",
-        "enum": [
-          "InternalServerError"
-        ]
+        "enum": ["InternalServerError"]
       },
       "GetChainsResponse": {
         "type": "array",
@@ -193,9 +206,7 @@
         "oneOf": [
           {
             "type": "object",
-            "required": [
-              "ParsingFeedId"
-            ],
+            "required": ["ParsingFeedId"],
             "properties": {
               "ParsingFeedId": {
                 "type": "string"
@@ -204,9 +215,7 @@
           },
           {
             "type": "string",
-            "enum": [
-              "InternalServerError"
-            ]
+            "enum": ["InternalServerError"]
           }
         ]
       },
@@ -215,20 +224,34 @@
         "items": {
           "$ref": "#/components/schemas/Feed"
         }
+      },
+      "RpcDataFeed": {
+        "type": "object",
+        "required": ["feed_id", "encoded_calldata"],
+        "properties": {
+          "encoded_calldata": {
+            "type": "string",
+            "description": "The calldata binary represented as a hex string."
+          },
+          "feed_id": {
+            "type": "string"
+          }
+        }
       }
     },
     "responses": {
-      "GetCalldataResponse": {
+      "CalldataResponse": {
         "description": "",
         "content": {
           "application/json": {
             "schema": {
               "type": "object",
-              "required": [
-                "calldata"
-              ],
+              "required": ["feed_id", "encoded_calldata"],
               "properties": {
-                "calldata": {
+                "encoded_calldata": {
+                  "type": "string"
+                },
+                "feed_id": {
                   "type": "string"
                 }
               }
