@@ -35,7 +35,6 @@ contract PragmaUpgraded is Initializable, UUPSUpgradeable, OwnableUpgradeable, I
     ) public initializer {
         __Ownable_init(initial_owner);
         __UUPSUpgradeable_init();
-        // __PragmaDecoder_init(_hyperlane, _dataSourceEmitterChainIds, _dataSourceEmitterAddresses);
         __Pragma_init(_validTimePeriodSeconds, _singleUpdateFeeInWei);
     }
 

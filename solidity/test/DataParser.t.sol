@@ -4,16 +4,13 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "../src/libraries/DataParser.sol";
 import "../src/libraries/ErrorsLib.sol";
+import "./utils/TestConstants.sol";
 
 contract DataParserTest is Test {
     function testParseSpotMedianEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(0), //SPOT
-                uint8(0), //VARIANT
-                bytes32("BTC/USD")
+                TestConstantsLib.CRYPTO, TestConstantsLib.SPOT, TestConstantsLib.UNIQUE, TestConstantsLib.BTC_USD
             )
         );
         bytes memory data = abi.encodePacked(
@@ -39,11 +36,7 @@ contract DataParserTest is Test {
     function testParseTWAPEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(1), //TWAP
-                uint8(0), //VARIANT
-                bytes32("ETH/USD")
+                TestConstantsLib.CRYPTO, TestConstantsLib.TWAP, TestConstantsLib.UNIQUE, TestConstantsLib.ETH_USD
             )
         );
         bytes memory data = abi.encodePacked(
@@ -77,11 +70,10 @@ contract DataParserTest is Test {
     function testParseRealizedVolatilityEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(2), //RV
-                uint8(0), //VARIANT
-                bytes32("BTC/USD")
+                TestConstantsLib.CRYPTO,
+                TestConstantsLib.REALIZED_VOLATILITY,
+                TestConstantsLib.UNIQUE,
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory data = abi.encodePacked(
@@ -117,11 +109,7 @@ contract DataParserTest is Test {
     function testParseOptionsEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(3), //Option
-                uint8(0), //VARIANT
-                bytes32("ETH/USD")
+                TestConstantsLib.CRYPTO, TestConstantsLib.OPTIONS, TestConstantsLib.UNIQUE, TestConstantsLib.ETH_USD
             )
         );
         bytes memory data = abi.encodePacked(
@@ -165,11 +153,7 @@ contract DataParserTest is Test {
     function testParsePerpEntry() public pure {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(4), //PERP
-                uint8(0), //VARIANT
-                bytes32("BTC/USD")
+                TestConstantsLib.CRYPTO, TestConstantsLib.PERP, TestConstantsLib.UNIQUE, TestConstantsLib.BTC_USD
             )
         );
         bytes memory data = abi.encodePacked(
@@ -199,11 +183,10 @@ contract DataParserTest is Test {
     function testParseUnknownDataType() public {
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
+                TestConstantsLib.CRYPTO,
                 uint8(20), //Unkown data type
-                uint8(0),
-                bytes32("BTC/USD")
+                TestConstantsLib.UNIQUE,
+                TestConstantsLib.BTC_USD
             )
         );
         bytes memory data = abi.encodePacked(

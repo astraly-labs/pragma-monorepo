@@ -9,18 +9,35 @@ import "./libraries/BytesLib.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
+/// @title Hyperlane Contract
+/// @notice This contract verifies and parses messages signed by validators.
+/// @dev The contract uses validator signatures to reach a quorum and validate the authenticity of messages.
+/// Validators are initialized during contract deployment and stored in `_validators`.
 contract Hyperlane is IHyperlane {
     using BytesLib for bytes;
-
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
-    address[] public _validators;
+    /* STORAGE */
 
+    address[] public _validators;
+    uint256 private constant VERSION = 3;
+
+    /* CONSTRUCTOR */
+
+    /// @notice Initializes the contract with a list of validators.
+    /// @param validators Array of validator addresses authorized to sign messages.
     constructor(address[] memory validators) {
         _validators = validators;
     }
 
+    /// @notice Parses and verifies a Hyperlane message.
+    /// @param encodedHyMsg The encoded Hyperlane message.
+    /// @return hyMsg The parsed Hyperlane message.
+    /// @return valid Boolean indicating if the message is valid.
+    /// @return reason Reason for invalidity, if applicable.
+    /// @return index The message parsing index for tracking.
+    /// @return checkpointRoot The checkpoint root associated with the message.
     function parseAndVerifyHyMsg(bytes calldata encodedHyMsg)
         public
         view
@@ -30,6 +47,10 @@ contract Hyperlane is IHyperlane {
         (valid, reason) = verifyHyMsg(hyMsg);
     }
 
+    /// @notice Verifies a parsed Hyperlane message by checking the quorum of validator signatures.
+    /// @param hyMsg The parsed Hyperlane message.
+    /// @return valid Boolean indicating if the message is valid.
+    /// @return reason Reason for invalidity, if applicable.
     function verifyHyMsg(HyMsg memory hyMsg) public view returns (bool valid, string memory reason) {
         // TODO: fetch validators from calldata/storage
         address[] memory validators = _validators;
@@ -51,6 +72,12 @@ contract Hyperlane is IHyperlane {
         return (true, "");
     }
 
+    /// @notice Verifies the signatures of validators on the message.
+    /// @param hash The message hash to verify.
+    /// @param signatures Array of validator signatures on the message.
+    /// @param validators List of validator addresses.
+    /// @return valid Boolean indicating if signatures are valid.
+    /// @return reason Reason for invalidity, if applicable.
     function verifySignatures(bytes32 hash, Signature[] memory signatures, address[] memory validators)
         public
         pure
@@ -71,6 +98,11 @@ contract Hyperlane is IHyperlane {
         return (true, "");
     }
 
+    /// @notice Parses a Hyperlane message from encoded data, and compute the hash to be signed by the validators.
+    /// @param encodedHyMsg The encoded Hyperlane message data.
+    /// @return hyMsg The parsed Hyperlane message.
+    /// @return index The index in the data stream, for further parsing.
+    /// @return checkPointRoot The checkpoint root associated with the message.
     function parseHyMsg(bytes calldata encodedHyMsg)
         public
         pure
@@ -78,7 +110,7 @@ contract Hyperlane is IHyperlane {
     {
         hyMsg.version = encodedHyMsg.toUint8(index);
         index += 1;
-        require(hyMsg.version == 3, "unsupported version");
+        require(hyMsg.version == VERSION, "unsupported version");
 
         // Parse Signatures
         uint256 signersLen = encodedHyMsg.toUint8(index);
@@ -101,9 +133,6 @@ contract Hyperlane is IHyperlane {
         hyMsg.nonce = encodedHyMsg.toUint32(index);
         index += 4;
 
-        hyMsg.timestamp = encodedHyMsg.toUint64(index);
-        index += 8;
-
         hyMsg.emitterChainId = encodedHyMsg.toUint32(index);
         index += 4;
 
@@ -118,6 +147,8 @@ contract Hyperlane is IHyperlane {
         bytes32 root = encodedHyMsg.toBytes32(index);
         index += 32;
 
+        checkPointRoot = root;
+
         uint32 checkpointIndex = encodedHyMsg.toUint32(index);
         index += 4;
 
@@ -130,6 +161,11 @@ contract Hyperlane is IHyperlane {
         hyMsg.payload = encodedHyMsg.slice(index, encodedHyMsg.length - index);
     }
 
+    /// @notice Verifies a single signature against an account.
+    /// @param data The hashed data to verify.
+    /// @param signature The signature to verify.
+    /// @param account The address expected to sign the data.
+    /// @return Boolean indicating whether the signature is valid.
     function _verify(bytes32 data, bytes memory signature, address account) internal pure returns (bool) {
         return data.toEthSignedMessageHash().recover(signature) == account;
     }

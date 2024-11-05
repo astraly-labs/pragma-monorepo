@@ -29,28 +29,31 @@ contract PragmaHarnessTest is Test {
         pragmaHarness = PragmaHarness(TestUtils.configurePragmaContract(dataType));
     }
 
-    function setupRaw() public {
-        pragmaHarness = PragmaHarness(TestUtils.configurePragmaRawContract());
+    function setupRealPragmaHarness() public {
+        pragmaHarness = PragmaHarness(TestUtils.setupRealEnvironment());
     }
 
-    function testUpdateRawFeed() public {
-        setupRaw();
+    function testUpdateRealFeed() public {
+        setupRealPragmaHarness();
         // encoded update
         bytes memory encodedUpdate =
-            hex"010000017003010002c8960ad17eddf3ec435aea12d031c6a6298e5c8e786550c1238fb423a4f5661455ef5cac013d6cc34a4ce472ba2031cb2ae84dfd35d0ecd0b51b4d437dc0b81b0003c638000000000000000000611a3d0060240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc30536953cdd0dd5b8e24428e4fb6eab5c143daba15f62b24606e50d822508faefff8c9ddbc7988bf343935dd1f19da8e03cccc7e63ae3cccadc04a64c9e6b79750003c638e03cccfc78838eafd29d5868d9e2333c684d10828874c31b7dbc01869ec98c2001006b000000000000000000004c5553442f555344000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004c5553442f5553440000000000000000";
-        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
+            hex"0100000130030100c1ec5070f1a4868b8e6bfa5bbd31ac77605c5af1a739bc4e7758d4ca1d88fa8835c1460646b647c4c4403b324c2297a04d70b84888dc873021f80d6d70ed015e1c00031b8b00611a3d0060240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc30536953cdd0dd5b8e24428e4fb6eab5c143daba15f62b24606e50d822508faefd53032e26a3b1d1510dfe82a2ab8d6c0fc0f010dcdd3c410ba2f9fdad3479b1400031b8b15704e0efd1955cfe1c1182ba083bd5309707bdd795397cbbbb106cfc9b29bb00100010000000000000000000000000000000000000000000000000000004254432f5553440000000067225b110008080000000000000000000000000000000000000000000000000000068aa5cb9d630000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004254432f5553440000000067225b11"; uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
         assertEq(numUpdates, 1, "Number of updates should be 1");
+        bytes32 feedId = bytes32(0x000000000000000000000000000000000000000000000000004254432f555344);
+        SpotMedian memory spotMedian = pragmaHarness.exposed_spotMedianFeeds(feedId);
+        assertEq(spotMedian.metadata.timestamp, uint64(0x67225b11), "Timestamp should match");
+        assertEq(spotMedian.metadata.numberOfSources, 8, "Number of sources should be 8");
+        assertEq(spotMedian.metadata.decimals, 8, "Decimals should be 8");
+        assertEq(spotMedian.metadata.feedId, feedId, "Feed ID should match");
+        assertEq(spotMedian.price, 0x68aa5cb9d63, "Price should match");
+        assertEq(spotMedian.volume, 0, "Volume should match");
     }
 
     function testUpdateDataInfoFromUpdateSpotMedian() public {
         _setUp(FeedType.SpotMedian);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(0), //SPOT
-                uint8(0), //VARIANT
-                TestConstantsLib.ETH_USD
+                TestConstantsLib.CRYPTO, TestConstantsLib.SPOT, TestConstantsLib.UNIQUE, TestConstantsLib.ETH_USD
             )
         );
 
@@ -73,11 +76,7 @@ contract PragmaHarnessTest is Test {
         _setUp(FeedType.Twap);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(1), //TWAP
-                uint8(0), // VARIANT,
-                TestConstantsLib.BTC_USD
+                TestConstantsLib.CRYPTO, TestConstantsLib.TWAP, TestConstantsLib.UNIQUE, TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Twap, feedId);
@@ -103,10 +102,9 @@ contract PragmaHarnessTest is Test {
         _setUp(FeedType.RealizedVolatility);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(2), //RV
-                uint8(0), //VARIANT
+                TestConstantsLib.CRYPTO,
+                TestConstantsLib.REALIZED_VOLATILITY,
+                TestConstantsLib.UNIQUE,
                 TestConstantsLib.BTC_USD
             )
         );
@@ -132,11 +130,7 @@ contract PragmaHarnessTest is Test {
         _setUp(FeedType.Options);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(3), //Options
-                uint8(0),
-                TestConstantsLib.BTC_USD
+                TestConstantsLib.CRYPTO, TestConstantsLib.OPTIONS, TestConstantsLib.UNIQUE, TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Options, feedId);
@@ -167,11 +161,7 @@ contract PragmaHarnessTest is Test {
         _setUp(FeedType.Perpetuals);
         bytes32 feedId = bytes32(
             abi.encodePacked(
-                uint16(0),
-                ///CRYPTO
-                uint8(4), //Perp
-                uint8(0), //VARIANT
-                TestConstantsLib.BTC_USD
+                TestConstantsLib.CRYPTO, TestConstantsLib.PERP, TestConstantsLib.UNIQUE, TestConstantsLib.BTC_USD
             )
         );
         bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Perpetuals, feedId);
@@ -203,7 +193,7 @@ contract PragmaUpgradeableTest is Test {
         user = address(0x1);
     }
 
-    function testInitialState() public {
+    function testInitialState() public view {
         assertEq(pragma_.owner(), owner);
         assertEq(pragma_.validTimePeriodSeconds(), 120);
         assertEq(pragma_.singleUpdateFeeInWei(), 0.1 ether);
