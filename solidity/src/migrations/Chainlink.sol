@@ -28,7 +28,8 @@ contract PragmaAggregatorV3 {
         pragmaInterface.updateDataFeeds{value: fee}(priceUpdateData);
 
         // refund remaining eth
-        payable(msg.sender).call{value: address(this).balance}("");
+        // (bool success, ) = payable(msg.sender).call{value: address(this).balance}("");
+        // require(success, "Transfer failed.");    
     }
 
     function decimals() public view virtual returns (uint8) {
@@ -68,12 +69,12 @@ contract PragmaAggregatorV3 {
     }
 
     function getRoundData(
-        uint80 _roundId
+        uint80 roundId
     )
         external
         view
         returns (
-            uint80 roundId,
+            uint80,
             int256 answer,
             uint256 startedAt,
             uint256 updatedAt,
@@ -82,11 +83,11 @@ contract PragmaAggregatorV3 {
     {
         SpotMedian memory price = pragmaInterface.getSpotMedianFeed(feedId);
         return (
-            _roundId,
+            roundId,
             int256(price.price),
             price.metadata.timestamp,
             price.metadata.timestamp,
-            _roundId
+            roundId
         );
     }
 
