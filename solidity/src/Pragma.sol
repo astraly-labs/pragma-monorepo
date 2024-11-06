@@ -150,6 +150,14 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         return validTimePeriodSeconds;
     }
 
+    /* GETTERS */
+    /// Even if the getters are automatically set for the public storage variable, we need to define the getter to make it
+    /// accessible for the interface
+
+    function getSpotMedianFeed(bytes32 feedId) external view returns (SpotMedian memory) {
+        return spotMedianFeeds[feedId];
+    }
+
     function withdrawFunds(uint256 amount) external onlyOwner {
         require(amount <= address(this).balance, "Insufficient balance");
         (bool success,) = owner().call{value: amount}("");

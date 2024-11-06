@@ -58,4 +58,9 @@ interface IPragma {
     /// @param id The data feed ID.
     /// @return True if the data feed exists, false otherwise.
     function dataFeedExists(bytes32 id) external view returns (bool);
+
+    /// @notice Getter accesssible through the interface
+    /// @param feedId The data feed id.
+    /// @return SpotMedian the entry associated to the spot feed id.
+    function getSpotMedianFeed(bytes32 feedId) external view returns (SpotMedian memory);
 }
