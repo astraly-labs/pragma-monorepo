@@ -147,6 +147,10 @@ contract PragmaUpgraded is Initializable, UUPSUpgradeable, OwnableUpgradeable, I
     function getValidTimePeriod() public view returns (uint256) {
         return validTimePeriodSeconds;
     }
+    
+     function getSpotMedianFeed(bytes32 feedId) external view returns (SpotMedian memory) {
+        return spotMedianFeeds[feedId];
+    }
 
     function version() public pure returns (string memory) {
         return "2.0.0";

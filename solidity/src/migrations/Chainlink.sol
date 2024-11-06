@@ -1,5 +1,12 @@
-import "@pragmaoracle/solidity-sdk/src/interfaces/IPragma.sol";
-import "@pragmaoracle/solidity-sdk/src/interfaces/PragmaStructs.sol";
+pragma solidity 0.8.28;
+
+// Replace this import with those down below once PR merged
+
+import "../interfaces/PragmaStructs.sol";
+import "../interfaces/IPragma.sol";
+
+// import "@pragmaoracle/solidity-sdk/src/interfaces/IPragma.sol";
+// import "@pragmaoracle/solidity-sdk/src/interfaces/PragmaStructs.sol";
 
 /**
  * @title An adapter of the ChainlinkAggregatorV3 interface that supports Pragma price feeds
@@ -18,7 +25,7 @@ contract PragmaAggregatorV3 {
         // Update the prices to the latest available values and pay the required fee for it. The `priceUpdateData` data
         // should be retrieved from the Theoros SDK, you can find additional information on https://docs.pragmaoracle.com/
         uint256 fee = pragmaInterface.getUpdateFee(priceUpdateData);
-        pragmaInterface.updatePriceFeeds{value: fee}(priceUpdateData);
+        pragmaInterface.updateDataFeeds{value: fee}(priceUpdateData);
 
         // refund remaining eth
         payable(msg.sender).call{value: address(this).balance}("");
@@ -26,7 +33,7 @@ contract PragmaAggregatorV3 {
 
     function decimals() public view virtual returns (uint8) {
         SpotMedian memory price = pragmaInterface.getSpotMedianFeed(feedId);
-        return uint8(-1 * int8(price.decimals));
+        return uint8(-1 * int8(price.metadata.decimals));
     }
 
     function description() public pure returns (string memory) {
