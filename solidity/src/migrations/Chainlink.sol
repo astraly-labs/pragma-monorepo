@@ -67,22 +67,48 @@ contract PragmaAggregatorV3 {
         return latestTimestamp();
     }
 
-    function getRoundData(uint80 _roundId)
+    function getRoundData(
+        uint80 _roundId
+    )
         external
         view
-        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
     {
         SpotMedian memory price = pragmaInterface.getSpotMedianFeed(feedId);
-        return (_roundId, int256(price.price), price.metadata.timestamp, price.metadata.timestamp, _roundId);
+        return (
+            _roundId,
+            int256(price.price),
+            price.metadata.timestamp,
+            price.metadata.timestamp,
+            _roundId
+        );
     }
 
     function latestRoundData()
         external
         view
-        returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound)
+        returns (
+            uint80 roundId,
+            int256 answer,
+            uint256 startedAt,
+            uint256 updatedAt,
+            uint80 answeredInRound
+        )
     {
         SpotMedian memory price = pragmaInterface.getSpotMedianFeed(feedId);
         roundId = uint80(price.metadata.timestamp);
-        return (roundId, int256(price.price), price.metadata.timestamp, price.metadata.timestamp, roundId);
+        return (
+            roundId,
+            int256(price.price),
+            price.metadata.timestamp,
+            price.metadata.timestamp,
+            roundId
+        );
     }
 }

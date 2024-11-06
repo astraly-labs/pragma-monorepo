@@ -8,12 +8,15 @@ import "./ErrorsLib.sol";
 library DataParser {
     using BytesLib for bytes;
 
-    function parse(bytes memory data) internal pure returns (ParsedData memory) {
+    function parse(
+        bytes memory data
+    ) internal pure returns (ParsedData memory) {
         uint8 offset = 2; // type of feed after the asset class
 
         uint8 rawDataType = data.toUint8(offset);
         FeedType dataType = safeCastToFeedType(rawDataType);
-        ParsedData memory parsedData = StructsInitializers.initializeParsedData();
+        ParsedData memory parsedData = StructsInitializers
+            .initializeParsedData();
         parsedData.dataType = dataType;
         if (dataType == FeedType.SpotMedian) {
             parsedData.spot = parseSpotData(data);
@@ -32,7 +35,9 @@ library DataParser {
         return parsedData;
     }
 
-    function safeCastToFeedType(uint8 rawDataType) internal pure returns (FeedType) {
+    function safeCastToFeedType(
+        uint8 rawDataType
+    ) internal pure returns (FeedType) {
         if (rawDataType <= uint8(type(FeedType).max)) {
             return FeedType(rawDataType);
         } else {
@@ -40,7 +45,10 @@ library DataParser {
         }
     }
 
-    function parseMetadata(bytes memory data, uint256 startIndex) internal pure returns (Metadata memory, uint256) {
+    function parseMetadata(
+        bytes memory data,
+        uint256 startIndex
+    ) internal pure returns (Metadata memory, uint256) {
         Metadata memory metadata = StructsInitializers.initializeMetadata();
         uint256 index = startIndex;
 
@@ -59,7 +67,9 @@ library DataParser {
         return (metadata, index);
     }
 
-    function parseSpotData(bytes memory data) internal pure returns (SpotMedian memory) {
+    function parseSpotData(
+        bytes memory data
+    ) internal pure returns (SpotMedian memory) {
         SpotMedian memory entry = StructsInitializers.initializeSpotMedian();
         uint256 index = 0;
 
@@ -74,7 +84,9 @@ library DataParser {
         return entry;
     }
 
-    function parseTWAPData(bytes memory data) internal pure returns (TWAP memory) {
+    function parseTWAPData(
+        bytes memory data
+    ) internal pure returns (TWAP memory) {
         TWAP memory entry = StructsInitializers.initializeTwap();
         uint256 index = 0;
 
@@ -100,7 +112,9 @@ library DataParser {
         return entry;
     }
 
-    function parseRealizedVolatilityData(bytes memory data) internal pure returns (RealizedVolatility memory) {
+    function parseRealizedVolatilityData(
+        bytes memory data
+    ) internal pure returns (RealizedVolatility memory) {
         RealizedVolatility memory entry = StructsInitializers.initializeRV();
         uint256 index = 0;
 
@@ -129,7 +143,9 @@ library DataParser {
         return entry;
     }
 
-    function parseOptionsData(bytes memory data) internal pure returns (Options memory) {
+    function parseOptionsData(
+        bytes memory data
+    ) internal pure returns (Options memory) {
         Options memory entry = StructsInitializers.initializeOptions();
         uint256 index = 0;
 
@@ -170,7 +186,9 @@ library DataParser {
         return entry;
     }
 
-    function parsePerpData(bytes memory data) internal pure returns (Perp memory) {
+    function parsePerpData(
+        bytes memory data
+    ) internal pure returns (Perp memory) {
         Perp memory entry = StructsInitializers.initializePerpetuals();
         uint256 index = 0;
 

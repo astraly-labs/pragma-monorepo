@@ -26,7 +26,9 @@ contract PragmaHarnessTest is Test {
 
     function _setUp(FeedType dataType) public {
         // Default setup with a specific data type, e.g., FeedType.SpotMedian
-        pragmaHarness = PragmaHarness(TestUtils.configurePragmaContract(dataType));
+        pragmaHarness = PragmaHarness(
+            TestUtils.configurePragmaContract(dataType)
+        );
     }
 
     function setupRaw() public {
@@ -36,9 +38,11 @@ contract PragmaHarnessTest is Test {
     function testUpdateRawFeed() public {
         setupRaw();
         // encoded update
-        bytes memory encodedUpdate =
-            hex"010000017003010002c8960ad17eddf3ec435aea12d031c6a6298e5c8e786550c1238fb423a4f5661455ef5cac013d6cc34a4ce472ba2031cb2ae84dfd35d0ecd0b51b4d437dc0b81b0003c638000000000000000000611a3d0060240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc30536953cdd0dd5b8e24428e4fb6eab5c143daba15f62b24606e50d822508faefff8c9ddbc7988bf343935dd1f19da8e03cccc7e63ae3cccadc04a64c9e6b79750003c638e03cccfc78838eafd29d5868d9e2333c684d10828874c31b7dbc01869ec98c2001006b000000000000000000004c5553442f555344000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004c5553442f5553440000000000000000";
-        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
+        bytes
+            memory encodedUpdate = hex"010000017003010002c8960ad17eddf3ec435aea12d031c6a6298e5c8e786550c1238fb423a4f5661455ef5cac013d6cc34a4ce472ba2031cb2ae84dfd35d0ecd0b51b4d437dc0b81b0003c638000000000000000000611a3d0060240f2bccef7e64f920eec05c5bfffbc48c6ceaa4efca8748772b60cbafc30536953cdd0dd5b8e24428e4fb6eab5c143daba15f62b24606e50d822508faefff8c9ddbc7988bf343935dd1f19da8e03cccc7e63ae3cccadc04a64c9e6b79750003c638e03cccfc78838eafd29d5868d9e2333c684d10828874c31b7dbc01869ec98c2001006b000000000000000000004c5553442f555344000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000004c5553442f5553440000000000000000";
+        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(
+            encodedUpdate
+        );
         assertEq(numUpdates, 1, "Number of updates should be 1");
     }
 
@@ -54,15 +58,30 @@ contract PragmaHarnessTest is Test {
             )
         );
 
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.SpotMedian, feedId);
-        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
+        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(
+            FeedType.SpotMedian,
+            feedId
+        );
+        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(
+            encodedUpdate
+        );
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
 
-        SpotMedian memory spotMedian = pragmaHarness.exposed_spotMedianFeeds(feedId);
+        SpotMedian memory spotMedian = pragmaHarness.exposed_spotMedianFeeds(
+            feedId
+        );
 
-        assertEq(spotMedian.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(spotMedian.metadata.numberOfSources, 5, "Number of sources should be 5");
+        assertEq(
+            spotMedian.metadata.timestamp,
+            block.timestamp,
+            "Timestamp should match"
+        );
+        assertEq(
+            spotMedian.metadata.numberOfSources,
+            5,
+            "Number of sources should be 5"
+        );
         assertEq(spotMedian.metadata.decimals, 8, "Decimals should be 8");
         assertEq(spotMedian.metadata.feedId, feedId, "Feed ID should match");
         assertEq(spotMedian.price, 2000 * 1e8, "Price should match");
@@ -80,15 +99,28 @@ contract PragmaHarnessTest is Test {
                 TestConstantsLib.BTC_USD
             )
         );
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Twap, feedId);
-        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
+        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(
+            FeedType.Twap,
+            feedId
+        );
+        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(
+            encodedUpdate
+        );
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
 
         TWAP memory twap = pragmaHarness.exposed_twapFeeds(feedId);
 
-        assertEq(twap.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(twap.metadata.numberOfSources, 5, "Number of sources should be 5");
+        assertEq(
+            twap.metadata.timestamp,
+            block.timestamp,
+            "Timestamp should match"
+        );
+        assertEq(
+            twap.metadata.numberOfSources,
+            5,
+            "Number of sources should be 5"
+        );
         assertEq(twap.metadata.decimals, 8, "Decimals should be 8");
         assertEq(twap.metadata.feedId, feedId, "Feed ID should match");
         assertEq(twap.twapPrice, 30000 * 1e8, "TWAP price should match");
@@ -96,7 +128,11 @@ contract PragmaHarnessTest is Test {
         assertEq(twap.startPrice, 29000 * 1e8, "Start price should match");
         assertEq(twap.endPrice, 31000 * 1e8, "End price should match");
         assertEq(twap.totalVolume, 1000 * 1e18, "Total volume should match");
-        assertEq(twap.numberOfDataPoints, 60, "Number of data points should match");
+        assertEq(
+            twap.numberOfDataPoints,
+            60,
+            "Number of data points should match"
+        );
     }
 
     function testUpdateDataInfoFromUpdateRealizedVolatility() public {
@@ -110,13 +146,26 @@ contract PragmaHarnessTest is Test {
                 TestConstantsLib.BTC_USD
             )
         );
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.RealizedVolatility, feedId);
-        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
+        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(
+            FeedType.RealizedVolatility,
+            feedId
+        );
+        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(
+            encodedUpdate
+        );
         RealizedVolatility memory rv = pragmaHarness.exposed_rvFeeds(feedId);
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
-        assertEq(rv.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(rv.metadata.numberOfSources, 5, "Number of sources should be 5");
+        assertEq(
+            rv.metadata.timestamp,
+            block.timestamp,
+            "Timestamp should match"
+        );
+        assertEq(
+            rv.metadata.numberOfSources,
+            5,
+            "Number of sources should be 5"
+        );
         assertEq(rv.metadata.decimals, 8, "Decimals should be 8");
         assertEq(rv.metadata.feedId, feedId, "Feed id ID should match");
         assertEq(rv.volatility, 50 * 1e6, "Volatility should match"); // 50% volatility
@@ -125,7 +174,11 @@ contract PragmaHarnessTest is Test {
         assertEq(rv.endPrice, 2100 * 1e8, "End price should match");
         assertEq(rv.highPrice, 2200 * 1e8, "High price should match");
         assertEq(rv.lowPrice, 1800 * 1e8, "Low price should match");
-        assertEq(rv.numberOfDataPoints, 1440, "Number of data points should match");
+        assertEq(
+            rv.numberOfDataPoints,
+            1440,
+            "Number of data points should match"
+        );
     }
 
     function testUpdateDataInfoFromUpdateOptions() public {
@@ -139,22 +192,43 @@ contract PragmaHarnessTest is Test {
                 TestConstantsLib.BTC_USD
             )
         );
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Options, feedId);
-        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
+        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(
+            FeedType.Options,
+            feedId
+        );
+        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(
+            encodedUpdate
+        );
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
 
         Options memory options = pragmaHarness.exposed_optionsFeeds(feedId);
 
-        assertEq(options.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(options.metadata.numberOfSources, 5, "Number of sources should be 5");
+        assertEq(
+            options.metadata.timestamp,
+            block.timestamp,
+            "Timestamp should match"
+        );
+        assertEq(
+            options.metadata.numberOfSources,
+            5,
+            "Number of sources should be 5"
+        );
         assertEq(options.metadata.decimals, 8, "Decimals should be 8");
         assertEq(options.metadata.feedId, feedId, "Feed ID should match");
         assertEq(options.strikePrice, 2000 * 1e8, "Strike price should match");
-        assertEq(options.impliedVolatility, 50 * 1e6, "Implied volatility should match");
+        assertEq(
+            options.impliedVolatility,
+            50 * 1e6,
+            "Implied volatility should match"
+        );
         assertEq(options.timeToExpiry, 604800, "Time to expiry should match");
         assertEq(options.isCall, true, "Option type should be call");
-        assertEq(options.underlyingPrice, 1950 * 1e8, "Underlying price should match");
+        assertEq(
+            options.underlyingPrice,
+            1950 * 1e8,
+            "Underlying price should match"
+        );
         assertEq(options.optionPrice, 100 * 1e8, "Option price should match");
         assertEq(options.delta, 60 * 1e6, "Delta should match");
         assertEq(options.gamma, 2 * 1e6, "Gamma should match");
@@ -174,14 +248,27 @@ contract PragmaHarnessTest is Test {
                 TestConstantsLib.BTC_USD
             )
         );
-        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(FeedType.Perpetuals, feedId);
-        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
+        bytes memory encodedUpdate = TestUtils.createEncodedUpdate(
+            FeedType.Perpetuals,
+            feedId
+        );
+        uint8 numUpdates = pragmaHarness.exposed_updateDataInfoFromUpdate(
+            encodedUpdate
+        );
 
         assertEq(numUpdates, 1, "Number of updates should be 1");
         Perp memory perp = pragmaHarness.exposed_perpFeeds(feedId);
 
-        assertEq(perp.metadata.timestamp, block.timestamp, "Timestamp should match");
-        assertEq(perp.metadata.numberOfSources, 5, "Number of sources should be 5");
+        assertEq(
+            perp.metadata.timestamp,
+            block.timestamp,
+            "Timestamp should match"
+        );
+        assertEq(
+            perp.metadata.numberOfSources,
+            5,
+            "Number of sources should be 5"
+        );
         assertEq(perp.metadata.decimals, 8, "Decimals should be 8");
         assertEq(perp.metadata.feedId, feedId, "Feed ID should match");
         assertEq(perp.markPrice, 2000 * 1e8, "Mark price should match");
@@ -198,7 +285,9 @@ contract PragmaUpgradeableTest is Test {
     address public user;
 
     function setUp() public {
-        pragma_ = PragmaHarness(TestUtils.configurePragmaContract(FeedType.SpotMedian));
+        pragma_ = PragmaHarness(
+            TestUtils.configurePragmaContract(FeedType.SpotMedian)
+        );
         owner = address(this);
         user = address(0x1);
     }
@@ -235,8 +324,14 @@ contract PragmaUpgradeableTest is Test {
         pragma_.upgradeToAndCall(address(pragmaV2), "");
 
         // Check if state is maintained
-        assertEq(PragmaUpgraded(address(pragma_)).validTimePeriodSeconds(), 120);
-        assertEq(PragmaUpgraded(address(pragma_)).singleUpdateFeeInWei(), 0.1 ether);
+        assertEq(
+            PragmaUpgraded(address(pragma_)).validTimePeriodSeconds(),
+            120
+        );
+        assertEq(
+            PragmaUpgraded(address(pragma_)).singleUpdateFeeInWei(),
+            0.1 ether
+        );
         // Add more checks for other state variables
     }
 

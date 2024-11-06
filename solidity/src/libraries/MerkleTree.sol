@@ -25,7 +25,10 @@ library MerkleTree {
         return hash(abi.encodePacked(MERKLE_LEAF_PREFIX, data));
     }
 
-    function nodeHash(bytes32 childA, bytes32 childB) internal pure returns (bytes32) {
+    function nodeHash(
+        bytes32 childA,
+        bytes32 childB
+    ) internal pure returns (bytes32) {
         if (childA > childB) {
             (childA, childB) = (childB, childA);
         }
@@ -40,21 +43,30 @@ library MerkleTree {
     /// `proofOffset` parameters. It is the caller's responsibility to ensure
     /// that the `encodedProof` is long enough to contain the proof and the
     /// `proofOffset` is not out of bound.
-    function isProofValid(bytes calldata encodedProof, uint256 offset, bytes32 root, bytes calldata leafData)
-        internal
-        pure
-        returns (bool valid, uint256 endOffset)
-    {
+    function isProofValid(
+        bytes calldata encodedProof,
+        uint256 offset,
+        bytes32 root,
+        bytes calldata leafData
+    ) internal pure returns (bool valid, uint256 endOffset) {
         unchecked {
             bytes32 currentDigest = MerkleTree.leafHash(leafData);
             uint256 proofOffset = 0;
-            uint16 proofSizeArray = UnsafeCalldataBytesLib.toUint16(encodedProof, proofOffset);
+            uint16 proofSizeArray = UnsafeCalldataBytesLib.toUint16(
+                encodedProof,
+                proofOffset
+            );
             proofOffset += 2;
             for (uint256 i = 0; i < proofSizeArray; i++) {
-                bytes32 siblingDigest = bytes32(UnsafeCalldataBytesLib.toBytes32(encodedProof, proofOffset));
+                bytes32 siblingDigest = bytes32(
+                    UnsafeCalldataBytesLib.toBytes32(encodedProof, proofOffset)
+                );
                 proofOffset += 32; // TO CHECK
 
-                currentDigest = MerkleTree.nodeHash(currentDigest, siblingDigest);
+                currentDigest = MerkleTree.nodeHash(
+                    currentDigest,
+                    siblingDigest
+                );
             }
             valid = currentDigest == root;
             endOffset = offset + proofOffset;
@@ -69,11 +81,10 @@ library MerkleTree {
     /// messages as leafs (in the same given order) and returns the root digest
     /// and the proofs for each message. If the number of messages is not a power
     /// of 2, the tree is padded with empty messages.
-    function constructProofs(bytes[] memory messages, uint8 depth)
-        internal
-        pure
-        returns (bytes32 root, bytes[] memory proofs)
-    {
+    function constructProofs(
+        bytes[] memory messages,
+        uint8 depth
+    ) internal pure returns (bytes32 root, bytes[] memory proofs) {
         require((1 << depth) >= messages.length, "depth too small");
 
         bytes32[] memory tree = new bytes32[]((1 << (depth + 1)));
