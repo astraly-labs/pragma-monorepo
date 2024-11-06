@@ -14,7 +14,7 @@ import "../interfaces/IPragma.sol";
  */
 contract PragmaAggregatorV3 {
     bytes32 public feedId;
-    IPragma public pragmaInterface;
+    IPragma public immutable pragmaInterface;
 
     constructor(address _pragma, bytes32 _feedId) {
         feedId = _feedId;
