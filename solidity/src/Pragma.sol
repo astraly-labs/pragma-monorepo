@@ -185,7 +185,11 @@ contract Pragma is
     function getSpotMedianFeed(
         bytes32 feedId
     ) external view returns (SpotMedian memory) {
-        return spotMedianFeeds[feedId];
+        SpotMedian memory feed = spotMedianFeeds[feedId];
+        if (feed.metadata.timestamp == 0) {
+            revert ErrorsLib.DataNotFound();
+        }
+        return feed;
     }
 
     function withdrawFunds(uint256 amount) external onlyOwner {
