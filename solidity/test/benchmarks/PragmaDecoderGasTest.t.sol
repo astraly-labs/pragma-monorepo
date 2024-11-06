@@ -10,7 +10,10 @@ import "../utils/TestConstants.sol";
 contract PragmaDecoderGasTest is Test {
     PragmaHarness private pragmaHarness;
 
-    function setUpHyperlane(uint8 numValidators, address[] memory initSigners) public returns (address) {
+    function setUpHyperlane(
+        uint8 numValidators,
+        address[] memory initSigners
+    ) public returns (address) {
         if (initSigners.length == 0) {
             initSigners = new address[](numValidators);
         }
@@ -24,11 +27,19 @@ contract PragmaDecoderGasTest is Test {
     }
 
     function _setUp(FeedType dataType) public {
-        pragmaHarness = PragmaHarness(TestUtils.configurePragmaContract(dataType));
+        pragmaHarness = PragmaHarness(
+            TestUtils.configurePragmaContract(dataType)
+        );
     }
 
     function testGasAllUpdates() public {
-        string[5] memory updateTypes = ["SpotMedian", "TWAP", "RealizedVolatility", "Options", "Perpetuals"];
+        string[5] memory updateTypes = [
+            "SpotMedian",
+            "TWAP",
+            "RealizedVolatility",
+            "Options",
+            "Perpetuals"
+        ];
         uint256[5] memory currencies = [
             TestConstantsLib.ETH_USD,
             TestConstantsLib.BTC_USD,
@@ -48,13 +59,25 @@ contract PragmaDecoderGasTest is Test {
                     currencies[i]
                 )
             );
-            bytes memory encodedUpdate = TestUtils.createEncodedUpdate(dataType, feedId);
+            bytes memory encodedUpdate = TestUtils.createEncodedUpdate(
+                dataType,
+                feedId
+            );
 
             uint256 gasBefore = gasleft();
             pragmaHarness.exposed_updateDataInfoFromUpdate(encodedUpdate);
             uint256 gasUsed = gasBefore - gasleft();
 
-            console.log(string(abi.encodePacked("Gas used for ", updateTypes[i], " update: ", vm.toString(gasUsed))));
+            console.log(
+                string(
+                    abi.encodePacked(
+                        "Gas used for ",
+                        updateTypes[i],
+                        " update: ",
+                        vm.toString(gasUsed)
+                    )
+                )
+            );
         }
     }
 }

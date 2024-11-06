@@ -16,7 +16,13 @@ import "./libraries/DataParser.sol";
 /// @author Pragma Labs
 /// @custom:contact security@pragma.build
 /// @notice The Pragma contract.
-contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, PragmaDecoder {
+contract Pragma is
+    Initializable,
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    IPragma,
+    PragmaDecoder
+{
     /* STORAGE */
     uint256 public validTimePeriodSeconds;
     uint256 public singleUpdateFeeInWei;
@@ -38,21 +44,28 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         hyperlane = IHyperlane(_hyperlane);
 
         for (uint256 i = 0; i < _dataSourceEmitterChainIds.length; i++) {
-            _isValidDataSource[keccak256(
-                abi.encodePacked(_dataSourceEmitterChainIds[i], _dataSourceEmitterAddresses[i])
-            )] = true;
+            _isValidDataSource[
+                keccak256(
+                    abi.encodePacked(
+                        _dataSourceEmitterChainIds[i],
+                        _dataSourceEmitterAddresses[i]
+                    )
+                )
+            ] = true;
         }
         validTimePeriodSeconds = _validTimePeriodSeconds;
         singleUpdateFeeInWei = _singleUpdateFeeInWei;
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(
+        address newImplementation
+    ) internal override onlyOwner {}
 
     /// @inheritdoc IPragma
     function updateDataFeeds(bytes[] calldata updateData) external payable {
         uint256 totalNumUpdates = 0;
         uint256 len = updateData.length;
-        for (uint256 i = 0; i < len;) {
+        for (uint256 i = 0; i < len; ) {
             totalNumUpdates += updateDataInfoFromUpdate(updateData[i]);
             unchecked {
                 i++;
@@ -65,15 +78,22 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
     }
 
     /// @inheritdoc IPragma
-    function getUpdateFee(bytes[] calldata updateData) external view returns (uint256 feeAmount) {
+    function getUpdateFee(
+        bytes[] calldata updateData
+    ) external view returns (uint256 feeAmount) {
         return 0;
     }
 
-    function getTotalFee(uint256 totalNumUpdates) private view returns (uint256 requiredFee) {
+    function getTotalFee(
+        uint256 totalNumUpdates
+    ) private view returns (uint256 requiredFee) {
         return totalNumUpdates * singleUpdateFeeInWei;
     }
 
-    function getSpotMedianNoOlderThan(bytes32 id, uint256 age) external view returns (SpotMedian memory data) {
+    function getSpotMedianNoOlderThan(
+        bytes32 id,
+        uint256 age
+    ) external view returns (SpotMedian memory data) {
         data = spotMedianFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
@@ -84,7 +104,10 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         return data;
     }
 
-    function getTwapNoOlderThan(bytes32 id, uint256 age) external view returns (TWAP memory data) {
+    function getTwapNoOlderThan(
+        bytes32 id,
+        uint256 age
+    ) external view returns (TWAP memory data) {
         data = twapFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
@@ -94,11 +117,10 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         }
     }
 
-    function getRealizedVolatilityNoOlderThan(bytes32 id, uint256 age)
-        external
-        view
-        returns (RealizedVolatility memory data)
-    {
+    function getRealizedVolatilityNoOlderThan(
+        bytes32 id,
+        uint256 age
+    ) external view returns (RealizedVolatility memory data) {
         data = rvFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
@@ -108,7 +130,10 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         }
     }
 
-    function getOptionsNoOlderThan(bytes32 id, uint256 age) external view returns (Options memory data) {
+    function getOptionsNoOlderThan(
+        bytes32 id,
+        uint256 age
+    ) external view returns (Options memory data) {
         data = optionsFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
@@ -118,7 +143,10 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         }
     }
 
-    function getPerpNoOlderThan(bytes32 id, uint256 age) external view returns (Perp memory data) {
+    function getPerpNoOlderThan(
+        bytes32 id,
+        uint256 age
+    ) external view returns (Perp memory data) {
         data = perpFeeds[id];
         if (data.metadata.timestamp == 0) {
             revert ErrorsLib.DataNotFound();
@@ -150,9 +178,23 @@ contract Pragma is Initializable, UUPSUpgradeable, OwnableUpgradeable, IPragma, 
         return validTimePeriodSeconds;
     }
 
+    /* GETTERS */
+    /// Even if the getters are automatically set for the public storage variable, we need to define the getter to make it
+    /// accessible for the interface
+
+    function getSpotMedianFeed(
+        bytes32 feedId
+    ) external view returns (SpotMedian memory) {
+        SpotMedian memory feed = spotMedianFeeds[feedId];
+        if (feed.metadata.timestamp == 0) {
+            revert ErrorsLib.DataNotFound();
+        }
+        return feed;
+    }
+
     function withdrawFunds(uint256 amount) external onlyOwner {
         require(amount <= address(this).balance, "Insufficient balance");
-        (bool success,) = owner().call{value: amount}("");
+        (bool success, ) = owner().call{value: amount}("");
         require(success, "Transfer failed");
     }
 

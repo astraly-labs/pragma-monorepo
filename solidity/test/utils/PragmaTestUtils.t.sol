@@ -11,7 +11,8 @@ import {DataFeedType} from "../../src/interfaces/IPragma.sol";
 
 abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
     uint32 constant SOURCE_EMITTER_CHAIN_ID = 0x1;
-    bytes32 constant SOURCE_EMITTER_ADDRESS = 0x03dA250675D8c2BB7cef7E1b7FDFe17aA4D5752Ed82A9333e4F9a12b22E521aa;
+    bytes32 constant SOURCE_EMITTER_ADDRESS =
+        0x03dA250675D8c2BB7cef7E1b7FDFe17aA4D5752Ed82A9333e4F9a12b22E521aa;
 
     uint256 constant SINGLE_UPDATE_FEE_IN_WEI = 1;
     uint256 constant VALID_TIME_PERIOD_IN_SECONDS = 60;
@@ -64,11 +65,9 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         bool brokenSignature;
     }
 
-    function encodeDataFeedMessages(DataFeedMessage[] memory dataFeedMessages)
-        internal
-        pure
-        returns (bytes[] memory encodedDataFeedMessages)
-    {
+    function encodeDataFeedMessages(
+        DataFeedMessage[] memory dataFeedMessages
+    ) internal pure returns (bytes[] memory encodedDataFeedMessages) {
         encodedDataFeedMessages = new bytes[](dataFeedMessages.length);
 
         for (uint256 i = 0; i < dataFeedMessages.length; i++) {
@@ -87,9 +86,12 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
         DataFeedMessage[] memory dataFeedMessages,
         MerkleUpdateConfig memory config
     ) internal returns (bytes memory hyMerkleUpdateData) {
-        bytes[] memory encodedDataFeedMessages = encodeDataFeedMessages(dataFeedMessages);
+        bytes[] memory encodedDataFeedMessages = encodeDataFeedMessages(
+            dataFeedMessages
+        );
 
-        (bytes32 rootDigest, bytes[] memory proofs) = MerkleTree.constructProofs(encodedDataFeedMessages, config.depth);
+        (bytes32 rootDigest, bytes[] memory proofs) = MerkleTree
+            .constructProofs(encodedDataFeedMessages, config.depth);
 
         bytes memory hyperlanePayload = abi.encodePacked(rootDigest);
 
@@ -124,7 +126,10 @@ abstract contract PragmaTestUtils is Test, RandTestUtils, HyperlaneTestUtils {
 
         for (uint256 i = 0; i < dataFeedMessages.length; i++) {
             hyMerkleUpdateData = abi.encodePacked(
-                hyMerkleUpdateData, uint16(encodedDataFeedMessages[i].length), encodedDataFeedMessages[i], proofs[i]
+                hyMerkleUpdateData,
+                uint16(encodedDataFeedMessages[i].length),
+                encodedDataFeedMessages[i],
+                proofs[i]
             );
         }
     }

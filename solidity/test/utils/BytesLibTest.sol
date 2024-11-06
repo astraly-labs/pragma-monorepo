@@ -62,7 +62,11 @@ contract BytesToInt256Test is Test {
 
         console.log("Retrieved value:", uint256(retrievedValue));
 
-        assertEq(retrievedValue, value, "Retrieved value does not match original value");
+        assertEq(
+            retrievedValue,
+            value,
+            "Retrieved value does not match original value"
+        );
     }
 
     function testFuzzing(int256 value, uint8 offset) public {
@@ -86,6 +90,10 @@ contract BytesToInt256Test is Test {
             console.logBytes(data);
         }
 
-        assertEq(retrievedValue, value, "Retrieved value does not match original value");
+        assertEq(
+            retrievedValue,
+            value,
+            "Retrieved value does not match original value"
+        );
     }
 }

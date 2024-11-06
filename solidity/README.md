@@ -46,10 +46,10 @@ contract YourContract {
   }
 
   /**
-     * This method is an example of how to interact with the Pragma contract to fetch Spot Median updates. You can check the documentation to
-     * find the available feeds.
-     * @param priceUpdate The encoded data to update the contract with the latest price
-     */
+   * This method is an example of how to interact with the Pragma contract to fetch Spot Median updates. You can check the documentation to
+   * find the available feeds.
+   * @param priceUpdate The encoded data to update the contract with the latest price
+   */
   function yourFunction(bytes[] calldata priceUpdate) public payable {
     // Submit a priceUpdate to the Pragma contract to update the on-chain price.
     // Updating the price requires paying the fee returned by getUpdateFee.
@@ -59,9 +59,11 @@ contract YourContract {
     // Read the current price from a price feed if it is less than 60 seconds old.
     // Each price feed (e.g., Spot Median ETH/USD) is identified by a unique identifier id.
     bytes32 id = 0x4554482f555344; // ETH/USD
-    PragmaStructs.DataFeed memory data_feed = oracle.getSpotMedianNoOlderThan(id, 60);
+    PragmaStructs.DataFeed memory data_feed = oracle.getSpotMedianNoOlderThan(
+      id,
+      60
+    );
   }
-
 }
 ```
 
@@ -76,8 +78,8 @@ You can find [here](https://docs.pragma.build/v2/Price%20Feeds/supported-assets-
 Alternatively, you can copy the `IPragma.sol` interface and `PragmaStructs.sol` inside your repository, and generate an instance using a deployed Pragma contract.
 
 ```solidity
-import {IPragma} from "./interfaces/IPragma.sol";
-import PragmaStructs from "./interfaces/PragmaStructs.sol";
+import { IPragma } from "./interfaces/IPragma.sol";
+import "./interfaces/PragmaStructs.sol" as PragmaStructs;
 ```
 
 The rest remains the same as described above.

@@ -32,4 +32,6 @@ library ErrorsLib {
     // Data feed is stale. (e.g., not updated for a long time)
     // TODO: add signature
     error DataStale();
+    // Parameters passed as arguments are incorrect
+    error InvalidArgument();
 }
