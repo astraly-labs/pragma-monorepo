@@ -49,7 +49,7 @@ pub struct Feed {
     pub pair_id: String,
 }
 
-#[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize, Clone, Copy)]
 pub enum AssetClass {
     Crypto = 0,
 }
@@ -69,7 +69,7 @@ impl TryFrom<u16> for AssetClass {
 // This configuration is wrong at the moment. We should include:
 // FeedType(FeedVariant).
 // For now it works because we only have 0 anyway.
-#[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Display, EnumString, Serialize, Deserialize, Clone, Copy)]
 pub enum FeedType {
     #[strum(serialize = "Unique Spot Median")]
     UniqueSpotMedian = 0,
@@ -122,6 +122,54 @@ impl FromStr for Feed {
     }
 }
 
+impl Feed {
+    /// Creates a new Feed from its components and generates the corresponding feed_id.
+    ///
+    /// # Arguments
+    ///
+    /// * `asset_class` - The asset class of the feed
+    /// * `feed_type` - The type of feed
+    /// * `pair_id` - The trading pair identifier
+    ///
+    /// # Returns
+    ///
+    /// A new `Feed` instance with the generated feed_id
+    pub fn new(asset_class: AssetClass, feed_type: FeedType, pair_id: String) -> Self {
+        let feed_id = Self::generate_feed_id(&asset_class, &feed_type, &pair_id);
+        Feed { feed_id, asset_class, feed_type, pair_id }
+    }
+
+    /// Generates a feed_id from its components.
+    ///
+    /// # Arguments
+    ///
+    /// * `asset_class` - The asset class of the feed
+    /// * `feed_type` - The type of feed
+    /// * `pair_id` - The trading pair identifier
+    ///
+    /// # Returns
+    ///
+    /// A string representing the feed_id in hexadecimal format with "0x" prefix
+    pub fn generate_feed_id(asset_class: &AssetClass, feed_type: &FeedType, pair_id: &str) -> String {
+        // Keep it simple - just concatenate the bytes without padding to 35 bytes
+        // The parsing function will handle the padding if needed
+
+        let mut bytes = Vec::new();
+
+        // Asset class - 1 byte (the lower byte of the u16 value)
+        bytes.push(*asset_class as u8);
+
+        // Feed type - 2 bytes (represented as "SM" for Spot Median, etc.)
+        let feed_type_value = *feed_type as u16;
+        bytes.extend_from_slice(&[feed_type_value as u8]);
+
+        // Pair ID - remaining bytes
+        bytes.extend_from_slice(pair_id.as_bytes());
+
+        format!("0x{}", hex::encode(&bytes))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -139,5 +187,22 @@ mod tests {
     #[test]
     fn test_asset_class_display() {
         assert_eq!(AssetClass::Crypto.to_string(), "Crypto");
+    }
+
+    #[test]
+    fn test_generate_feed_id() {
+        let asset_class = AssetClass::Crypto;
+        let feed_type = FeedType::UniqueSpotMedian;
+        let pair_id = "BTC/USD";
+
+        let feed = Feed::new(asset_class, feed_type, pair_id.to_string());
+
+        assert_eq!(feed.pair_id, "BTC/USD");
+
+        // Test round-trip conversion
+        let parsed_feed: Feed = feed.feed_id.parse().unwrap();
+        assert_eq!(parsed_feed.asset_class, AssetClass::Crypto);
+        assert_eq!(parsed_feed.feed_type, FeedType::UniqueSpotMedian);
+        assert_eq!(parsed_feed.pair_id, "BTC/USD");
     }
 }
