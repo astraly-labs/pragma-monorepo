@@ -144,7 +144,7 @@ jobs:
 
       - name: Upload gas report
         if: steps.check_changes.outputs.solidity_changed == 'true'
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: gas-report
           path: ${{ env.working-directory }}/previous_gas_report.txt
